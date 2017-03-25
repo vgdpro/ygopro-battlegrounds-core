@@ -196,6 +196,10 @@ uint32 card::get_infos(byte* buf, int32 query_flag, int32 use_cache) {
 	if(!use_cache) {
 		if(query_flag & QUERY_LSCALE) q_cache.lscale = *p++ = get_lscale();
 		if(query_flag & QUERY_RSCALE) q_cache.rscale = *p++ = get_rscale();
+		if(query_flag & QUERY_LINK) {
+			q_cache.link = *p++ = get_link();
+			q_cache.link_marker = *p++ = get_link_marker();
+		}
 	} else {
 		if((query_flag & QUERY_LSCALE) && ((uint32)(tdata = get_lscale()) != q_cache.lscale)) {
 			q_cache.lscale = tdata;
@@ -205,6 +209,16 @@ uint32 card::get_infos(byte* buf, int32 query_flag, int32 use_cache) {
 			q_cache.rscale = tdata;
 			*p++ = tdata;
 		} else query_flag &= ~QUERY_RSCALE;
+		if(query_flag & QUERY_LINK) {
+			uint32 link = get_link();
+			uint32 link_marker = get_link_marker();
+			if((link != q_cache.link) || (link_marker != q_cache.link_marker)) {
+				q_cache.link = link;
+				*p++ = (int32)link;
+				q_cache.link_marker = link_marker;
+				*p++ = (int32)link_marker;
+			} else query_flag &= ~QUERY_LINK;
+		}
 	}
 	*(uint32*)buf = (byte*)p - buf;
 	*(uint32*)(buf + 4) = query_flag;
@@ -429,8 +443,11 @@ int32 card::get_base_attack() {
 		bdef = 0;
 	temp.base_attack = batk;
 	effect_set eset;
-	filter_effect(EFFECT_SWAP_BASE_AD, &eset, FALSE);
-	int32 swap = eset.size();
+	int32 swap = 0;
+	if(!(data.type & TYPE_LINK)) {
+		filter_effect(EFFECT_SWAP_BASE_AD, &eset, FALSE);
+		swap = eset.size();
+	}
 	filter_effect(EFFECT_SET_BASE_ATTACK, &eset, FALSE);
 	if(swap)
 		filter_effect(EFFECT_SET_BASE_DEFENSE, &eset, FALSE);
@@ -498,14 +515,16 @@ int32 card::get_attack() {
 	int32 up_atk = 0, upc_atk = 0;
 	int32 swap_final = FALSE;
 	effect_set eset;
-	filter_effect(EFFECT_SWAP_AD, &eset, FALSE);
 	filter_effect(EFFECT_UPDATE_ATTACK, &eset, FALSE);
 	filter_effect(EFFECT_SET_ATTACK, &eset, FALSE);
 	filter_effect(EFFECT_SET_ATTACK_FINAL, &eset, FALSE);
 	filter_effect(EFFECT_SWAP_ATTACK_FINAL, &eset, FALSE);
-	filter_effect(EFFECT_SWAP_BASE_AD, &eset, FALSE);
 	filter_effect(EFFECT_SET_BASE_ATTACK, &eset, FALSE);
-	filter_effect(EFFECT_SET_BASE_DEFENSE, &eset, FALSE);
+	if(!(data.type & TYPE_LINK)) {
+		filter_effect(EFFECT_SWAP_AD, &eset, FALSE);
+		filter_effect(EFFECT_SWAP_BASE_AD, &eset, FALSE);
+		filter_effect(EFFECT_SET_BASE_DEFENSE, &eset, FALSE);
+	}
 	eset.sort();
 	int32 rev = FALSE;
 	if(is_affected_by_effect(EFFECT_REVERSE_UPDATE))
@@ -609,6 +628,8 @@ int32 card::get_attack() {
 	return atk;
 }
 int32 card::get_base_defense() {
+	if(data.type & TYPE_LINK)
+		return 0;
 	if(!(data.type & TYPE_MONSTER) && !(get_type() & TYPE_MONSTER) && !is_affected_by_effect(EFFECT_PRE_MONSTER))
 		return 0;
 	if (current.location != LOCATION_MZONE || get_status(STATUS_SUMMONING | STATUS_SPSUMMON_STEP))
@@ -671,6 +692,8 @@ int32 card::get_base_defense() {
 	return bdef;
 }
 int32 card::get_defense() {
+	if(data.type & TYPE_LINK)
+		return 0;
 	if(assume_type == ASSUME_DEFENSE)
 		return assume_value;
 	if(!(data.type & TYPE_MONSTER) && !(get_type() & TYPE_MONSTER) && !is_affected_by_effect(EFFECT_PRE_MONSTER))
@@ -806,7 +829,7 @@ int32 card::get_defense() {
 // 2. cards with current type TYPE_MONSTER or
 // 3. cards with EFFECT_PRE_MONSTER
 uint32 card::get_level() {
-	if((data.type & TYPE_XYZ) || (status & STATUS_NO_LEVEL) 
+	if((data.type & (TYPE_XYZ | TYPE_LINK)) || (status & STATUS_NO_LEVEL)
 	        || (!(data.type & TYPE_MONSTER) && !(get_type() & TYPE_MONSTER) && !is_affected_by_effect(EFFECT_PRE_MONSTER)))
 		return 0;
 	if(assume_type == ASSUME_LEVEL)
@@ -888,8 +911,13 @@ uint32 card::get_rank() {
 	temp.level = 0xffffffff;
 	return rank;
 }
+uint32 card::get_link() {
+	if(!(data.type & TYPE_LINK) || (status & STATUS_NO_LEVEL))
+		return 0;
+	return data.level;
+}
 uint32 card::get_synchro_level(card* pcard) {
-	if((data.type & TYPE_XYZ) || (status & STATUS_NO_LEVEL))
+	if((data.type & (TYPE_XYZ | TYPE_LINK)) || (status & STATUS_NO_LEVEL))
 		return 0;
 	uint32 lev;
 	effect_set eset;
@@ -901,7 +929,7 @@ uint32 card::get_synchro_level(card* pcard) {
 	return lev;
 }
 uint32 card::get_ritual_level(card* pcard) {
-	if((data.type & TYPE_XYZ) || (status & STATUS_NO_LEVEL))
+	if((data.type & (TYPE_XYZ | TYPE_LINK)) || (status & STATUS_NO_LEVEL))
 		return 0;
 	uint32 lev;
 	effect_set eset;
@@ -1056,6 +1084,86 @@ uint32 card::get_rscale() {
 	rscale += up + upc;
 	temp.rscale = 0xffffffff;
 	return rscale;
+}
+uint32 card::get_link_marker() {
+	if(!(data.type & TYPE_LINK))
+		return 0;
+	return data.link_marker;
+}
+int32 card::is_link_marker(uint32 dir) {
+	return (int32)(get_link_marker() & dir);
+}
+uint32 card::get_linked_zone() {
+	if(!(data.type & TYPE_LINK) || current.location != LOCATION_MZONE)
+		return 0;
+	int32 zones = 0;
+	int32 s = current.sequence;
+	if(s > 0 && s <= 4 && is_link_marker(LINK_MARKER_LEFT))
+		zones |= 1u << (s - 1);
+	if(s <= 3 && is_link_marker(LINK_MARKER_RIGHT))
+		zones |= 1u << (s + 1);
+	if((s == 0 && is_link_marker(LINK_MARKER_TOP_RIGHT))
+		|| (s == 1 && is_link_marker(LINK_MARKER_TOP))
+		|| (s == 2 && is_link_marker(LINK_MARKER_TOP_LEFT)))
+		zones |= (1u << 5) | (1u << (16 + 6));
+	if((s == 2 && is_link_marker(LINK_MARKER_TOP_RIGHT))
+		|| (s == 3 && is_link_marker(LINK_MARKER_TOP))
+		|| (s == 4 && is_link_marker(LINK_MARKER_TOP_LEFT)))
+		zones |= (1u << 6) | (1u << (16 + 5));
+	if(s == 5) {
+		if(is_link_marker(LINK_MARKER_BOTTOM_LEFT))
+			zones |= 1u << 0;
+		if(is_link_marker(LINK_MARKER_BOTTOM))
+			zones |= 1u << 1;
+		if(is_link_marker(LINK_MARKER_BOTTOM_RIGHT))
+			zones |= 1u << 2;
+		if(is_link_marker(LINK_MARKER_TOP_LEFT))
+			zones |= 1u << (16 + 4);
+		if(is_link_marker(LINK_MARKER_TOP))
+			zones |= 1u << (16 + 3);
+		if(is_link_marker(LINK_MARKER_TOP_RIGHT))
+			zones |= 1u << (16 + 2);
+	}
+	if(s == 6) {
+		if(is_link_marker(LINK_MARKER_BOTTOM_LEFT))
+			zones |= 1u << 2;
+		if(is_link_marker(LINK_MARKER_BOTTOM))
+			zones |= 1u << 3;
+		if(is_link_marker(LINK_MARKER_BOTTOM_RIGHT))
+			zones |= 1u << 4;
+		if(is_link_marker(LINK_MARKER_TOP_LEFT))
+			zones |= 1u << (16 + 2);
+		if(is_link_marker(LINK_MARKER_TOP))
+			zones |= 1u << (16 + 1);
+		if(is_link_marker(LINK_MARKER_TOP_RIGHT))
+			zones |= 1u << (16 + 0);
+	}
+	return zones;
+}
+void card::get_linked_cards(card_set* cset) {
+	cset->clear();
+	if(!(data.type & TYPE_LINK) || current.location != LOCATION_MZONE)
+		return;
+	int32 p = current.controler;
+	uint32 zones = get_linked_zone();
+	uint32 icheck = 0x1;
+	for(auto it = pduel->game_field->player[p].list_mzone.begin(); it != pduel->game_field->player[p].list_mzone.end(); ++it) {
+		if(zones & icheck) {
+			card* pcard = *it;
+			if(pcard)
+				cset->insert(pcard);
+		}
+		icheck <<= 1;
+	}
+	icheck = 0x10000;
+	for(auto it = pduel->game_field->player[1 - p].list_mzone.begin(); it != pduel->game_field->player[1 - p].list_mzone.end(); ++it) {
+		if(zones & icheck) {
+			card* pcard = *it;
+			if(pcard)
+				cset->insert(pcard);
+		}
+		icheck <<= 1;
+	}
 }
 int32 card::is_position(int32 pos) {
 	return current.position & pos;
@@ -1880,7 +1988,7 @@ void card::set_material(card_set* materials) {
 		(*cit)->current.reason_card = this;
 	effect_set eset;
 	filter_effect(EFFECT_MATERIAL_CHECK, &eset);
-	for(int i = 0; i < eset.size(); ++i) {
+	for(int32 i = 0; i < eset.size(); ++i) {
 		eset[i]->get_value(this);
 	}
 }
@@ -1921,6 +2029,8 @@ void card::filter_effect(int32 code, effect_set* eset, uint8 sort) {
 		rg = (*cit)->xmaterial_effect.equal_range(code);
 		for (; rg.first != rg.second; ++rg.first) {
 			peffect = rg.first->second;
+			if (peffect->type & EFFECT_TYPE_FIELD)
+				continue;
 			if (peffect->is_available() && is_affect_by_effect(peffect))
 				eset->add_item(peffect);
 		}
@@ -1957,8 +2067,12 @@ void card::filter_single_continuous_effect(int32 code, effect_set* eset, uint8 s
 	}
 	for (auto cit = xyz_materials.begin(); cit != xyz_materials.end(); ++cit) {
 		rg = (*cit)->xmaterial_effect.equal_range(code);
-		for (; rg.first != rg.second; ++rg.first)
-			eset->add_item(rg.first->second);
+		for (; rg.first != rg.second; ++rg.first) {
+			effect* peffect = rg.first->second;
+			if (peffect->type & EFFECT_TYPE_FIELD)
+				continue;
+			eset->add_item(peffect);
+		}
 	}
 	if(sort)
 		eset->sort();
@@ -1985,6 +2099,8 @@ void card::filter_immune_effect() {
 		rg = (*cit)->xmaterial_effect.equal_range(EFFECT_IMMUNE_EFFECT);
 		for (; rg.first != rg.second; ++rg.first) {
 			peffect = rg.first->second;
+			if (peffect->type & EFFECT_TYPE_FIELD)
+				continue;
 			if (peffect->is_available())
 				immune_effect.add_item(peffect);
 		}
@@ -2178,6 +2294,8 @@ effect* card::is_affected_by_effect(int32 code) {
 		rg = (*cit)->xmaterial_effect.equal_range(code);
 		for (; rg.first != rg.second; ++rg.first) {
 			peffect = rg.first->second;
+			if (peffect->type & EFFECT_TYPE_FIELD)
+				continue;
 			if (peffect->is_available() && is_affect_by_effect(peffect))
 				return peffect;
 		}
@@ -2212,6 +2330,8 @@ effect* card::is_affected_by_effect(int32 code, card* target) {
 		rg = (*cit)->xmaterial_effect.equal_range(code);
 		for (; rg.first != rg.second; ++rg.first) {
 			peffect = rg.first->second;
+			if (peffect->type & EFFECT_TYPE_FIELD)
+				continue;
 			if (peffect->is_available() && is_affect_by_effect(peffect) && peffect->get_value(target))
 				return peffect;
 		}
@@ -2239,6 +2359,8 @@ effect* card::check_control_effect() {
 		auto rg = (*cit)->xmaterial_effect.equal_range(EFFECT_SET_CONTROL);
 		for (; rg.first != rg.second; ++rg.first) {
 			effect* peffect = rg.first->second;
+			if (peffect->type & EFFECT_TYPE_FIELD)
+				continue;
 			if(!ret_effect || peffect->id > ret_effect->id)
 				ret_effect = peffect;
 		}
@@ -2310,16 +2432,16 @@ void card::get_unique_target(card_set* cset, int32 controler) {
 			continue;
 		const auto& player = pduel->game_field->player[controler ^ p];
 		if(unique_location & LOCATION_MZONE) {
-			for(int32 i = 0; i < 5; ++i) {
-				card* pcard = player.list_mzone[i];
+			for(auto cit = player.list_mzone.begin(); cit != player.list_mzone.end(); ++cit) {
+				card* pcard = *cit;
 				if(pcard && pcard->is_position(POS_FACEUP) && !pcard->is_status(STATUS_BATTLE_DESTROYED)
 					&& check_unique_code(pcard))
 					cset->insert(pcard);
 			}
 		}
 		if(unique_location & LOCATION_SZONE) {
-			for(int32 i = 0; i < 8; ++i) {
-				card* pcard = player.list_szone[i];
+			for(auto cit = player.list_szone.begin(); cit != player.list_szone.end(); ++cit) {
+				card* pcard = *cit;
 				if(pcard && pcard->is_position(POS_FACEUP) && check_unique_code(pcard))
 					cset->insert(pcard);
 			}
@@ -2826,7 +2948,7 @@ int32 card::is_capable_send_to_grave(uint8 playerid) {
 int32 card::is_capable_send_to_hand(uint8 playerid) {
 	if(is_status(STATUS_LEAVE_CONFIRMED))
 		return FALSE;
-	if((current.location == LOCATION_EXTRA) && (data.type & (TYPE_FUSION + TYPE_SYNCHRO + TYPE_XYZ)))
+	if((current.location == LOCATION_EXTRA) && (data.type & (TYPE_FUSION + TYPE_SYNCHRO + TYPE_XYZ + TYPE_LINK)))
 		return FALSE;
 	if(is_affected_by_effect(EFFECT_CANNOT_TO_HAND))
 		return FALSE;
@@ -2837,7 +2959,7 @@ int32 card::is_capable_send_to_hand(uint8 playerid) {
 int32 card::is_capable_send_to_deck(uint8 playerid) {
 	if(is_status(STATUS_LEAVE_CONFIRMED))
 		return FALSE;
-	if((current.location == LOCATION_EXTRA) && (data.type & (TYPE_FUSION + TYPE_SYNCHRO + TYPE_XYZ)))
+	if((current.location == LOCATION_EXTRA) && (data.type & (TYPE_FUSION + TYPE_SYNCHRO + TYPE_XYZ + TYPE_LINK)))
 		return FALSE;
 	if(is_affected_by_effect(EFFECT_CANNOT_TO_DECK))
 		return FALSE;
@@ -2846,7 +2968,7 @@ int32 card::is_capable_send_to_deck(uint8 playerid) {
 	return TRUE;
 }
 int32 card::is_capable_send_to_extra(uint8 playerid) {
-	if(!(data.type & (TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ | TYPE_PENDULUM)))
+	if(!(data.type & (TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ | TYPE_PENDULUM | TYPE_LINK)))
 		return FALSE;
 	if(is_affected_by_effect(EFFECT_CANNOT_TO_DECK))
 		return FALSE;
@@ -2882,7 +3004,7 @@ int32 card::is_capable_cost_to_grave(uint8 playerid) {
 int32 card::is_capable_cost_to_hand(uint8 playerid) {
 	uint32 redirect = 0;
 	uint32 dest = LOCATION_HAND;
-	if(data.type & (TYPE_TOKEN | TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ))
+	if(data.type & (TYPE_TOKEN | TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ | TYPE_LINK))
 		return FALSE;
 	if(current.location == LOCATION_HAND)
 		return FALSE;
@@ -2905,7 +3027,7 @@ int32 card::is_capable_cost_to_hand(uint8 playerid) {
 int32 card::is_capable_cost_to_deck(uint8 playerid) {
 	uint32 redirect = 0;
 	uint32 dest = LOCATION_DECK;
-	if(data.type & (TYPE_TOKEN | TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ))
+	if(data.type & (TYPE_TOKEN | TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ | TYPE_LINK))
 		return FALSE;
 	if(current.location == LOCATION_DECK)
 		return FALSE;
@@ -2928,7 +3050,7 @@ int32 card::is_capable_cost_to_deck(uint8 playerid) {
 int32 card::is_capable_cost_to_extra(uint8 playerid) {
 	uint32 redirect = 0;
 	uint32 dest = LOCATION_DECK;
-	if(!(data.type & (TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ)))
+	if(!(data.type & (TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ | TYPE_LINK)))
 		return FALSE;
 	if(current.location == LOCATION_EXTRA)
 		return FALSE;
@@ -2983,7 +3105,9 @@ int32 card::is_capable_attack_announce(uint8 playerid) {
 	return TRUE;
 }
 int32 card::is_capable_change_position(uint8 playerid) {
-	if(is_status(STATUS_SUMMON_TURN) || is_status(STATUS_FLIP_SUMMON_TURN) || is_status(STATUS_SPSUMMON_TURN) || is_status(STATUS_FORM_CHANGED))
+	if(get_status(STATUS_SUMMON_TURN | STATUS_FLIP_SUMMON_TURN | STATUS_SPSUMMON_TURN | STATUS_FORM_CHANGED))
+		return FALSE;
+	if(data.type & TYPE_LINK)
 		return FALSE;
 	if(announce_count > 0)
 		return FALSE;
@@ -3071,7 +3195,7 @@ int32 card::is_can_be_fusion_material(card* fcard) {
 	return TRUE;
 }
 int32 card::is_can_be_synchro_material(card* scard, card* tuner) {
-	if(data.type & TYPE_XYZ)
+	if(data.type & (TYPE_XYZ | TYPE_LINK))
 		return FALSE;
 	if(!(get_type() & TYPE_MONSTER))
 		return FALSE;

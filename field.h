@@ -231,7 +231,7 @@ struct processor {
 	ptr temp_var[4];
 	uint32 global_flag;
 	uint16 pre_field[2];
-	uint16 opp_mzone[5];
+	uint16 opp_mzone[7];
 	int32 chain_limit;
 	uint8 chain_limp;
 	int32 chain_limit_p;
@@ -260,6 +260,7 @@ struct processor {
 	uint8 extra_summon[2];
 	int32 spe_effect[2];
 	int32 duel_options;
+	int32 duel_rule;
 	uint32 copy_reset;
 	uint8 copy_reset_count;
 	uint32 last_control_changed_id;
@@ -341,6 +342,8 @@ public:
 	card* get_field_card(uint8 playerid, uint8 location, uint8 sequence);
 	int32 is_location_useable(uint8 playerid, uint8 location, uint8 sequence);
 	int32 get_useable_count(uint8 playerid, uint8 location, uint8 uplayer, uint32 reason, uint32* list = 0);
+	int32 get_useable_count_fromex(uint8 playerid, uint8 uplayer, uint32* list = 0);
+	uint32 get_linked_zone(int32 playerid);
 	void shuffle(uint8 playerid, uint8 location);
 	void reset_sequence(uint8 playerid, uint8 location);
 	void swap_deck_and_grave(uint8 playerid);

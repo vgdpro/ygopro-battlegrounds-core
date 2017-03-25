@@ -1873,7 +1873,7 @@ int32 field::process_point_event(int16 step, int32 skip_trigger, int32 skip_free
 		return FALSE;
 	}
 	case 8: {
-		if(!(core.duel_options & DUEL_OBSOLETE_RULING) || (infos.phase != PHASE_MAIN1 && infos.phase != PHASE_MAIN2))
+		if((core.duel_rule >= 2) || (infos.phase != PHASE_MAIN1 && infos.phase != PHASE_MAIN2))
 			return FALSE;
 		// Obsolete ignition effect ruling
 		tevent e;
@@ -2477,7 +2477,6 @@ int32 field::process_single_event(effect* peffect, const tevent& e, effect_vecto
 int32 field::process_idle_command(uint16 step) {
 	switch(step) {
 	case 0: {
-		card* pcard;
 		effect* peffect;
 		bool must_attack = false;
 		core.select_chains.clear();
@@ -2488,8 +2487,8 @@ int32 field::process_idle_command(uint16 step) {
 		if((!(core.duel_options & DUEL_ATTACK_FIRST_TURN) && infos.turn_id == 1) || infos.phase == PHASE_MAIN2 || is_player_affected_by_effect(infos.turn_player, EFFECT_CANNOT_BP))
 			core.to_bp = FALSE;
 		if(infos.phase == PHASE_MAIN1) {
-			for(uint32 i = 0; i < 5; ++i) {
-				pcard = player[infos.turn_player].list_mzone[i];
+			for(auto cit = player[infos.turn_player].list_mzone.begin(); cit != player[infos.turn_player].list_mzone.end(); ++cit) {
+				card* pcard = *cit;
 				if(pcard && pcard->is_capable_attack() && pcard->is_affected_by_effect(EFFECT_MUST_ATTACK)) {
 					must_attack = true;
 					break;
@@ -2554,15 +2553,16 @@ int32 field::process_idle_command(uint16 step) {
 		for(auto clit = player[infos.turn_player].list_hand.begin(); clit != player[infos.turn_player].list_hand.end(); ++clit)
 			if((*clit)->is_can_be_summoned(infos.turn_player, FALSE, 0, 0))
 				core.summonable_cards.push_back(*clit);
-		for(int i = 0; i < 5; ++i) {
-			if(player[infos.turn_player].list_mzone[i] && player[infos.turn_player].list_mzone[i]->is_can_be_summoned(infos.turn_player, FALSE, 0, 0))
-				core.summonable_cards.push_back(player[infos.turn_player].list_mzone[i]);
+		for(auto clit = player[infos.turn_player].list_mzone.begin(); clit != player[infos.turn_player].list_mzone.end(); ++clit) {
+			card* pcard = *clit;
+			if(pcard && pcard->is_can_be_summoned(infos.turn_player, FALSE, 0, 0))
+				core.summonable_cards.push_back(pcard);
 		}
 		core.spsummonable_cards.clear();
 		effect_set eset;
 		filter_field_effect(EFFECT_SPSUMMON_PROC, &eset);
 		for(int32 i = 0; i < eset.size(); ++i) {
-			pcard = eset[i]->get_handler();
+			card* pcard = eset[i]->get_handler();
 			if(!eset[i]->check_count_limit(pcard->current.controler))
 				continue;
 			if(pcard->current.controler == infos.turn_player && pcard->is_special_summonable(infos.turn_player, 0))
@@ -2571,7 +2571,7 @@ int32 field::process_idle_command(uint16 step) {
 		eset.clear();
 		filter_field_effect(EFFECT_SPSUMMON_PROC_G, &eset);
 		for(int32 i = 0; i < eset.size(); ++i) {
-			pcard = eset[i]->get_handler();
+			card* pcard = eset[i]->get_handler();
 			if(!eset[i]->check_count_limit(infos.turn_player))
 				continue;
 			if(pcard->current.controler != infos.turn_player && !eset[i]->is_flag(EFFECT_FLAG_BOTH_SIDE))
@@ -2590,11 +2590,11 @@ int32 field::process_idle_command(uint16 step) {
 			core.reason_player = op;
 		}
 		core.repositionable_cards.clear();
-		for(int i = 0; i < 5; ++i) {
-			pcard = player[infos.turn_player].list_mzone[i];
+		for(auto clit = player[infos.turn_player].list_mzone.begin(); clit != player[infos.turn_player].list_mzone.end(); ++clit) {
+			card* pcard = *clit;
 			if(pcard && ((pcard->is_position(POS_FACEUP | POS_FACEDOWN_ATTACK) && pcard->is_capable_change_position(infos.turn_player))
 		        || (pcard->is_position(POS_FACEDOWN) && pcard->is_can_be_flip_summoned(infos.turn_player))))
-				core.repositionable_cards.push_back(player[infos.turn_player].list_mzone[i]);
+				core.repositionable_cards.push_back(pcard);
 		}
 		core.msetable_cards.clear();
 		core.ssetable_cards.clear();
@@ -2793,7 +2793,6 @@ int32 field::process_battle_command(uint16 step) {
 	switch(step) {
 	case 0: {
 		effect* peffect = 0;
-		card* pcard = 0;
 		core.select_chains.clear();
 		chain newchain;
 		nil_event.event_code = EVENT_FREE_CHAIN;
@@ -2842,8 +2841,8 @@ int32 field::process_battle_command(uint16 step) {
 		card_vector first_attack;
 		card_vector must_attack;
 		if(!is_player_affected_by_effect(infos.turn_player, EFFECT_CANNOT_ATTACK_ANNOUNCE)) {
-			for(uint32 i = 0; i < 5; ++i) {
-				pcard = player[infos.turn_player].list_mzone[i];
+			for(auto cit = player[infos.turn_player].list_mzone.begin(); cit != player[infos.turn_player].list_mzone.end(); ++cit) {
+				card* pcard = *cit;
 				if(!pcard)
 					continue;
 				if(!pcard->is_capable_attack_announce(infos.turn_player))
@@ -2975,8 +2974,8 @@ int32 field::process_battle_command(uint16 step) {
 				core.units.begin()->step = 5;
 				return FALSE;
 			}
-			for(int32 i = 0; i < 5; ++i) {
-				if(player[1 - infos.turn_player].list_mzone[i]) {
+			for(auto cit = player[1 - infos.turn_player].list_mzone.begin(); cit != player[1 - infos.turn_player].list_mzone.end(); ++cit) {
+				if(*cit) {
 					add_process(PROCESSOR_SELECT_YESNO, 0, 0, 0, infos.turn_player, 31);
 					return FALSE;
 				}
@@ -3063,9 +3062,10 @@ int32 field::process_battle_command(uint16 step) {
 		} else
 			pduel->write_buffer32(0);
 		core.attack_rollback = FALSE;
-		for(uint32 i = 0; i < 5; ++i) {
-			if(player[1 - infos.turn_player].list_mzone[i])
-				core.opp_mzone[i] = player[1 - infos.turn_player].list_mzone[i]->fieldid_r;
+		for(uint32 i = 0; i < player[1 - infos.turn_player].list_mzone.size(); ++i) {
+			card* pcard = player[1 - infos.turn_player].list_mzone[i];
+			if(pcard)
+				core.opp_mzone[i] = pcard->fieldid_r;
 			else
 				core.opp_mzone[i] = 0;
 		}
@@ -3892,7 +3892,6 @@ int32 field::process_turn(uint16 step, uint8 turn_player) {
 	switch(step) {
 	case 0: {
 		//Pre Draw
-		card* pcard;
 		for(auto elit = core.used_event.begin(); elit != core.used_event.end(); ++elit) {
 			if(elit->event_cards)
 				pduel->delete_group(elit->event_cards);
@@ -3904,8 +3903,8 @@ int32 field::process_turn(uint16 step, uint8 turn_player) {
 		core.reseted_effects.clear();
 		core.effect_count_code.clear();
 		for(uint8 p = 0; p < 2; ++p) {
-			for(uint8 i = 0; i < 5; ++i) {
-				pcard = player[p].list_mzone[i];
+			for(auto cit = player[p].list_mzone.begin(); cit != player[p].list_mzone.end(); ++cit) {
+				card* pcard = *cit;
 				if(!pcard)
 					continue;
 				pcard->set_status(STATUS_SUMMON_TURN, FALSE);
@@ -3921,8 +3920,8 @@ int32 field::process_turn(uint16 step, uint8 turn_player) {
 				pcard->battled_cards.clear();
 				pcard->attack_all_target = TRUE;
 			}
-			for(uint8 i = 0; i < 8; ++i) {
-				pcard = player[p].list_szone[i];
+			for(auto cit = player[p].list_szone.begin(); cit != player[p].list_szone.end(); ++cit) {
+				card* pcard = *cit;
 				if(!pcard)
 					continue;
 				pcard->set_status(STATUS_SET_TURN, FALSE);
@@ -4011,7 +4010,7 @@ int32 field::process_turn(uint16 step, uint8 turn_player) {
 	}
 	case 2: {
 		// Draw, new ruling
-		if((core.duel_options & DUEL_OBSOLETE_RULING) || (infos.turn_id > 1)) {
+		if((core.duel_rule <= 2) || (infos.turn_id > 1)) {
 			int32 count = get_draw_count(infos.turn_player);
 			if(count > 0) {
 				draw(0, REASON_RULE, turn_player, turn_player, count);
@@ -4122,8 +4121,8 @@ int32 field::process_turn(uint16 step, uint8 turn_player) {
 			core.units.begin()->arg2 = 1;
 			core.units.begin()->step = 8;
 			for(uint8 p = 0; p < 2; ++p) {
-				for(uint8 i = 0; i < 5; ++i) {
-					card* pcard = player[p].list_mzone[i];
+				for(auto cit = player[p].list_mzone.begin(); cit != player[p].list_mzone.end(); ++cit) {
+					card* pcard = *cit;
 					if(!pcard)
 						continue;
 					pcard->announce_count = 0;
@@ -4588,7 +4587,7 @@ int32 field::solve_chain(uint16 step, uint32 chainend_arg1, uint32 chainend_arg2
 		if((peffect->type & EFFECT_TYPE_ACTIVATE) && pcard->is_has_relation(*cait)) {
 			pcard->set_status(STATUS_ACTIVATED, TRUE);
 			pcard->enable_field_effect(true);
-			if(core.duel_options & DUEL_OBSOLETE_RULING) {
+			if(core.duel_rule <= 2) {
 				if(pcard->data.type & TYPE_FIELD) {
 					card* fscard = player[1 - pcard->current.controler].list_szone[5];
 					if(fscard && fscard->is_position(POS_FACEUP))
@@ -4713,7 +4712,7 @@ int32 field::solve_chain(uint16 step, uint32 chainend_arg1, uint32 chainend_arg2
 		if((pcard->data.type & TYPE_EQUIP) && (peffect->type & EFFECT_TYPE_ACTIVATE)
 		        && !pcard->equiping_target && pcard->is_has_relation(*cait))
 			destroy(pcard, 0, REASON_RULE, PLAYER_NONE);
-		if(core.duel_options & DUEL_OBSOLETE_RULING) {
+		if(core.duel_rule <= 2) {
 			if((pcard->data.type & TYPE_FIELD) && (peffect->type & EFFECT_TYPE_ACTIVATE)
 					&& !pcard->is_status(STATUS_LEAVE_CONFIRMED) && pcard->is_has_relation(*cait)) {
 				card* fscard = player[1 - pcard->current.controler].list_szone[5];
@@ -4821,9 +4820,15 @@ void field::adjust_all() {
 void field::refresh_location_info_instant() {
 	effect_set eset;
 	uint32 value, p;
-	int32 dis1 = player[0].disabled_location | (player[1].disabled_location << 16);
+	uint32 dis1 = player[0].disabled_location | (player[1].disabled_location << 16);
 	player[0].disabled_location = 0;
 	player[1].disabled_location = 0;
+	if(core.duel_rule >= 4) {
+		uint32 loc = player[0].used_location;
+		player[0].disabled_location = ((loc & 0x100) << 6) | ((loc & 0x1000) << 3) | ((loc >> 6) & 0x100) | ((loc >> 3) & 0x1000);
+		loc = player[1].used_location;
+		player[1].disabled_location = ((loc & 0x100) << 6) | ((loc & 0x1000) << 3) | ((loc >> 6) & 0x100) | ((loc >> 3) & 0x1000);
+	}
 	filter_field_effect(EFFECT_DISABLE_FIELD, &eset);
 	for (int32 i = 0; i < eset.size(); ++i) {
 		value = eset[i]->get_value();
@@ -4844,7 +4849,7 @@ void field::refresh_location_info_instant() {
 		value = eset[i]->get_value();
 		player[p].disabled_location |= (value >> 8) & 0x1f00;
 	}
-	int32 dis2 = player[0].disabled_location | (player[1].disabled_location << 16);
+	uint32 dis2 = player[0].disabled_location | (player[1].disabled_location << 16);
 	if(dis1 != dis2) {
 		pduel->write_buffer8(MSG_FIELD_DISABLED);
 		pduel->write_buffer32(dis2);
@@ -4859,6 +4864,12 @@ int32 field::refresh_location_info(uint16 step) {
 		core.units.begin()->arg2 = player[0].disabled_location | (player[1].disabled_location << 16);
 		player[0].disabled_location = 0;
 		player[1].disabled_location = 0;
+		if(core.duel_rule >= 4) {
+			uint32 loc = player[0].used_location;
+			player[0].disabled_location = ((loc & 0x100) << 6) | ((loc & 0x1000) << 3) | ((loc >> 6) & 0x100) | ((loc >> 3) & 0x1000);
+			loc = player[1].used_location;
+			player[1].disabled_location = ((loc & 0x100) << 6) | ((loc & 0x1000) << 3) | ((loc >> 6) & 0x100) | ((loc >> 3) & 0x1000);
+		}
 		core.disfield_effects.clear();
 		core.extram_effects.clear();
 		core.extras_effects.clear();
@@ -4974,7 +4985,7 @@ int32 field::refresh_location_info(uint16 step) {
 		core.units.begin()->peffect = peffect;
 		core.extras_effects.remove_item(0);
 		uint32 p = peffect->get_handler_player();
-		uint32 szone_flag = ((player[p].disabled_location | player[p].used_location) & 0x1f00) >> 8;
+		uint32 szone_flag = ((player[p].disabled_location | player[p].used_location) >> 8) & 0x1f;
 		if(szone_flag == 0x1f) {
 			core.units.begin()->step = 6;
 			return FALSE;
@@ -5069,15 +5080,14 @@ int32 field::adjust_step(uint16 step) {
 	case 2: {
 		//disable check
 		uint8 tp = infos.turn_player;
-		card* pcard;
 		for(uint8 p = 0; p < 2; ++p) {
-			for(uint8 i = 0; i < 5; ++i) {
-				pcard = player[tp].list_mzone[i];
+			for(auto cit = player[tp].list_mzone.begin(); cit != player[tp].list_mzone.end(); ++cit) {
+				card* pcard = *cit;
 				if(pcard)
 					add_to_disable_check_list(pcard);
 			}
-			for(uint8 i = 0; i < 8; ++i) {
-				pcard = player[tp].list_szone[i];
+			for(auto cit = player[tp].list_szone.begin(); cit != player[tp].list_szone.end(); ++cit) {
+				card* pcard = *cit;
 				if(pcard)
 					add_to_disable_check_list(pcard);
 			}
@@ -5089,11 +5099,10 @@ int32 field::adjust_step(uint16 step) {
 	}
 	case 3: {
 		//trap monster
-		card* pcard;
 		uint8 tp = infos.turn_player;
 		for(uint8 p = 0; p < 2; ++p) {
-			for(uint8 i = 0; i < 5; ++i) {
-				pcard = player[tp].list_mzone[i];
+			for(auto cit = player[tp].list_mzone.begin(); cit != player[tp].list_mzone.end(); ++cit) {
+				card* pcard = *cit;
 				if(!pcard) continue;
 				if((pcard->get_type() & TYPE_TRAPMONSTER) && pcard->is_affected_by_effect(EFFECT_DISABLE_TRAPMONSTER)) {
 					pcard->reset(RESET_TURN_SET, RESET_EVENT);
@@ -5111,8 +5120,8 @@ int32 field::adjust_step(uint16 step) {
 		core.control_adjust_set[0].clear();
 		core.control_adjust_set[1].clear();
 		for(uint8 p = 0; p < 2; ++p) {
-			for(uint8 i = 0; i < 5; ++i) {
-				card* pcard = player[p].list_mzone[i];
+			for(auto cit = player[p].list_mzone.begin(); cit != player[p].list_mzone.end(); ++cit) {
+				card* pcard = *cit;
 				if(!pcard) continue;
 				uint8 cur = pcard->current.controler;
 				uint8 ref = pcard->refresh_control_status();
@@ -5133,13 +5142,12 @@ int32 field::adjust_step(uint16 step) {
 			core.control_adjust_set[0].clear();
 			core.control_adjust_set[1].clear();
 			effect_set eset;
-			uint32 res = 0;
 			filter_field_effect(EFFECT_REMOVE_BRAINWASHING, &eset, FALSE);
-			res = eset.size() ? TRUE : FALSE;
+			uint32 res = eset.size() ? TRUE : FALSE;
 			if(res) {
 				for(uint8 p = 0; p < 2; ++p) {
-					for(uint8 i = 0; i < 5; ++i) {
-						card* pcard = player[p].list_mzone[i];
+					for(auto cit = player[p].list_mzone.begin(); cit != player[p].list_mzone.end(); ++cit) {
+						card* pcard = *cit;
 						// remove EFFECT_SET_CONTROL
 						if(pcard && pcard->is_affected_by_effect(EFFECT_REMOVE_BRAINWASHING)) {
 							pcard->reset(EFFECT_SET_CONTROL, RESET_CODE);
@@ -5188,12 +5196,11 @@ int32 field::adjust_step(uint16 step) {
 	case 11: {
 		//position
 		uint32 tp = infos.turn_player, pos;
-		card* pcard;
 		card_set pos_adjust;
 		effect_set eset;
 		for(uint8 p = 0; p < 2; ++p) {
-			for(uint8 i = 0; i < 5; ++i) {
-				pcard = player[tp].list_mzone[i];
+			for(auto cit = player[tp].list_mzone.begin(); cit != player[tp].list_mzone.end(); ++cit) {
+				card* pcard = *cit;
 				if(!pcard || pcard->is_affected_by_effect(EFFECT_CANNOT_CHANGE_POS_E))
 					continue;
 				eset.clear();
@@ -5292,7 +5299,7 @@ int32 field::adjust_step(uint16 step) {
 			attacker->set_status(STATUS_ATTACK_CANCELED, TRUE);
 		if(core.attack_rollback)
 			return FALSE;
-		for(uint32 i = 0; i < 5; ++i) {
+		for(uint32 i = 0; i < player[1 - infos.turn_player].list_mzone.size(); ++i) {
 			card* pcard = player[1 - infos.turn_player].list_mzone[i];
 			if(pcard) {
 				if(!core.opp_mzone[i] || core.opp_mzone[i] != pcard->fieldid_r) {
