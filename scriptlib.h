@@ -45,6 +45,7 @@ public:
 	static int32 card_is_link_marker(lua_State *L);
 	static int32 card_get_linked_group(lua_State *L);
 	static int32 card_get_linked_group_count(lua_State *L);
+	static int32 card_get_linked_zone(lua_State *L);
 	static int32 card_get_attribute(lua_State *L);
 	static int32 card_get_origin_attribute(lua_State *L);
 	static int32 card_get_fusion_attribute(lua_State *L);
@@ -355,6 +356,7 @@ public:
 	static int32 duel_move_to_field(lua_State *L);
 	static int32 duel_return_to_field(lua_State *L);
 	static int32 duel_move_sequence(lua_State *L);
+	static int32 duel_swap_sequence(lua_State *L);
 	static int32 duel_set_chain_limit(lua_State *L);
 	static int32 duel_set_chain_limit_p(lua_State *L);
 	static int32 duel_get_chain_material(lua_State *L);
