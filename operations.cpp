@@ -105,15 +105,15 @@ void field::remove_counter(uint32 reason, card* pcard, uint32 rplayer, uint32 s,
 void field::remove_overlay_card(uint32 reason, card* pcard, uint32 rplayer, uint32 s, uint32 o, uint16 min, uint16 max) {
 	add_process(PROCESSOR_REMOVEOL_S, 0, NULL, (group*)pcard, (rplayer << 16) + (s << 8) + o, (max << 16) + min, reason);
 }
-void field::get_control(card_set* targets, effect* reason_effect, uint32 reason_player, uint32 playerid, uint32 reset_phase, uint32 reset_count) {
+void field::get_control(card_set* targets, effect* reason_effect, uint32 reason_player, uint32 playerid, uint32 reset_phase, uint32 reset_count, uint32 zone) {
 	group* ng = pduel->new_group(*targets);
 	ng->is_readonly = TRUE;
-	add_process(PROCESSOR_GET_CONTROL, 0, reason_effect, ng, 0, (reason_player << 28) + (playerid << 24) + (reset_phase << 8) + reset_count);
+	add_process(PROCESSOR_GET_CONTROL, 0, reason_effect, ng, 0, (reason_player << 28) + (playerid << 24) + (reset_phase << 8) + reset_count, zone);
 }
-void field::get_control(card* target, effect* reason_effect, uint32 reason_player, uint32 playerid, uint32 reset_phase, uint32 reset_count) {
+void field::get_control(card* target, effect* reason_effect, uint32 reason_player, uint32 playerid, uint32 reset_phase, uint32 reset_count, uint32 zone) {
 	card_set tset;
 	tset.insert(target);
-	get_control(&tset, reason_effect, reason_player, playerid, reset_phase, reset_count);
+	get_control(&tset, reason_effect, reason_player, playerid, reset_phase, reset_count, zone);
 }
 void field::swap_control(effect* reason_effect, uint32 reason_player, card_set* targets1, card_set* targets2, uint32 reset_phase, uint32 reset_count) {
 	group* ng1 = pduel->new_group(*targets1);
@@ -813,7 +813,7 @@ int32 field::remove_overlay_card(uint16 step, uint32 reason, card* pcard, uint8 
 	}
 	return TRUE;
 }
-int32 field::get_control(uint16 step, effect* reason_effect, uint8 reason_player, group* targets, uint8 playerid, uint16 reset_phase, uint8 reset_count) {
+int32 field::get_control(uint16 step, effect* reason_effect, uint8 reason_player, group* targets, uint8 playerid, uint16 reset_phase, uint8 reset_count, uint32 zone) {
 	switch(step) {
 	case 0: {
 		card_set* destroy_set = new card_set;
@@ -840,7 +840,7 @@ int32 field::get_control(uint16 step, effect* reason_effect, uint8 reason_player
 			if(!change)
 				targets->container.erase(pcard);
 		}
-		int32 fcount = get_useable_count(playerid, LOCATION_MZONE, playerid, LOCATION_REASON_CONTROL);
+		int32 fcount = get_useable_count(playerid, LOCATION_MZONE, playerid, LOCATION_REASON_CONTROL, zone);
 		if(fcount <= 0) {
 			destroy_set->swap(targets->container);
 			core.units.begin()->step = 5;
@@ -883,7 +883,7 @@ int32 field::get_control(uint16 step, effect* reason_effect, uint8 reason_player
 			return FALSE;
 		}
 		card* pcard = *targets->it;
-		move_to_field(pcard, playerid, playerid, LOCATION_MZONE, pcard->current.position);
+		move_to_field(pcard, playerid, playerid, LOCATION_MZONE, pcard->current.position, FALSE, 0, FALSE, zone);
 		return FALSE;
 	}
 	case 4: {
@@ -2527,7 +2527,8 @@ int32 field::special_summon_rule(uint16 step, uint8 sumplayer, card * target, ui
 	}
 	case 23: {
 		effect* peffect = core.units.begin()->peffect;
-		card* pcard = *core.units.begin()->ptarget->it;
+		group* pgroup = core.units.begin()->ptarget;
+		card* pcard = *pgroup->it;
 		pcard->enable_field_effect(false);
 		pcard->current.reason = REASON_SPSUMMON;
 		pcard->current.reason_effect = peffect;
@@ -2535,7 +2536,26 @@ int32 field::special_summon_rule(uint16 step, uint8 sumplayer, card * target, ui
 		pcard->summon_player = sumplayer;
 		pcard->summon_info = (peffect->get_value(pcard) & 0xff00ffff) | SUMMON_TYPE_SPECIAL | ((uint32)pcard->current.location << 16);
 		check_card_counter(pcard, 3, sumplayer);
-		move_to_field(pcard, sumplayer, sumplayer, LOCATION_MZONE, POS_FACEUP);
+		uint32 zone = 0xff;
+		if(core.duel_rule >= 4) {
+			uint32 flag1, flag2;
+			int32 ct1 = get_tofield_count(sumplayer, LOCATION_MZONE, zone, &flag1);
+			int32 ct2 = get_spsummonable_count_fromex(pcard, sumplayer, zone, &flag2);
+			for(auto it = pgroup->it; it != pgroup->container.end(); ++it) {
+				if((*it)->current.location != LOCATION_EXTRA)
+					ct1--;
+				else
+					ct2--;
+			}
+			if(pcard->current.location != LOCATION_EXTRA) {
+				if(ct2 == 0)
+					zone = flag2;
+			} else {
+				if(ct1 == 0)
+					zone = flag1;
+			}
+		}
+		move_to_field(pcard, sumplayer, sumplayer, LOCATION_MZONE, POS_FACEUP, FALSE, 0, FALSE, zone);
 		return FALSE;
 	}
 	case 24: {
@@ -5520,30 +5540,29 @@ int32 field::toss_dice(uint16 step, effect * reason_effect, uint8 reason_player,
 }
 int32 field::rock_paper_scissors(uint16 step, uint8 repeat) {
 	switch (step) {
-	case 1: {
+	case 0: {
 		pduel->write_buffer8(MSG_ROCK_PAPER_SCISSORS);
 		pduel->write_buffer8(0);
 		return FALSE;
 	}
-	case 2: {
+	case 1: {
 		core.units.begin()->arg2 = returns.ivalue[0];
 		pduel->write_buffer8(MSG_ROCK_PAPER_SCISSORS);
 		pduel->write_buffer8(1);
 		return FALSE;
 	}
-	case 3: {
-		core.units.begin()->arg2 = core.units.begin()->arg2 + (returns.ivalue[0] << 2);
+	case 2: {
+		int32 hand0 = core.units.begin()->arg2;
+		int32 hand1 = returns.ivalue[0];
 		pduel->write_buffer8(MSG_HAND_RES);
-		pduel->write_buffer8(core.units.begin()->arg2);
-		if((core.units.begin()->arg2 & 0x3) == ((core.units.begin()->arg2 >> 2) & 0x3)) {
+		pduel->write_buffer8(hand0 + (hand1 << 2));
+		if(hand0 == hand1) {
 			if(repeat) {
-				core.units.begin()->step = 0;
+				core.units.begin()->step = -1;
 				return FALSE;
 			} else
 				returns.ivalue[0] = PLAYER_NONE;
-		} else if(((core.units.begin()->arg2 & 0x3) == 1 && ((core.units.begin()->arg2 >> 2) & 0x3) == 2)
-		          || ((core.units.begin()->arg2 & 0x3) == 2 && ((core.units.begin()->arg2 >> 2) & 0x3) == 3)
-		          || ((core.units.begin()->arg2 & 0x3) == 3 && ((core.units.begin()->arg2 >> 2) & 0x3) == 1)) {
+		} else if((hand0 == 1 && hand1 == 2) || (hand0 == 2 && hand1 == 3) || (hand0 == 3 && hand1 == 1)) {
 			returns.ivalue[0] = 1;
 		} else {
 			returns.ivalue[0] = 0;
@@ -5551,4 +5570,5 @@ int32 field::rock_paper_scissors(uint16 step, uint8 repeat) {
 		return TRUE;
 	}
 	}
+	return TRUE;
 }
