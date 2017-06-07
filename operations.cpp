@@ -625,7 +625,6 @@ int32 field::pay_lp_cost(uint32 step, uint8 playerid, uint32 cost) {
 		effect* peffect = core.select_effects[returns.ivalue[0]];
 		if(!peffect) {
 			player[playerid].lp -= cost;
-			this->cost[playerid].amount -= cost;
 			pduel->write_buffer8(MSG_PAY_LPCOST);
 			pduel->write_buffer8(playerid);
 			pduel->write_buffer32(cost);
@@ -884,6 +883,8 @@ int32 field::get_control(uint16 step, effect* reason_effect, uint8 reason_player
 		}
 		card* pcard = *targets->it;
 		move_to_field(pcard, playerid, playerid, LOCATION_MZONE, pcard->current.position, FALSE, 0, FALSE, zone);
+		pcard->fieldid = infos.field_id++;
+		pcard->fieldid_r = pcard->fieldid;
 		return FALSE;
 	}
 	case 4: {
