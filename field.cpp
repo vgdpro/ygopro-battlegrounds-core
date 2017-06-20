@@ -115,7 +115,7 @@ field::~field() {
 }
 void field::reload_field_info() {
 	pduel->write_buffer8(MSG_RELOAD_FIELD);
-	pduel->write_buffer8(core.duel_rule - 1);
+	pduel->write_buffer8(core.duel_rule);
 	for(int32 playerid = 0; playerid < 2; ++playerid) {
 		pduel->write_buffer32(player[playerid].lp);
 		for(auto cit = player[playerid].list_mzone.begin(); cit != player[playerid].list_mzone.end(); ++cit) {
@@ -703,6 +703,18 @@ uint32 field::get_linked_zone(int32 playerid) {
 		}
 	}
 	return zones;
+}
+void field::get_linked_cards(uint8 self, uint8 s, uint8 o, card_set* cset) {
+	cset->clear();
+	uint8 c = s;
+	for(int32 p = 0; p < 2; ++p) {
+		if(c) {
+			uint32 linked_zone = get_linked_zone(self);
+			get_cards_in_zone(cset, linked_zone, self);
+		}
+		self = 1 - self;
+		c = o;
+	}
 }
 int32 field::check_extra_link(int32 playerid) {
 	if(!player[playerid].list_mzone[5] || !player[playerid].list_mzone[6])
@@ -1609,9 +1621,9 @@ int32 field::get_summon_release_list(card* target, card_set* release_list, card_
 int32 field::get_summon_count_limit(uint8 playerid) {
 	effect_set eset;
 	filter_player_effect(playerid, EFFECT_SET_SUMMON_COUNT_LIMIT, &eset);
-	int32 count = 1, c;
+	int32 count = 1;
 	for(int32 i = 0; i < eset.size(); ++i) {
-		c = eset[i]->get_value();
+		int32 c = eset[i]->get_value();
 		if(c > count)
 			count = c;
 	}
@@ -2150,7 +2162,7 @@ int32 field::get_attack_target(card* pcard, card_vector* v, uint8 chain_attack) 
 			// effects with target limit
 			if((peffect = pcard->is_affected_by_effect(EFFECT_ATTACK_ALL))
 					&& pcard->announced_cards.find(0) == pcard->announced_cards.end() && pcard->battled_cards.find(0) == pcard->battled_cards.end()
-					&& pcard->attack_all_target) { 
+					&& pcard->attack_all_target) {
 				for(auto cit = pv->begin(); cit != pv->end(); ++cit) {
 					card* atarget = *cit;
 					if(!atarget)
@@ -2190,7 +2202,7 @@ int32 field::get_attack_target(card* pcard, card_vector* v, uint8 chain_attack) 
 			dir = false;
 		else {
 			// effects with target limit
-			if((peffect = pcard->is_affected_by_effect(EFFECT_ATTACK_ALL)) && pcard->attack_all_target) { 
+			if((peffect = pcard->is_affected_by_effect(EFFECT_ATTACK_ALL)) && pcard->attack_all_target) {
 				for(auto cit = pv->begin(); cit != pv->end(); ++cit) {
 					card* atarget = *cit;
 					if(!atarget)
@@ -2201,7 +2213,7 @@ int32 field::get_attack_target(card* pcard, card_vector* v, uint8 chain_attack) 
 						continue;
 					// enough effect count
 					auto it = pcard->announced_cards.find(atarget->fieldid_r);
-					if(it != pcard->announced_cards.end() 
+					if(it != pcard->announced_cards.end()
 							&& (atarget == core.attack_target ? (int32)it->second.second > peffect->get_value(atarget) : (int32)it->second.second >= peffect->get_value(atarget))) {
 						continue;
 					}
@@ -2257,7 +2269,7 @@ bool field::confirm_attack_target() {
 	card_vector must_be_attack;
 	card_vector only_be_attack;
 	effect_set eset;
-	
+
 	// find the universal set
 	for(auto cit = player[1 - p].list_mzone.begin(); cit != player[1 - p].list_mzone.end(); ++cit) {
 		card* atarget = *cit;
@@ -2320,7 +2332,7 @@ bool field::confirm_attack_target() {
 		dir = false;
 	else {
 		// effects with target limit
-		if((peffect = pcard->is_affected_by_effect(EFFECT_ATTACK_ALL)) && pcard->attack_all_target && core.attack_target) { 
+		if((peffect = pcard->is_affected_by_effect(EFFECT_ATTACK_ALL)) && pcard->attack_all_target && core.attack_target) {
 			// valid target
 			pduel->lua->add_param(core.attack_target, PARAM_TYPE_CARD);
 			if(!peffect->check_value_condition(1))
@@ -2353,7 +2365,7 @@ bool field::confirm_attack_target() {
 	if(core.attack_target)
 		return std::find(pv->begin(), pv->end(), core.attack_target) != pv->end();
 	else
-		return (mcount == 0 || pcard->is_affected_by_effect(EFFECT_DIRECT_ATTACK) || core.attack_player) 
+		return (mcount == 0 || pcard->is_affected_by_effect(EFFECT_DIRECT_ATTACK) || core.attack_player)
 			&& !pcard->is_affected_by_effect(EFFECT_CANNOT_DIRECT_ATTACK) && dir;
 }
 // update the validity for EFFECT_ATTACK_ALL (approximate solution)
@@ -2623,7 +2635,7 @@ int32 field::check_other_synchro_material(const card_vector& nsyn, int32 lv, int
 	}
 	return FALSE;
 }
-int32 field::check_tribute(card* pcard, int32 min, int32 max, group* mg, uint8 toplayer) {
+int32 field::check_tribute(card* pcard, int32 min, int32 max, group* mg, uint8 toplayer, uint32 zone) {
 	int32 ex = FALSE;
 	if(toplayer == 1 - pcard->current.controler)
 		ex = TRUE;
@@ -2633,14 +2645,15 @@ int32 field::check_tribute(card* pcard, int32 min, int32 max, group* mg, uint8 t
 		max = m;
 	if(min > max)
 		return FALSE;
+	zone &= 0x1f;
 	int32 s;
 	if(toplayer == pcard->current.controler) {
-		int32 ct = get_tofield_count(toplayer, LOCATION_MZONE);
+		int32 ct = get_tofield_count(toplayer, LOCATION_MZONE, zone);
 		if(ct <= 0) {
 			if(max <= 0)
 				return FALSE;
 			for(auto it = release_list.begin(); it != release_list.end(); ++it) {
-				if((*it)->current.sequence < 5)
+				if((zone >> (*it)->current.sequence) & 1)
 					ct++;
 			}
 			if(ct <= 0)
@@ -2902,22 +2915,14 @@ int32 field::is_player_can_spsummon(effect* peffect, uint32 sumtype, uint8 sumpo
 		return FALSE;
 	sumtype |= SUMMON_TYPE_SPECIAL;
 	save_lp_cost();
-	effect_set eset;
-	pcard->filter_effect(EFFECT_SPSUMMON_COST, &eset);
-	for(int32 i = 0; i < eset.size(); ++i) {
-		pduel->lua->add_param(eset[i], PARAM_TYPE_EFFECT);
-		pduel->lua->add_param(pcard, PARAM_TYPE_CARD);
-		pduel->lua->add_param(playerid, PARAM_TYPE_INT);
-		pduel->lua->add_param(sumtype, PARAM_TYPE_INT);
-		if(!pduel->lua->check_condition(eset[i]->cost, 4)) {
-			restore_lp_cost();
-			return FALSE;
-		}
+	if(!pcard->check_cost_condition(EFFECT_SPSUMMON_COST, playerid, sumtype)) {
+		restore_lp_cost();
+		return FALSE;
 	}
 	restore_lp_cost();
 	if(sumpos & POS_FACEDOWN && is_player_affected_by_effect(playerid, EFFECT_DEVINE_LIGHT))
 		sumpos = (sumpos & POS_FACEUP) | (sumpos >> 1);
-	eset.clear();
+	effect_set eset;
 	filter_player_effect(playerid, EFFECT_CANNOT_SPECIAL_SUMMON, &eset);
 	for(int32 i = 0; i < eset.size(); ++i) {
 		if(!eset[i]->target)

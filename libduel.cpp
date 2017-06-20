@@ -225,11 +225,14 @@ int32 scriptlib::duel_summon(lua_State *L) {
 	card* pcard = *(card**)lua_touserdata(L, 2);
 	uint32 ignore_count = lua_toboolean(L, 3);
 	uint32 min_tribute = 0;
-	if(lua_gettop(L) > 4)
+	if(lua_gettop(L) >= 5)
 		min_tribute = lua_tointeger(L, 5);
+	uint32 zone = 0x1f;
+	if(lua_gettop(L) >= 6)
+		zone = lua_tointeger(L, 6);
 	duel * pduel = pcard->pduel;
 	pduel->game_field->core.summon_cancelable = FALSE;
-	pduel->game_field->summon(playerid, pcard, peffect, ignore_count, min_tribute);
+	pduel->game_field->summon(playerid, pcard, peffect, ignore_count, min_tribute, zone);
 	return lua_yield(L, 0);
 }
 int32 scriptlib::duel_special_summon_rule(lua_State *L) {
@@ -314,11 +317,14 @@ int32 scriptlib::duel_setm(lua_State *L) {
 	card* pcard = *(card**)lua_touserdata(L, 2);
 	uint32 ignore_count = lua_toboolean(L, 3);
 	uint32 min_tribute = 0;
-	if(lua_gettop(L) > 4)
+	if(lua_gettop(L) >= 5)
 		min_tribute = lua_tointeger(L, 5);
-	duel * pduel = pcard->pduel;
+	uint32 zone = 0x1f;
+	if(lua_gettop(L) >= 6)
+		zone = lua_tointeger(L, 6);
+	duel* pduel = pcard->pduel;
 	pduel->game_field->core.summon_cancelable = FALSE;
-	pduel->game_field->add_process(PROCESSOR_MSET, 0, peffect, (group*)pcard, playerid + (ignore_count << 8) + (min_tribute << 16), 0);
+	pduel->game_field->mset(playerid, pcard, peffect, ignore_count, min_tribute, zone);
 	return lua_yield(L, 0);
 }
 int32 scriptlib::duel_sets(lua_State *L) {
@@ -1582,6 +1588,33 @@ int32 scriptlib::duel_get_usable_mzone_count(lua_State *L) {
 		lua_pushinteger(L, pduel->game_field->get_useable_count(playerid, LOCATION_MZONE, uplayer, LOCATION_REASON_TOFIELD, zone));
 	return 1;
 }
+int32 scriptlib::duel_get_linked_group(lua_State *L) {
+	check_param_count(L, 3);
+	uint32 rplayer = lua_tointeger(L, 1);
+	if(rplayer != 0 && rplayer != 1)
+		return 0;
+	uint32 s = lua_tointeger(L, 2);
+	uint32 o = lua_tointeger(L, 3);
+	duel* pduel = interpreter::get_duel_info(L);
+	field::card_set cset;
+	pduel->game_field->get_linked_cards(rplayer, s, o, &cset);
+	group* pgroup = pduel->new_group(cset);
+	interpreter::group2value(L, pgroup);
+	return 1;
+}
+int32 scriptlib::duel_get_linked_group_count(lua_State *L) {
+	check_param_count(L, 3);
+	uint32 rplayer = lua_tointeger(L, 1);
+	if(rplayer != 0 && rplayer != 1)
+		return 0;
+	uint32 s = lua_tointeger(L, 2);
+	uint32 o = lua_tointeger(L, 3);
+	duel* pduel = interpreter::get_duel_info(L);
+	field::card_set cset;
+	pduel->game_field->get_linked_cards(rplayer, s, o, &cset);
+	lua_pushinteger(L, cset.size());
+	return 1;
+}
 int32 scriptlib::duel_get_linked_zone(lua_State *L) {
 	check_param_count(L, 1);
 	uint32 playerid = lua_tointeger(L, 1);
@@ -2171,8 +2204,11 @@ int32 scriptlib::duel_check_tribute(lua_State *L) {
 	uint8 toplayer = target->current.controler;
 	if(lua_gettop(L) >= 5 && !lua_isnil(L, 5))
 		toplayer = lua_tointeger(L, 5);
+	uint32 zone = 0x1f;
+	if(lua_gettop(L) >= 6 && !lua_isnil(L, 6))
+		zone = lua_tointeger(L, 6);
 	duel* pduel = target->pduel;
-	lua_pushboolean(L, pduel->game_field->check_tribute(target, min, max, mg, toplayer));
+	lua_pushboolean(L, pduel->game_field->check_tribute(target, min, max, mg, toplayer, zone));
 	return 1;
 }
 int32 scriptlib::duel_select_tribute(lua_State *L) {
