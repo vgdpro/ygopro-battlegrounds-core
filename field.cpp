@@ -164,7 +164,7 @@ void field::add_card(uint8 playerid, card* pcard, uint8 location, uint8 sequence
 		return;
 	if((pcard->data.type & (TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ | TYPE_LINK)) && (location & (LOCATION_HAND | LOCATION_DECK))) {
 		location = LOCATION_EXTRA;
-		pcard->operation_param = (pcard->operation_param & 0x00ffffff) | (POS_FACEDOWN_DEFENSE << 24);
+		pcard->sendto_param.position = POS_FACEDOWN_DEFENSE;
 	}
 	pcard->current.controler = playerid;
 	pcard->current.location = location;
@@ -192,14 +192,14 @@ void field::add_card(uint8 playerid, card* pcard, uint8 location, uint8 sequence
 			if(!core.shuffle_check_disabled)
 				core.shuffle_deck_check[playerid] = TRUE;
 		}
-		pcard->operation_param = (pcard->operation_param & 0x00ffffff) | (POS_FACEDOWN << 24);
+		pcard->sendto_param.position = POS_FACEDOWN;
 		break;
 	}
 	case LOCATION_HAND: {
 		player[playerid].list_hand.push_back(pcard);
 		pcard->current.sequence = player[playerid].list_hand.size() - 1;
 		uint32 pos = pcard->is_affected_by_effect(EFFECT_PUBLIC) ? POS_FACEUP : POS_FACEDOWN;
-		pcard->operation_param = (pcard->operation_param & 0x00ffffff) | (pos << 24);
+		pcard->sendto_param.position = pos;
 		if(!(pcard->current.reason & REASON_DRAW) && !core.shuffle_check_disabled)
 			core.shuffle_hand_check[playerid] = TRUE;
 		break;
@@ -217,7 +217,7 @@ void field::add_card(uint8 playerid, card* pcard, uint8 location, uint8 sequence
 	case LOCATION_EXTRA: {
 		player[playerid].list_extra.push_back(pcard);
 		pcard->current.sequence = player[playerid].list_extra.size() - 1;
-		if((pcard->data.type & TYPE_PENDULUM) && ((pcard->operation_param >> 24) & POS_FACEUP))
+		if((pcard->data.type & TYPE_PENDULUM) && (pcard->sendto_param.position & POS_FACEUP))
 			++player[playerid].extra_p_count;
 		break;
 	}
@@ -299,7 +299,7 @@ void field::move_card(uint8 playerid, card* pcard, uint8 location, uint8 sequenc
 	uint8 presequence = pcard->current.sequence;
 	if((pcard->data.type & (TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ | TYPE_LINK)) && (location & (LOCATION_HAND | LOCATION_DECK))) {
 		location = LOCATION_EXTRA;
-		pcard->operation_param = (pcard->operation_param & 0x00ffffff) | (POS_FACEDOWN_DEFENSE << 24);
+		pcard->sendto_param.position = POS_FACEDOWN_DEFENSE;
 	}
 	if (pcard->current.location) {
 		if (pcard->current.location == location) {
@@ -411,7 +411,7 @@ void field::move_card(uint8 playerid, card* pcard, uint8 location, uint8 sequenc
 			        && (((pcard->current.location == LOCATION_MZONE) && !pcard->is_status(STATUS_SUMMON_DISABLED))
 			        || ((pcard->current.location == LOCATION_SZONE) && !pcard->is_status(STATUS_ACTIVATE_DISABLED)))) {
 				location = LOCATION_EXTRA;
-				pcard->operation_param = (pcard->operation_param & 0x00ffffff) | (POS_FACEUP_DEFENSE << 24);
+				pcard->sendto_param.position = POS_FACEUP_DEFENSE;
 			}
 			remove_card(pcard);
 		}
@@ -516,13 +516,13 @@ card* field::get_field_card(uint32 playerid, uint32 location, uint32 sequence) {
 	return 0;
 }
 // return: the given slot in LOCATION_MZONE or all LOCATION_SZONE is available or not
-int32 field::is_location_useable(uint32 playerid, uint32 location, uint32 sequence) {
-	uint32 flag = player[playerid].disabled_location | player[playerid].used_location;
+int32 field::is_location_useable(uint32 playerid, uint32 location, uint32 sequence, uint8 neglect_used) {
+	uint32 flag = player[playerid].disabled_location | (neglect_used ? 0 : player[playerid].used_location);
 	if (location == LOCATION_MZONE) {
 		if(flag & (0x1u << sequence))
 			return FALSE;
 		if(sequence >= 5) {
-			uint32 oppo = player[1 - playerid].disabled_location | player[1 - playerid].used_location;
+			uint32 oppo = player[1 - playerid].disabled_location | (neglect_used ? 0 : player[1 - playerid].used_location);
 			if(oppo & (0x1u << (11 - sequence)))
 				return FALSE;
 		}
@@ -546,11 +546,11 @@ int32 field::is_location_useable(uint32 playerid, uint32 location, uint32 sequen
 // uplayer: request player, PLAYER_NONE means ignoring EFFECT_MAX_MZONE, EFFECT_MAX_SZONE
 // list: store local flag in list
 // return: usable count of LOCATION_MZONE or real LOCATION_SZONE of playerid requested by uplayer (may be negative)
-int32 field::get_useable_count(card* pcard, uint8 playerid, uint8 location, uint8 uplayer, uint32 reason, uint32 zone, uint32* list) {
+int32 field::get_useable_count(card* pcard, uint8 playerid, uint8 location, uint8 uplayer, uint32 reason, uint32 zone, uint32* list, uint8 neglect_used) {
 	if(core.duel_rule >= 4 && location == LOCATION_MZONE && pcard->current.location == LOCATION_EXTRA)
 		return get_useable_count_fromex(pcard, playerid, uplayer, zone, list);
 	else
-		return get_useable_count(playerid, location, uplayer, reason, zone, list);
+		return get_useable_count(playerid, location, uplayer, reason, zone, list, neglect_used);
 }
 int32 field::get_spsummonable_count(card* pcard, uint8 playerid, uint32 zone, uint32* list) {
 	if(core.duel_rule >= 4 && pcard->current.location == LOCATION_EXTRA)
@@ -558,8 +558,8 @@ int32 field::get_spsummonable_count(card* pcard, uint8 playerid, uint32 zone, ui
 	else
 		return get_tofield_count(playerid, LOCATION_MZONE, zone, list);
 }
-int32 field::get_useable_count(uint8 playerid, uint8 location, uint8 uplayer, uint32 reason, uint32 zone, uint32* list) {
-	int32 count = get_tofield_count(playerid, location, zone, list);
+int32 field::get_useable_count(uint8 playerid, uint8 location, uint8 uplayer, uint32 reason, uint32 zone, uint32* list, uint8 neglect_used) {
+	int32 count = get_tofield_count(playerid, location, zone, list, neglect_used);
 	int32 limit;
 	if(location == LOCATION_MZONE)
 		limit = get_mzone_limit(playerid, uplayer, LOCATION_REASON_TOFIELD);
@@ -569,10 +569,10 @@ int32 field::get_useable_count(uint8 playerid, uint8 location, uint8 uplayer, ui
 		count = limit;
 	return count;
 }
-int32 field::get_tofield_count(uint8 playerid, uint8 location, uint32 zone, uint32* list) {
+int32 field::get_tofield_count(uint8 playerid, uint8 location, uint32 zone, uint32* list, uint8 neglect_used) {
 	if (location != LOCATION_MZONE && location != LOCATION_SZONE)
 		return 0;
-	uint32 flag = player[playerid].disabled_location | player[playerid].used_location;
+	uint32 flag = player[playerid].disabled_location | (neglect_used ? 0 : player[playerid].used_location);
 	if (location == LOCATION_MZONE)
 		flag = (flag | ~zone) & 0x1f;
 	else
@@ -2115,12 +2115,11 @@ int32 field::get_attack_target(card* pcard, card_vector* v, uint8 chain_attack) 
 		std::set<uint32> idset;
 		for(int32 i = 0; i < eset.size(); ++i)
 			idset.insert(eset[i]->label);
-		if(idset.size()==1 && only_be_attack.size() == 1 && only_be_attack.front()->fieldid_r == *idset.begin())
+		if(idset.size() == 1 && only_be_attack.size() == 1 && only_be_attack.front()->fieldid_r == *idset.begin())
 			pv = &only_be_attack;
 		else
 			return atype;
-	}
-	else if(pcard->is_affected_by_effect(EFFECT_ONLY_ATTACK_MONSTER)) {
+	} else if(pcard->is_affected_by_effect(EFFECT_ONLY_ATTACK_MONSTER)) {
 		atype = 2;
 		if(only_be_attack.size() == 1)
 			pv = &only_be_attack;

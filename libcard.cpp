@@ -662,7 +662,7 @@ int32 scriptlib::card_get_destination(lua_State *L) {
 	check_param_count(L, 1);
 	check_param(L, PARAM_TYPE_CARD, 1);
 	card* pcard = *(card**) lua_touserdata(L, 1);
-	lua_pushinteger(L, (pcard->operation_param >> 8) & 0xff);
+	lua_pushinteger(L, pcard->sendto_param.location);
 	return 1;
 }
 int32 scriptlib::card_get_leave_field_dest(lua_State *L) {
@@ -1661,13 +1661,16 @@ int32 scriptlib::card_is_can_be_special_summoned(lua_State *L) {
 	uint32 sumpos = POS_FACEUP;
 	uint32 toplayer = sumplayer;
 	uint32 zone = 0xff;
+	uint32 nozoneusedcheck = 0;
 	if(lua_gettop(L) >= 7)
 		sumpos = lua_tointeger(L, 7);
 	if(lua_gettop(L) >= 8)
 		toplayer = lua_tointeger(L, 8);
 	if(lua_gettop(L) >= 9)
 		zone = lua_tointeger(L, 9);
-	if(pcard->is_can_be_special_summoned(peffect, sumtype, sumpos, sumplayer, toplayer, nocheck, nolimit, zone))
+	if(lua_gettop(L) >= 10)
+		nozoneusedcheck = lua_toboolean(L, 10);
+	if(pcard->is_can_be_special_summoned(peffect, sumtype, sumpos, sumplayer, toplayer, nocheck, nolimit, zone, nozoneusedcheck))
 		lua_pushboolean(L, 1);
 	else
 		lua_pushboolean(L, 0);
@@ -2191,6 +2194,13 @@ int32 scriptlib::card_set_counter_limit(lua_State *L) {
 	peffect->value = limit;
 	pcard->add_effect(peffect);
 	return 0;
+}
+int32 scriptlib::card_is_can_change_position(lua_State *L) {
+	check_param_count(L, 1);
+	check_param(L, PARAM_TYPE_CARD, 1);
+	card* pcard = *(card**)lua_touserdata(L, 1);
+	lua_pushboolean(L, pcard->is_capable_change_position_by_effect(pcard->pduel->game_field->core.reason_player));
+	return 1;
 }
 int32 scriptlib::card_is_can_turn_set(lua_State *L) {
 	check_param_count(L, 1);
