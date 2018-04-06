@@ -106,7 +106,7 @@ public:
 	public:
 		void addcard(card* pcard);
 	};
-	
+
 	//millux
 	uint32 get_ritual_type();
 	uint32 set_entity_code(uint32 entity_code, bool remove_alias = false);
