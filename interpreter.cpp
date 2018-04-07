@@ -632,6 +632,9 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	lua_pushnil(lua_state);
 	lua_setglobal(lua_state, "os");
 	*/
+	//add bit lib back in 2pick - will be reverted
+	lua_getglobal(lua_state, "bit32");
+	lua_setglobal(lua_state, "bit");
 	//open all libs
 	luaL_newlib(lua_state, cardlib);
 	lua_pushstring(lua_state, "__index");
