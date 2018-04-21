@@ -103,9 +103,14 @@ int32 scriptlib::duel_get_master_rule(lua_State * L) {
 }
 int32 scriptlib::duel_read_card(lua_State *L) {
 	check_param_count(L, 2);
-	int32 code = lua_tointeger(L, 1);
 	card_data dat;
-	::read_card(code, &dat);
+	if(check_param(L, PARAM_TYPE_CARD, 1, TRUE)) {
+		card* pcard = *(card**) lua_touserdata(L, 1);
+		dat = pcard->data;
+	} else {
+		int32 code = lua_tointeger(L, 1);
+		::read_card(code, &dat);
+	}
 	if(!dat.code)
 		return 0;
 	uint32 args = lua_gettop(L) - 1;
