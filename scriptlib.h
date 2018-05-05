@@ -40,10 +40,6 @@ public:
 	static int32 duel_move_turn_count(lua_State *L);
 	static int32 duel_get_cards_in_zone(lua_State *L);
 	static int32 duel_xyz_summon_by_rose(lua_State *L);
-	//metatable
-	static int32 group_meta_add(lua_State *L);
-	static int32 group_meta_sub(lua_State *L);
-
 	//card lib
 	static int32 card_get_code(lua_State *L);
 	static int32 card_get_origin_code(lua_State *L);
@@ -381,6 +377,7 @@ public:
 	static int32 group_equal(lua_State *L);
 	static int32 group_is_contains(lua_State *L);
 	static int32 group_search_card(lua_State *L);
+	static int32 group_get_bin_class_count(lua_State *L);
 
 	//Duel functions
 	static int32 duel_enable_global_flag(lua_State *L);
@@ -595,6 +592,13 @@ public:
 	static int32 duel_venom_swamp_check(lua_State *L);
 	static int32 duel_swap_deck_and_grave(lua_State *L);
 	static int32 duel_majestic_copy(lua_State *L);
+	
+	//group metamethods
+	//__len is in the group lib, which is same as group_get_count
+	static int32 group_meta_add(lua_State *L);
+	static int32 group_meta_sub(lua_State *L);
+	static int32 group_meta_band(lua_State *L);
+	static int32 group_meta_bxor(lua_State *L);
 
 	//preload
 	static int32 debug_message(lua_State *L);

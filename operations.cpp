@@ -758,7 +758,27 @@ int32 field::remove_overlay_card(uint16 step, uint32 reason, card* pcard, uint8 
 	case 0: {
 		core.select_options.clear();
 		core.select_effects.clear();
-		if((pcard && pcard->xyz_materials.size() >= min) || (!pcard && get_overlay_count(rplayer, s, o) >= min)) {
+		int32 minc = min;
+		effect_set eset;
+		filter_player_effect(rplayer, EFFECT_OVERLAY_REMOVE_COST_CHANGE_KOISHI, &eset);
+		for(int32 i = 0; i < eset.size(); ++i) {
+			pduel->lua->add_param(core.reason_effect, PARAM_TYPE_EFFECT);
+			pduel->lua->add_param(rplayer, PARAM_TYPE_INT);
+			pduel->lua->add_param(minc, PARAM_TYPE_INT);
+			pduel->lua->add_param(reason, PARAM_TYPE_INT);
+			int32 param_count;
+			if(pcard) {
+				pduel->lua->add_param(pcard, PARAM_TYPE_CARD);
+				param_count = 5;
+			} else {
+				pduel->lua->add_param(s, PARAM_TYPE_INT);
+				pduel->lua->add_param(o, PARAM_TYPE_INT);
+				param_count = 6;
+			}
+			minc = eset[i]->get_value(param_count);
+		}
+		core.units.begin()->arg2 = (max << 16) + minc;
+		if((pcard && pcard->xyz_materials.size() >= minc) || (!pcard && get_overlay_count(rplayer, s, o) >= minc)) {
 			core.select_options.push_back(12);
 			core.select_effects.push_back(0);
 		}
@@ -766,7 +786,7 @@ int32 field::remove_overlay_card(uint16 step, uint32 reason, card* pcard, uint8 
 		tevent e;
 		e.event_cards = 0;
 		e.event_player = rplayer;
-		e.event_value = min;
+		e.event_value = minc;
 		e.reason = reason;
 		e.reason_effect = core.reason_effect;
 		e.reason_player = rplayer;

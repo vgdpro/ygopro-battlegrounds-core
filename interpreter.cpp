@@ -335,10 +335,6 @@ static const struct luaL_Reg effectlib[] = {
 };
 
 static const struct luaL_Reg grouplib[] = {
-	//metatable
-	{ "__add", scriptlib::group_meta_add },
-	{ "__sub", scriptlib::group_meta_sub },
-
 	{ "CreateGroup", scriptlib::group_new },
 	{ "KeepAlive", scriptlib::group_keep_alive },
 	{ "DeleteGroup", scriptlib::group_delete },
@@ -373,6 +369,12 @@ static const struct luaL_Reg grouplib[] = {
 	{ "Equal", scriptlib::group_equal },
 	{ "IsContains", scriptlib::group_is_contains },
 	{ "SearchCard", scriptlib::group_search_card },
+	{ "GetBinClassCount", scriptlib::group_get_bin_class_count },
+	{ "__add", scriptlib::group_meta_add },
+	{ "__bor", scriptlib::group_meta_add },
+	{ "__sub", scriptlib::group_meta_sub },
+	{ "__band", scriptlib::group_meta_band },
+	{ "__bxor", scriptlib::group_meta_bxor },
 	{ NULL, NULL }
 };
 
@@ -701,6 +703,8 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	lua_setglobal(lua_state, "EFFECT_CANNOT_LOSE_KOISHI");
 	lua_pushinteger(lua_state, EFFECT_EXTRA_TOMAIN_KOISHI);
 	lua_setglobal(lua_state, "EFFECT_EXTRA_TOMAIN_KOISHI");
+	lua_pushinteger(lua_state, EFFECT_OVERLAY_REMOVE_COST_CHANGE_KOISHI);
+	lua_setglobal(lua_state, "EFFECT_OVERLAY_REMOVE_COST_CHANGE_KOISHI");
 	//music hints
 	lua_pushinteger(lua_state, HINT_MUSIC);
 	lua_setglobal(lua_state, "HINT_MUSIC");
