@@ -1445,7 +1445,7 @@ int32 field::equip(uint16 step, uint8 equip_player, card * equip_card, card * ta
 			cset.insert(equip_card);
 			raise_single_event(target, &cset, EVENT_EQUIP, core.reason_effect, 0, core.reason_player, PLAYER_NONE, 0);
 			raise_event(&cset, EVENT_EQUIP, core.reason_effect, 0, core.reason_player, PLAYER_NONE, 0);
-			core.hint_timing[target->overlay_target ? target->overlay_target->current.controler : target->current.controler] |= TIMING_EQUIP;
+			core.hint_timing[target->current.controler] |= TIMING_EQUIP;
 			process_single_event();
 			process_instant_event();
 			return FALSE;
@@ -3105,9 +3105,13 @@ int32 field::destroy(uint16 step, group * targets, effect * reason_effect, uint3
 		for (auto cit = targets->container.begin(); cit != targets->container.end();) {
 			auto rm = cit++;
 			card* pcard = *rm;
+			if(!pcard->is_destructable()) {
+				indestructable_set.insert(pcard);
+				continue;
+			}
 			if (!(pcard->current.reason & (REASON_RULE | REASON_COST))) {
-				int32 is_destructable = true;
-				if (pcard->is_destructable() && pcard->is_affect_by_effect(pcard->current.reason_effect)) {
+				bool is_destructable = true;
+				if (pcard->is_affect_by_effect(pcard->current.reason_effect)) {
 					effect* indestructable_effect = pcard->check_indestructable_by_effect(pcard->current.reason_effect, pcard->current.reason_player);
 					if (indestructable_effect) {
 						if(reason_player != 5)
@@ -3265,7 +3269,7 @@ int32 field::destroy(uint16 step, group * targets, effect * reason_effect, uint3
 				continue;
 			}
 			pcard->current.reason |= REASON_DESTROY;
-			core.hint_timing[pcard->overlay_target ? pcard->overlay_target->current.controler : pcard->current.controler] |= TIMING_DESTROY;
+			core.hint_timing[pcard->current.controler] |= TIMING_DESTROY;
 			raise_single_event(pcard, 0, EVENT_DESTROY, pcard->current.reason_effect, pcard->current.reason, pcard->current.reason_player, 0, 0);
 		}
 		adjust_instant();
@@ -3310,15 +3314,13 @@ int32 field::destroy(uint16 step, group * targets, effect * reason_effect, uint3
 		for (auto cit = targets->container.begin(); cit != targets->container.end();) {
 			auto rm = cit++;
 			card* pcard = *rm;
-			if (!(pcard->current.reason & REASON_RULE)) {
-				if (!pcard->is_destructable()) {
-					pcard->current.reason = pcard->temp.reason;
-					pcard->current.reason_effect = pcard->temp.reason_effect;
-					pcard->current.reason_player = pcard->temp.reason_player;
-					pcard->set_status(STATUS_DESTROY_CONFIRMED, FALSE);
-					targets->container.erase(pcard);
-					continue;
-				}
+			if (!pcard->is_destructable()) {
+				pcard->current.reason = pcard->temp.reason;
+				pcard->current.reason_effect = pcard->temp.reason_effect;
+				pcard->current.reason_player = pcard->temp.reason_player;
+				pcard->set_status(STATUS_DESTROY_CONFIRMED, FALSE);
+				targets->container.erase(pcard);
+				continue;
 			}
 			eset.clear();
 			pcard->filter_effect(EFFECT_INDESTRUCTABLE, &eset);
@@ -3822,16 +3824,17 @@ int32 field::send_to(uint16 step, group * targets, effect * reason_effect, uint3
 		uint8 playerid = pcard->sendto_param.playerid & 0x7;
 		uint8 dest = pcard->sendto_param.location;
 		uint8 seq = pcard->sendto_param.sequence;
+		uint8 control_player = pcard->overlay_target ? pcard->overlay_target->current.controler : pcard->current.controler;
 		if(dest == LOCATION_GRAVE) {
-			core.hint_timing[pcard->overlay_target ? pcard->overlay_target->current.controler : pcard->current.controler] |= TIMING_TOGRAVE;
+			core.hint_timing[control_player] |= TIMING_TOGRAVE;
 		} else if(dest == LOCATION_HAND) {
 			pcard->set_status(STATUS_PROC_COMPLETE, FALSE);
-			core.hint_timing[pcard->overlay_target ? pcard->overlay_target->current.controler : pcard->current.controler] |= TIMING_TOHAND;
+			core.hint_timing[control_player] |= TIMING_TOHAND;
 		} else if(dest == LOCATION_DECK) {
 			pcard->set_status(STATUS_PROC_COMPLETE, FALSE);
-			core.hint_timing[pcard->overlay_target ? pcard->overlay_target->current.controler : pcard->current.controler] |= TIMING_TODECK;
+			core.hint_timing[control_player] |= TIMING_TODECK;
 		} else if(dest == LOCATION_REMOVED) {
-			core.hint_timing[pcard->overlay_target ? pcard->overlay_target->current.controler : pcard->current.controler] |= TIMING_REMOVE;
+			core.hint_timing[control_player] |= TIMING_REMOVE;
 		}
 		//call move_card()
 		if(pcard->current.controler != playerid || pcard->current.location != dest) {
@@ -3848,7 +3851,7 @@ int32 field::send_to(uint16 step, group * targets, effect * reason_effect, uint3
 			pduel->write_buffer32(pcard->current.reason);
 		}
 		if((core.deck_reversed && pcard->current.location == LOCATION_DECK) || (pcard->current.position == POS_FACEUP_DEFENSE))
-			param->show_decktop[pcard->overlay_target ? pcard->overlay_target->current.controler : pcard->current.controler] = true;
+			param->show_decktop[pcard->current.controler] = true;
 		pcard->set_status(STATUS_LEAVE_CONFIRMED, FALSE);
 		if(pcard->status & (STATUS_SUMMON_DISABLED | STATUS_ACTIVATE_DISABLED)) {
 			pcard->set_status(STATUS_SUMMON_DISABLED | STATUS_ACTIVATE_DISABLED, FALSE);
@@ -3942,8 +3945,6 @@ int32 field::send_to(uint16 step, group * targets, effect * reason_effect, uint3
 					pduel->write_buffer32(ptop->data.code | 0x80000000);
 			}
 		}
-		for(auto iter = param->leave.begin(); iter != param->leave.end(); ++iter)
-			raise_single_event(*iter, 0, EVENT_LEAVE_FIELD, (*iter)->current.reason_effect, (*iter)->current.reason, (*iter)->current.reason_player, 0, 0);
 		for(auto iter = param->discard.begin(); iter != param->discard.end(); ++iter)
 			raise_single_event(*iter, 0, EVENT_DISCARD, (*iter)->current.reason_effect, (*iter)->current.reason, (*iter)->current.reason_player, 0, 0);
 		if((core.global_flag & GLOBALFLAG_DETACH_EVENT) && param->detach.size()) {
@@ -3953,8 +3954,6 @@ int32 field::send_to(uint16 step, group * targets, effect * reason_effect, uint3
 			}
 		}
 		process_single_event();
-		if(param->leave.size())
-			raise_event(&param->leave, EVENT_LEAVE_FIELD, reason_effect, reason, reason_player, 0, 0);
 		if(param->discard.size())
 			raise_event(&param->discard, EVENT_DISCARD, reason_effect, reason, reason_player, 0, 0);
 		if((core.global_flag & GLOBALFLAG_DETACH_EVENT) && param->detach.size())
@@ -3967,6 +3966,10 @@ int32 field::send_to(uint16 step, group * targets, effect * reason_effect, uint3
 		exargs* param = (exargs*)targets;
 		core.units.begin()->ptarget = param->targets;
 		targets = param->targets;
+		for(auto iter = param->leave.begin(); iter != param->leave.end(); ++iter)
+			raise_single_event(*iter, 0, EVENT_LEAVE_FIELD, (*iter)->current.reason_effect, (*iter)->current.reason, (*iter)->current.reason_player, 0, 0);
+		if(param->leave.size())
+			raise_event(&param->leave, EVENT_LEAVE_FIELD, reason_effect, reason, reason_player, 0, 0);
 		delete param;
 		uint8 nloc;
 		card_set tohand, todeck, tograve, remove, released, destroyed, retgrave;
@@ -4233,6 +4236,14 @@ int32 field::move_to_field(uint16 step, card* target, uint32 enable, uint32 ret,
 			}
 			if(ct <= 0)
 				return TRUE;
+			if((zone & zone - 1) == 0) {
+				for(uint8 seq = 0; seq < 8; seq++) {
+					if((1 << seq) & zone) {
+						returns.bvalue[2] = seq;
+						return FALSE;
+					}
+				}
+			}
 			if(move_player == playerid) {
 				if(location == LOCATION_SZONE)
 					flag = ((flag & 0xff) << 8) | 0xffff00ff;
