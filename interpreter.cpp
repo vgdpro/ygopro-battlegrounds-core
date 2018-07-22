@@ -591,7 +591,7 @@ static const struct luaL_Reg duellib[] = {
 	{ "IsPlayerCanSendtoHand", scriptlib::duel_is_player_can_send_to_hand },
 	{ "IsPlayerCanSendtoGrave", scriptlib::duel_is_player_can_send_to_grave },
 	{ "IsPlayerCanSendtoDeck", scriptlib::duel_is_player_can_send_to_deck },
-	{ "IsPlayerExtraSummoned", scriptlib::duel_is_player_extra_summoned },
+	{ "IsPlayerCanAdditionalSummon", scriptlib::duel_is_player_can_additional_summon },
 	{ "IsChainNegatable", scriptlib::duel_is_chain_negatable },
 	{ "IsChainDisablable", scriptlib::duel_is_chain_disablable },
 	{ "CheckChainTarget", scriptlib::duel_check_chain_target },
@@ -712,6 +712,8 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	lua_setglobal(lua_state, "EFFECT_OVERLAY_REMOVE_COST_CHANGE_KOISHI");
 	lua_pushinteger(lua_state, EFFECT_ALLOW_SYNCHRO_KOISHI);
 	lua_setglobal(lua_state, "EFFECT_ALLOW_SYNCHRO_KOISHI");
+	lua_pushinteger(lua_state, EFFECT_MINIATURE_GARDEN_GIRL);
+	lua_setglobal(lua_state, "EFFECT_MINIATURE_GARDEN_GIRL");
 	//music hints
 	lua_pushinteger(lua_state, HINT_MUSIC);
 	lua_setglobal(lua_state, "HINT_MUSIC");
