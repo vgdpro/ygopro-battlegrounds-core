@@ -40,6 +40,7 @@ int32 scriptlib::card_set_card_data(lua_State *L) {
 	check_param_count(L, 3);
 	check_param(L, PARAM_TYPE_CARD, 1);
 	card* pcard = *(card**) lua_touserdata(L, 1);
+	duel* pduel = pcard->pduel;
 	int32 stype = lua_tointeger(L, 2);
 	switch(stype) {
 	case CARDDATA_CODE:
@@ -79,6 +80,11 @@ int32 scriptlib::card_set_card_data(lua_State *L) {
 		pcard->data.link_marker = lua_tointeger(L, 3);
 		break;
 	}
+	pduel->write_buffer8(MSG_MOVE);
+	pduel->write_buffer32(pcard->data.code);
+	pduel->write_buffer32(pcard->get_info_location());
+	pduel->write_buffer32(pcard->get_info_location());
+	pduel->write_buffer32(0);
 	return 0;
 }
 int32 scriptlib::card_get_link_marker(lua_State *L) {
@@ -120,6 +126,13 @@ int32 scriptlib::card_is_xyz_summonable_by_rose(lua_State *L) {
 	pcard->pduel->game_field->rose_card = 0;
 	pcard->pduel->game_field->rose_level = 0;
 	lua_pushboolean(L, result);
+	return 1;
+}
+int32 scriptlib::card_get_removed_overlay_count(lua_State *L) {
+	check_param_count(L, 1);
+	check_param(L, PARAM_TYPE_CARD, 1);
+	card* pcard = *(card**) lua_touserdata(L, 1);
+	lua_pushinteger(L, pcard->removed_overlay_count);
 	return 1;
 }
 
@@ -534,14 +547,8 @@ int32 scriptlib::card_get_column_group(lua_State *L) {
 	check_param_count(L, 1);
 	check_param(L, PARAM_TYPE_CARD, 1);
 	card* pcard = *(card**) lua_touserdata(L, 1);
-	int32 left = 0;
-	int32 right = 0;
-	if(lua_gettop(L) >= 2)
-		left = lua_tointeger(L, 2);
-	if(lua_gettop(L) >= 3)
-		right = lua_tointeger(L, 3);
 	card::card_set cset;
-	pcard->get_column_cards(&cset, left, right);
+	pcard->get_column_cards(&cset);
 	group* pgroup = pcard->pduel->new_group(cset);
 	interpreter::group2value(L, pgroup);
 	return 1;
@@ -550,14 +557,8 @@ int32 scriptlib::card_get_column_group_count(lua_State *L) {
 	check_param_count(L, 1);
 	check_param(L, PARAM_TYPE_CARD, 1);
 	card* pcard = *(card**) lua_touserdata(L, 1);
-	int32 left = 0;
-	int32 right = 0;
-	if(lua_gettop(L) >= 2)
-		left = lua_tointeger(L, 2);
-	if(lua_gettop(L) >= 3)
-		right = lua_tointeger(L, 3);
 	card::card_set cset;
-	pcard->get_column_cards(&cset, left, right);
+	pcard->get_column_cards(&cset);
 	lua_pushinteger(L, cset.size());
 	return 1;
 }
@@ -566,16 +567,10 @@ int32 scriptlib::card_get_column_zone(lua_State *L) {
 	check_param(L, PARAM_TYPE_CARD, 1);
 	card* pcard = *(card**) lua_touserdata(L, 1);
 	int32 loc = lua_tointeger(L, 2);
-	int32 left = 0;
-	int32 right = 0;
 	int32 cp = pcard->current.controler;
-	if(lua_gettop(L) >= 3)
-		left = lua_tointeger(L, 3);
-	if(lua_gettop(L) >= 4)
-		right = lua_tointeger(L, 4);
-	if(lua_gettop(L) >= 5 && !lua_isnil(L, 5))
-		cp = lua_tointeger(L, 5);
-	uint32 zone = pcard->get_column_zone(loc, left, right);
+	if(lua_gettop(L) >= 3 && !lua_isnil(L, 3))
+		cp = lua_tointeger(L, 3);
+	uint32 zone = pcard->get_column_zone(loc);
 	if(cp == 1 - pcard->current.controler)
 		lua_pushinteger(L, (((zone & 0xffff) << 16) | (zone >> 16)));
 	else
@@ -872,14 +867,14 @@ int32 scriptlib::card_get_summon_type(lua_State *L) {
 	check_param_count(L, 1);
 	check_param(L, PARAM_TYPE_CARD, 1);
 	card* pcard = *(card**) lua_touserdata(L, 1);
-	lua_pushinteger(L, pcard->summon_info & 0xff00ffff);
+	lua_pushinteger(L, pcard->get_summon_info() & 0xff00ffff);
 	return 1;
 }
 int32 scriptlib::card_get_summon_location(lua_State *L) {
 	check_param_count(L, 1);
 	check_param(L, PARAM_TYPE_CARD, 1);
 	card* pcard = *(card**) lua_touserdata(L, 1);
-	lua_pushinteger(L, (pcard->summon_info >> 16) & 0xff);
+	lua_pushinteger(L, (pcard->get_summon_info() >> 16) & 0xff);
 	return 1;
 }
 int32 scriptlib::card_get_summon_player(lua_State *L) {
@@ -1188,7 +1183,7 @@ int32 scriptlib::card_is_summon_type(lua_State *L) {
 	check_param(L, PARAM_TYPE_CARD, 1);
 	card* pcard = *(card**)lua_touserdata(L, 1);
 	uint32 ttype = lua_tointeger(L, 2);
-	if(((pcard->summon_info & 0xff00ffff) & ttype) == ttype)
+	if(((pcard->get_summon_info() & 0xff00ffff) & ttype) == ttype)
 		lua_pushboolean(L, 1);
 	else
 		lua_pushboolean(L, 0);

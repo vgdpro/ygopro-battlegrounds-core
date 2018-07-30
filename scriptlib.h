@@ -26,8 +26,9 @@ public:
 	static int32 card_set_entity_code(lua_State *L);
 	static int32 card_set_card_data(lua_State *L);
 	static int32 card_get_link_marker(lua_State *L);
-	static int32 card_get_origin_link_marker(lua_State *L);	
-	static int32 card_is_xyz_summonable_by_rose(lua_State *L);	
+	static int32 card_get_origin_link_marker(lua_State *L);
+	static int32 card_is_xyz_summonable_by_rose(lua_State *L);
+	static int32 card_get_removed_overlay_count(lua_State *L);
 	static int32 effect_set_owner(lua_State *L);
 	static int32 effect_get_range(lua_State *L);
 	static int32 effect_get_count_limit(lua_State *L);

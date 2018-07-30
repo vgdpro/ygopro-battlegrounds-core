@@ -22,7 +22,8 @@ static const struct luaL_Reg cardlib[] = {
 	{ "SetCardData", scriptlib::card_set_card_data },
 	{ "GetLinkMarker", scriptlib::card_get_link_marker },
 	{ "GetOriginalLinkMarker", scriptlib::card_get_origin_link_marker },
-	{ "IsXyzSummonableByRose", scriptlib::card_is_xyz_summonable_by_rose },	
+	{ "IsXyzSummonableByRose", scriptlib::card_is_xyz_summonable_by_rose },
+	{ "GetRemovedOverlayCount", scriptlib::card_get_removed_overlay_count },
 	
 	{ "GetCode", scriptlib::card_get_code },
 	{ "GetOriginalCode", scriptlib::card_get_origin_code },
@@ -697,6 +698,9 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	lua_setglobal(lua_state, "CARDDATA_RSCALE");
 	lua_pushinteger(lua_state, CARDDATA_LINK_MARKER);
 	lua_setglobal(lua_state, "CARDDATA_LINK_MARKER");
+	//effect flag2s
+	lua_pushinteger(lua_state, EFFECT_FLAG2_SPOSITCH);
+	lua_setglobal(lua_state, "EFFECT_FLAG2_SPOSITCH");
 	//effects
 	lua_pushinteger(lua_state, EFFECT_CHANGE_LINK_MARKER_KOISHI);
 	lua_setglobal(lua_state, "EFFECT_CHANGE_LINK_MARKER_KOISHI");
@@ -714,6 +718,14 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	lua_setglobal(lua_state, "EFFECT_ALLOW_SYNCHRO_KOISHI");
 	lua_pushinteger(lua_state, EFFECT_MINIATURE_GARDEN_GIRL);
 	lua_setglobal(lua_state, "EFFECT_MINIATURE_GARDEN_GIRL");
+	lua_pushinteger(lua_state, EFFECT_ADD_SUMMON_TYPE_KOISHI);
+	lua_setglobal(lua_state, "EFFECT_ADD_SUMMON_TYPE_KOISHI");
+	lua_pushinteger(lua_state, EFFECT_REMOVE_SUMMON_TYPE_KOISHI);
+	lua_setglobal(lua_state, "EFFECT_REMOVE_SUMMON_TYPE_KOISHI");
+	lua_pushinteger(lua_state, EFFECT_CHANGE_SUMMON_TYPE_KOISHI);
+	lua_setglobal(lua_state, "EFFECT_CHANGE_SUMMON_TYPE_KOISHI");
+	lua_pushinteger(lua_state, EFFECT_CHANGE_SUMMON_LOCATION_KOISHI);
+	lua_setglobal(lua_state, "EFFECT_CHANGE_SUMMON_LOCATION_KOISHI");
 	//music hints
 	lua_pushinteger(lua_state, HINT_MUSIC);
 	lua_setglobal(lua_state, "HINT_MUSIC");

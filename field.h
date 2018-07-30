@@ -228,6 +228,7 @@ struct processor {
 	card_set discarded_set;
 	card_set destroy_canceled;
 	card_set delayed_enable_set;
+	card_set set_group_pre_set;
 	card_set set_group_set;
 	effect_set_v disfield_effects;
 	effect_set_v extram_effects;
@@ -611,6 +612,8 @@ public:
 #define CHAIN_HAND_EFFECT		0x04
 #define CHAIN_CONTINUOUS_CARD	0x08
 #define CHAIN_ACTIVATING		0x10
+#define CHAIN_HAND_TRIGGER		0x20
+#define CHAIN_DECK_EFFECT		0x40
 #define CHAININFO_CHAIN_COUNT			0x01
 #define CHAININFO_TRIGGERING_EFFECT		0x02
 #define CHAININFO_TRIGGERING_PLAYER		0x04

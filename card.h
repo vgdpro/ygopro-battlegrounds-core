@@ -108,8 +108,10 @@ public:
 	};
 
 	//millux
+
 	uint32 get_ritual_type();
 	uint32 set_entity_code(uint32 entity_code, bool remove_alias = false);
+	uint32 get_summon_info();
 
 	struct sendto_param_t {
 		void set(uint8 p, uint8 pos, uint8 loc, uint8 seq = 0) {
@@ -150,6 +152,7 @@ public:
 	uint8 direct_attackable;
 	uint8 announce_count;
 	uint8 attacked_count;
+	uint8 removed_overlay_count;
 	uint8 attack_all_target;
 	uint8 attack_controler;
 	uint16 cardid;
@@ -238,8 +241,8 @@ public:
 	void set_status(uint32 status, int32 enabled);
 	int32 get_status(uint32 status);
 	int32 is_status(uint32 status);
-	uint32 get_column_zone(int32 loc1, int32 left, int32 right);
-	void get_column_cards(card_set* cset, int32 left, int32 right);
+	uint32 get_column_zone(int32 location);
+	void get_column_cards(card_set* cset);
 	int32 is_all_column();
 
 	void equip(card *target, uint32 send_msg = TRUE);

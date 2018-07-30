@@ -224,6 +224,9 @@ int32 effect::is_activateable(uint8 playerid, const tevent& e, int32 neglect_con
 					else
 						return FALSE;
 				}
+				else if((handler->data.type & TYPE_PENDULUM) && pduel->game_field->infos.turn_player != playerid && is_flag(EFFECT_FLAG2_SPOSITCH)) {
+					ecode = EFFECT_QP_ACT_IN_NTPHAND;
+				}
 			} else if(handler->current.location == LOCATION_SZONE) {
 				if((handler->data.type & TYPE_TRAP) && handler->get_status(STATUS_SET_TURN))
 					ecode = EFFECT_TRAP_ACT_IN_SET_TURN;
@@ -268,7 +271,7 @@ int32 effect::is_activateable(uint8 playerid, const tevent& e, int32 neglect_con
 			}
 			if(phandler->current.location == LOCATION_OVERLAY)
 				return FALSE;
-			if((type & EFFECT_TYPE_FIELD) && (phandler->current.controler != playerid) && !is_flag(EFFECT_FLAG_BOTH_SIDE))
+			if((type & EFFECT_TYPE_FIELD) && (phandler->current.controler != playerid) && !is_flag(EFFECT_FLAG_BOTH_SIDE | EFFECT_FLAG_EVENT_PLAYER))
 				return FALSE;
 			if(phandler->is_status(STATUS_FORBIDDEN))
 				return FALSE;

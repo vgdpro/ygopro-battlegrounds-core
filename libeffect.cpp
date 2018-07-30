@@ -472,7 +472,11 @@ int32 scriptlib::effect_get_active_type(lua_State *L) {
 		if(peffect->active_type)
 			atype = peffect->active_type;
 		else if((peffect->type & EFFECT_TYPE_ACTIVATE) && (peffect->get_handler()->data.type & TYPE_PENDULUM))
+		{
 			atype = TYPE_PENDULUM + TYPE_SPELL;
+			if(peffect->is_flag(EFFECT_FLAG2_SPOSITCH))
+				atype |= TYPE_QUICKPLAY;
+		}
 		else
 			atype = peffect->get_handler()->get_type();
 	} else
@@ -490,7 +494,11 @@ int32 scriptlib::effect_is_active_type(lua_State *L) {
 		if(peffect->active_type)
 			atype = peffect->active_type;
 		else if((peffect->type & EFFECT_TYPE_ACTIVATE) && (peffect->get_handler()->data.type & TYPE_PENDULUM))
+		{
 			atype = TYPE_PENDULUM + TYPE_SPELL;
+			if(peffect->is_flag(EFFECT_FLAG2_SPOSITCH))
+				atype |= TYPE_QUICKPLAY;
+		}
 		else
 			atype = peffect->get_handler()->get_type();
 	} else
