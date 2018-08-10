@@ -1365,8 +1365,10 @@ int32 field::process_phase_event(int16 step, int32 phase) {
 	switch(step) {
 	case 0: {
 		if((phase == PHASE_DRAW && is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_DP))
-		        || (phase == PHASE_STANDBY && is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_SP))
-		        || (phase == PHASE_BATTLE_START && is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_BP))) {
+			|| (phase == PHASE_STANDBY && is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_SP))
+			|| (phase == PHASE_BATTLE_START && is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_BP))
+			|| (phase == PHASE_BATTLE && is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_BP))
+			|| (phase == PHASE_END && is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_EP))) {
 			core.units.begin()->step = 24;
 			return FALSE;
 		}
@@ -1407,18 +1409,18 @@ int32 field::process_phase_event(int16 step, int32 phase) {
 			effect* peffect = *eit++;
 			if(peffect->code != EFFECT_SET_CONTROL)
 				continue;
-			if(peffect->get_owner_player() != check_player)
-				continue;
 			if(!(peffect->reset_flag & phase))
 				continue;
 			uint8 pid = peffect->get_handler_player();
+			if(pid != check_player)
+				continue;
 			uint8 tp = infos.turn_player;
 			if(!(((peffect->reset_flag & RESET_SELF_TURN) && pid == tp) || ((peffect->reset_flag & RESET_OPPO_TURN) && pid != tp)))
 				continue;
 			if(peffect->reset_count != 1)
 				continue;
 			card* phandler = peffect->get_handler();
-			if(peffect->get_owner_player() != phandler->current.controler) {
+			if(pid != phandler->current.controler) {
 				if(peffect->is_flag(EFFECT_FLAG_FIELD_ONLY))
 					remove_effect(peffect);
 				else
@@ -1681,6 +1683,8 @@ int32 field::process_point_event(int16 step, int32 skip_trigger, int32 skip_free
 		for (auto clit = core.new_fchain_s.begin(); clit != core.new_fchain_s.end(); ) {
 			effect* peffect = clit->triggering_effect;
 			card* phandler = peffect->get_handler();
+			if(phandler->is_has_relation(*clit))
+				clit->set_triggering_place(phandler);
 			uint8 tp = clit->triggering_player;
 			bool act = true;
 			if(!peffect->is_flag(EFFECT_FLAG_FIELD_ONLY)
@@ -1744,6 +1748,8 @@ int32 field::process_point_event(int16 step, int32 skip_trigger, int32 skip_free
 		for (auto clit = core.new_ochain_s.begin(); clit != core.new_ochain_s.end(); ) {
 			effect* peffect = clit->triggering_effect;
 			card* phandler = peffect->get_handler();
+			if(phandler->is_has_relation(*clit))
+				clit->set_triggering_place(phandler);
 			if(!peffect->is_flag(EFFECT_FLAG_FIELD_ONLY) && (peffect->type & EFFECT_TYPE_FIELD)
 				&& (peffect->range & LOCATION_HAND) && phandler->current.location == LOCATION_HAND) {
 				if(!phandler->is_has_relation(*clit))
@@ -4020,8 +4026,6 @@ int32 field::process_turn(uint16 step, uint8 turn_player) {
 			tag_swap(turn_player);
 		if(is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_TURN)) {
 			core.units.begin()->step = 17;
-			reset_phase(PHASE_DRAW);
-			reset_phase(PHASE_STANDBY);
 			reset_phase(PHASE_END);
 			adjust_all();
 			return FALSE;
@@ -4212,6 +4216,12 @@ int32 field::process_turn(uint16 step, uint8 turn_player) {
 		//End Phase
 		infos.phase = PHASE_END;
 		core.phase_action = FALSE;
+		if(is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_EP)) {
+			core.units.begin()->step = 17;
+			reset_phase(PHASE_END);
+			adjust_all();
+			return FALSE;
+		}
 		pduel->write_buffer8(MSG_NEW_PHASE);
 		pduel->write_buffer16(infos.phase);
 		raise_event((card*)0, EVENT_PHASE_START + PHASE_END, 0, 0, 0, turn_player, 0);
