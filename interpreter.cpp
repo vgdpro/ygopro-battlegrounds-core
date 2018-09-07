@@ -6,7 +6,6 @@
  */
 
 #include <stdio.h>
-#include <iostream>
 #include "duel.h"
 #include "group.h"
 #include "card.h"
@@ -563,6 +562,7 @@ static const struct luaL_Reg duellib[] = {
 	{ "SelectOption", scriptlib::duel_select_option },
 	{ "SelectSequence", scriptlib::duel_select_sequence },
 	{ "SelectPosition", scriptlib::duel_select_position },
+	{ "GetDisableField", scriptlib::duel_get_disable_field },
 	{ "SelectDisableField", scriptlib::duel_select_disable_field },
 	{ "AnnounceRace", scriptlib::duel_announce_race },
 	{ "AnnounceAttribute", scriptlib::duel_announce_attribute },
@@ -668,9 +668,9 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	luaL_newlib(lua_state, debuglib);
 	lua_setglobal(lua_state, "Debug");
 	//extra scripts
-	load_script((char*) "./script/constant.lua");
-	load_script((char*) "./script/utility.lua");
-	load_script((char*) "./script/special.lua");
+	load_script("./script/constant.lua");
+	load_script("./script/utility.lua");
+	load_script("./script/special.lua");
 	//load kpro constant
 	//card data constants
 	lua_pushinteger(lua_state, CARDDATA_CODE);
@@ -740,18 +740,20 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	lua_setglobal(lua_state, "_WIN32");
 #endif
 	//load init.lua by MLD
-	load_script((char*) "./script/init.lua");
+	load_script("./script/init.lua");
 	//nef
-	load_script((char*) "./script/nef/afi.lua");
-	load_script((char*) "./script/nef/cardList.lua");
-	load_script((char*) "./script/nef/nef.lua");
-	load_script((char*) "./script/nef/elf.lua");
-	load_script((char*) "./script/nef/ets.lua");
-	load_script((char*) "./script/nef/fus.lua");
-	load_script((char*) "./script/nef/msc.lua");
-	load_script((char*) "./script/nef/uds.lua");
+	/*
+	load_script("./script/nef/afi.lua");
+	load_script("./script/nef/cardList.lua");
+	load_script("./script/nef/nef.lua");
+	load_script("./script/nef/elf.lua");
+	load_script("./script/nef/ets.lua");
+	load_script("./script/nef/fus.lua");
+	load_script("./script/nef/msc.lua");
+	load_script("./script/nef/uds.lua");
+	*/
 	//2pick rule
-	load_script((char*) "./script/pick.lua");
+	load_script("./script/pick.lua");
 }
 interpreter::~interpreter() {
 	lua_close(lua_state);
@@ -775,7 +777,7 @@ int32 interpreter::register_card(card *pcard) {
 	if(pcard->data.code && (!(pcard->data.type & TYPE_NORMAL) || (pcard->data.type & TYPE_PENDULUM))) {
 		pcard->set_status(STATUS_INITIALIZING, TRUE);
 		add_param(pcard, PARAM_TYPE_CARD);
-		call_card_function(pcard, (char*) "initial_effect", 1, 0);
+		call_card_function(pcard, "initial_effect", 1, 0);
 		pcard->set_status(STATUS_INITIALIZING, FALSE);
 	}
 	pcard->cardid = pduel->game_field->infos.card_id++;
@@ -829,14 +831,13 @@ void interpreter::unregister_group(group *pgroup) {
 	luaL_unref(lua_state, LUA_REGISTRYINDEX, pgroup->ref_handle);
 	pgroup->ref_handle = 0;
 }
-int32 interpreter::load_script(char* script_name) {
-	int32 error;
+int32 interpreter::load_script(const char* script_name) {
 	int32 len = 0;
 	byte* buffer = read_script(script_name, &len);
 	if (!buffer)
 		return OPERATION_FAIL;
 	no_action++;
-	error = luaL_loadbuffer(current_state, (const char*) buffer, len, (const char*) script_name) || lua_pcall(current_state, 0, 0, 0);
+	int32 error = luaL_loadbuffer(current_state, (char*)buffer, len, script_name) || lua_pcall(current_state, 0, 0, 0);
 	if (error) {
 		interpreter::strcpy(pduel->strbuffer, lua_tostring(current_state, -1));
 		handle_message(pduel, 1);
@@ -849,7 +850,6 @@ int32 interpreter::load_script(char* script_name) {
 }
 int32 interpreter::load_card_script(uint32 code) {
 	char class_name[20];
-	char script_name[64];
 	sprintf(class_name, "c%d", code);
 	lua_getglobal(current_state, class_name);
 	//if script is not loaded, create and load it
@@ -864,6 +864,7 @@ int32 interpreter::load_card_script(uint32 code) {
 		lua_pushstring(current_state, "__index");
 		lua_pushvalue(current_state, -2);
 		lua_rawset(current_state, -3);
+		char script_name[64];
 		sprintf(script_name, "./script/c%d.lua", code);
 		if(!load_script(script_name)) {
 			return OPERATION_FAIL;
@@ -884,47 +885,46 @@ void interpreter::add_param(ptr param, int32 type, bool front) {
 		params.emplace_back((void*)param, type);
 }
 void interpreter::push_param(lua_State* L, bool is_coroutine) {
-	uint32 type;
 	int32 pushed = 0;
-	for (auto it = params.begin(); it != params.end(); ++it) {
-		type = it->second;
+	for (const auto& it : params) {
+		uint32 type = it.second;
 		switch(type) {
 		case PARAM_TYPE_INT:
-			lua_pushinteger(L, (ptr) it->first);
+			lua_pushinteger(L, (ptr) it.first);
 			break;
 		case PARAM_TYPE_STRING:
-			lua_pushstring(L, (const char *) it->first);
+			lua_pushstring(L, (const char *) it.first);
 			break;
 		case PARAM_TYPE_BOOLEAN:
-			lua_pushboolean(L, (ptr) it->first);
+			lua_pushboolean(L, (ptr) it.first);
 			break;
 		case PARAM_TYPE_CARD: {
-			if (it->first)
-				lua_rawgeti(L, LUA_REGISTRYINDEX, ((card*)it->first)->ref_handle);
+			if (it.first)
+				lua_rawgeti(L, LUA_REGISTRYINDEX, ((card*)it.first)->ref_handle);
 			else
 				lua_pushnil(L);
 			break;
 		}
 		case PARAM_TYPE_EFFECT: {
-			if (it->first)
-				lua_rawgeti(L, LUA_REGISTRYINDEX, ((effect*)it->first)->ref_handle);
+			if (it.first)
+				lua_rawgeti(L, LUA_REGISTRYINDEX, ((effect*)it.first)->ref_handle);
 			else
 				lua_pushnil(L);
 			break;
 		}
 		case PARAM_TYPE_GROUP: {
-			if (it->first)
-				lua_rawgeti(L, LUA_REGISTRYINDEX, ((group*)it->first)->ref_handle);
+			if (it.first)
+				lua_rawgeti(L, LUA_REGISTRYINDEX, ((group*)it.first)->ref_handle);
 			else
 				lua_pushnil(L);
 			break;
 		}
 		case PARAM_TYPE_FUNCTION: {
-			function2value(L, (ptr)it->first);
+			function2value(L, (ptr)it.first);
 			break;
 		}
 		case PARAM_TYPE_INDEX: {
-			int32 index = (int32)(ptr)it->first;
+			int32 index = (int32)(ptr)it.first;
 			if(index > 0)
 				lua_pushvalue(L, index);
 			else if(is_coroutine) {
@@ -952,7 +952,7 @@ int32 interpreter::call_function(int32 f, uint32 param_count, int32 ret_count) {
 		return OPERATION_FAIL;
 	}
 	if (param_count != params.size()) {
-		sprintf(pduel->strbuffer, "\"CallFunction\": incorrect parameter count (%d expected, %ud pushed)", param_count, params.size());
+		sprintf(pduel->strbuffer, "\"CallFunction\": incorrect parameter count (%d expected, %zu pushed)", param_count, params.size());
 		handle_message(pduel, 1);
 		params.clear();
 		return OPERATION_FAIL;
@@ -988,7 +988,7 @@ int32 interpreter::call_function(int32 f, uint32 param_count, int32 ret_count) {
 	}
 	return OPERATION_SUCCESS;
 }
-int32 interpreter::call_card_function(card* pcard, char* f, uint32 param_count, int32 ret_count) {
+int32 interpreter::call_card_function(card* pcard, const char* f, uint32 param_count, int32 ret_count) {
 	if (param_count != params.size()) {
 		sprintf(pduel->strbuffer, "\"CallCardFunction\"(c%d.%s): incorrect parameter count", pcard->data.code, f);
 		handle_message(pduel, 1);
@@ -1028,7 +1028,7 @@ int32 interpreter::call_card_function(card* pcard, char* f, uint32 param_count, 
 	}
 	return OPERATION_SUCCESS;
 }
-int32 interpreter::call_code_function(uint32 code, char* f, uint32 param_count, int32 ret_count) {
+int32 interpreter::call_code_function(uint32 code, const char* f, uint32 param_count, int32 ret_count) {
 	if (param_count != params.size()) {
 		sprintf(pduel->strbuffer, "\"CallCodeFunction\": incorrect parameter count");
 		handle_message(pduel, 1);
@@ -1076,7 +1076,6 @@ int32 interpreter::call_code_function(uint32 code, char* f, uint32 param_count, 
 	return OPERATION_SUCCESS;
 }
 int32 interpreter::check_condition(int32 f, uint32 param_count) {
-	int32 result;
 	if(!f) {
 		params.clear();
 		return TRUE;
@@ -1084,7 +1083,7 @@ int32 interpreter::check_condition(int32 f, uint32 param_count) {
 	no_action++;
 	call_depth++;
 	if (call_function(f, param_count, 1)) {
-		result = lua_toboolean(current_state, -1);
+		int32 result = lua_toboolean(current_state, -1);
 		lua_pop(current_state, 1);
 		no_action--;
 		call_depth--;
@@ -1103,7 +1102,6 @@ int32 interpreter::check_condition(int32 f, uint32 param_count) {
 	return OPERATION_FAIL;
 }
 int32 interpreter::check_matching(card* pcard, int32 findex, int32 extraargs) {
-	int32 result;
 	if(!findex || lua_isnil(current_state, findex))
 		return TRUE;
 	no_action++;
@@ -1124,7 +1122,7 @@ int32 interpreter::check_matching(card* pcard, int32 findex, int32 extraargs) {
 		}
 		return OPERATION_FAIL;
 	}
-	result = lua_toboolean(current_state, -1);
+	int32 result = lua_toboolean(current_state, -1);
 	lua_pop(current_state, 1);
 	no_action--;
 	call_depth--;
@@ -1135,7 +1133,6 @@ int32 interpreter::check_matching(card* pcard, int32 findex, int32 extraargs) {
 	return result;
 }
 int32 interpreter::get_operation_value(card* pcard, int32 findex, int32 extraargs) {
-	int32 result;
 	if(!findex || lua_isnil(current_state, findex))
 		return 0;
 	no_action++;
@@ -1156,7 +1153,7 @@ int32 interpreter::get_operation_value(card* pcard, int32 findex, int32 extraarg
 		}
 		return OPERATION_FAIL;
 	}
-	result = round(lua_tonumber(current_state, -1));
+	int32 result = std::round(lua_tonumber(current_state, -1));
 	lua_pop(current_state, 1);
 	no_action--;
 	call_depth--;
@@ -1167,7 +1164,6 @@ int32 interpreter::get_operation_value(card* pcard, int32 findex, int32 extraarg
 	return result;
 }
 int32 interpreter::get_function_value(int32 f, uint32 param_count) {
-	int32 result;
 	if(!f) {
 		params.clear();
 		return 0;
@@ -1175,10 +1171,11 @@ int32 interpreter::get_function_value(int32 f, uint32 param_count) {
 	no_action++;
 	call_depth++;
 	if (call_function(f, param_count, 1)) {
+		int32 result = 0;
 		if (lua_isboolean(current_state, -1))
 			result = lua_toboolean(current_state, -1);
 		else
-			result = round(lua_tonumber(current_state, -1));
+			result = std::round(lua_tonumber(current_state, -1));
 		lua_pop(current_state, 1);
 		no_action--;
 		call_depth--;
@@ -1212,7 +1209,7 @@ int32 interpreter::get_function_value(int32 f, uint32 param_count, std::vector<i
 			if (lua_isboolean(current_state, index))
 				return_value = lua_toboolean(current_state, index);
 			else
-				return_value = round(lua_tonumber(current_state, index));
+				return_value = std::round(lua_tonumber(current_state, index));
 			result->push_back(return_value);
 		}
 		lua_settop(current_state, stack_top);
@@ -1273,7 +1270,7 @@ int32 interpreter::call_coroutine(int32 f, uint32 param_count, uint32 * yield_va
 	if (result == 0) {
 		coroutines.erase(f);
 		if(yield_value)
-			*yield_value = lua_isboolean(rthread, -1) ? lua_toboolean(rthread, -1) : round(lua_tonumber(rthread, -1));
+			*yield_value = lua_isboolean(rthread, -1) ? lua_toboolean(rthread, -1) : lua_tointeger(rthread, -1);
 		current_state = lua_state;
 		call_depth--;
 		if(call_depth == 0) {

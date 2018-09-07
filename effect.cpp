@@ -191,18 +191,7 @@ int32 effect::is_activateable(uint8 playerid, const tevent& e, int32 neglect_con
 					&& !pduel->game_field->get_cteffect(this, playerid, FALSE))
 					return FALSE;
 			}
-			// additional check for each location
-			if(handler->current.location == LOCATION_HAND) {
-				if(handler->data.type & TYPE_MONSTER) {
-					if(!(handler->data.type & TYPE_PENDULUM))
-						return FALSE;
-					if(!pduel->game_field->is_location_useable(playerid, LOCATION_PZONE, 0)
-							&& !pduel->game_field->is_location_useable(playerid, LOCATION_PZONE, 1))
-						return FALSE;
-				} else if(!(handler->data.type & TYPE_FIELD)
-						&& pduel->game_field->get_useable_count(handler, playerid, LOCATION_SZONE, playerid, LOCATION_REASON_TOFIELD) <= 0)
-					return FALSE;
-			} else if(handler->current.location == LOCATION_SZONE) {
+			if(handler->current.location == LOCATION_SZONE) {
 				if(handler->is_position(POS_FACEUP))
 					return FALSE;
 				if(handler->equiping_target)
@@ -211,6 +200,16 @@ int32 effect::is_activateable(uint8 playerid, const tevent& e, int32 neglect_con
 					if((handler->data.type & TYPE_SPELL) && (handler->data.type & TYPE_QUICKPLAY))
 						return FALSE;
 				}
+			} else {
+				if(handler->data.type & TYPE_MONSTER) {
+					if(!(handler->data.type & TYPE_PENDULUM))
+						return FALSE;
+					if(!pduel->game_field->is_location_useable(playerid, LOCATION_PZONE, 0)
+						&& !pduel->game_field->is_location_useable(playerid, LOCATION_PZONE, 1))
+						return FALSE;
+				} else if(!(handler->data.type & TYPE_FIELD)
+					&& pduel->game_field->get_useable_count(handler, playerid, LOCATION_SZONE, playerid, LOCATION_REASON_TOFIELD) <= 0)
+					return FALSE;
 			}
 			// check activate in hand/in set turn
 			int32 ecode = 0;
@@ -498,9 +497,8 @@ int32 effect::is_player_effect_target(card* pcard) {
 }
 int32 effect::is_immuned(card* pcard) {
 	effect_set_v effects = pcard->immune_effect;
-	effect* peffect;
 	for (int32 i = 0; i < effects.size(); ++i) {
-		peffect = effects.at(i);
+		effect* peffect = effects.at(i);
 		if(peffect->value) {
 			pduel->lua->add_param(this, PARAM_TYPE_EFFECT);
 			pduel->lua->add_param(pcard, PARAM_TYPE_CARD);
@@ -525,18 +523,18 @@ int32 effect::is_chainable(uint8 tp) {
 		} else if(sp < pduel->game_field->core.current_chain.rbegin()->triggering_effect->get_speed())
 			return FALSE;
 	}
-	for(auto it = pduel->game_field->core.chain_limit.begin(); it != pduel->game_field->core.chain_limit.end(); ++it) {
+	for(const auto& ch_lim : pduel->game_field->core.chain_limit) {
 		pduel->lua->add_param(this, PARAM_TYPE_EFFECT);
-		pduel->lua->add_param(it->player, PARAM_TYPE_INT);
+		pduel->lua->add_param(ch_lim.player, PARAM_TYPE_INT);
 		pduel->lua->add_param(tp, PARAM_TYPE_INT);
-		if(!pduel->lua->check_condition(it->function, 3))
+		if(!pduel->lua->check_condition(ch_lim.function, 3))
 			return FALSE;
 	}
-	for(auto it = pduel->game_field->core.chain_limit_p.begin(); it != pduel->game_field->core.chain_limit_p.end(); ++it) {
+	for(const auto& ch_lim_p : pduel->game_field->core.chain_limit_p) {
 		pduel->lua->add_param(this, PARAM_TYPE_EFFECT);
-		pduel->lua->add_param(it->player, PARAM_TYPE_INT);
+		pduel->lua->add_param(ch_lim_p.player, PARAM_TYPE_INT);
 		pduel->lua->add_param(tp, PARAM_TYPE_INT);
-		if(!pduel->lua->check_condition(it->function, 3))
+		if(!pduel->lua->check_condition(ch_lim_p.function, 3))
 			return FALSE;
 	}
 	return TRUE;
