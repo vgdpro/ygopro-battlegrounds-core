@@ -670,7 +670,6 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	//extra scripts
 	load_script("./script/constant.lua");
 	load_script("./script/utility.lua");
-	load_script("./script/special.lua");
 	//load kpro constant
 	//card data constants
 	lua_pushinteger(lua_state, CARDDATA_CODE);
@@ -727,6 +726,8 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	lua_setglobal(lua_state, "EFFECT_CHANGE_SUMMON_TYPE_KOISHI");
 	lua_pushinteger(lua_state, EFFECT_CHANGE_SUMMON_LOCATION_KOISHI);
 	lua_setglobal(lua_state, "EFFECT_CHANGE_SUMMON_LOCATION_KOISHI");
+	lua_pushinteger(lua_state, EFFECT_LINK_SPELL_KOISHI);
+	lua_setglobal(lua_state, "EFFECT_LINK_SPELL_KOISHI");
 	//music hints
 	lua_pushinteger(lua_state, HINT_MUSIC);
 	lua_setglobal(lua_state, "HINT_MUSIC");
@@ -739,20 +740,6 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	lua_pushboolean(lua_state, 1);
 	lua_setglobal(lua_state, "_WIN32");
 #endif
-	//load init.lua by MLD
-	load_script("./script/init.lua");
-	//nef
-	/*
-	load_script("./script/nef/afi.lua");
-	load_script("./script/nef/cardList.lua");
-	load_script("./script/nef/nef.lua");
-	load_script("./script/nef/elf.lua");
-	load_script("./script/nef/ets.lua");
-	load_script("./script/nef/fus.lua");
-	load_script("./script/nef/msc.lua");
-	load_script("./script/nef/uds.lua");
-	*/
-	//2pick rule
 	load_script("./script/pick.lua");
 }
 interpreter::~interpreter() {

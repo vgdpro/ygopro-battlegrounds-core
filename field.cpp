@@ -645,7 +645,7 @@ int32 field::get_tofield_count(card* pcard, uint8 playerid, uint8 location, uint
 	if (location == LOCATION_MZONE)
 		flag = (flag | ~zone) & 0x1f;
 	else
-		flag = (flag >> 8) & 0x1f;
+		flag = ((flag >> 8) | ~zone) & 0x1f;
 	int32 count = 5 - field_used_count[flag];
 	if(location == LOCATION_MZONE)
 		flag |= (1u << 5) | (1u << 6);
@@ -800,6 +800,14 @@ uint32 field::get_linked_zone(int32 playerid) {
 			if(pcard->is_link_marker(LINK_MARKER_TOP_RIGHT))
 				zones |= 1u << (2 - i * 2);
 		}
+	}
+	for(uint32 i = 0; i < 5; ++i) {
+		if(i > 0 && player[playerid].list_szone[i] && player[playerid].list_szone[i]->is_link_marker(LINK_MARKER_TOP_LEFT))
+			zones |= 1u << (i - 1);
+		if(player[playerid].list_szone[i] && player[playerid].list_szone[i]->is_link_marker(LINK_MARKER_TOP))
+			zones |= 1u << i;
+		if(i < 4 && player[playerid].list_szone[i] && player[playerid].list_szone[i]->is_link_marker(LINK_MARKER_TOP_RIGHT))
+			zones |= 1u << (i + 1);
 	}
 	return zones;
 }

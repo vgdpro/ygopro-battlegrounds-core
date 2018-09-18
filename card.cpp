@@ -1225,11 +1225,20 @@ uint32 card::get_rscale() {
 	return rscale;
 }
 uint32 card::get_link_marker() {
-	if(!(data.type & TYPE_LINK))
-		return 0;
 	effect_set effects;
 	effect_set effects2;
 	uint32 link_marker = data.link_marker;
+	if(!(data.type & TYPE_LINK)) {
+		effect_set effects3;
+		filter_effect(EFFECT_LINK_SPELL_KOISHI, &effects3);
+		if(!effects3.size())
+			return 0;
+		for (int32 i = 0; i < effects3.size(); ++i) {
+			card* ocard = effects3[i]->get_handler();
+			if (!(effects3[i]->type & EFFECT_TYPE_FIELD) || !(ocard && ocard->get_status(STATUS_TO_LEAVE_FROMEX)))
+				link_marker = effects3[i]->get_value(this);
+		}
+	}
 	filter_effect(EFFECT_ADD_LINK_MARKER_KOISHI, &effects, FALSE);
 	filter_effect(EFFECT_REMOVE_LINK_MARKER_KOISHI, &effects);
 	filter_effect(EFFECT_CHANGE_LINK_MARKER_KOISHI, &effects2);
@@ -1251,10 +1260,20 @@ int32 card::is_link_marker(uint32 dir) {
 	return (int32)(get_link_marker() & dir);
 }
 uint32 card::get_linked_zone() {
-	if(!(data.type & TYPE_LINK) || current.location != LOCATION_MZONE)
+	if((!(data.type & TYPE_LINK) || current.location != LOCATION_MZONE) && (!is_affected_by_effect(EFFECT_LINK_SPELL_KOISHI) || current.location != LOCATION_SZONE))
 		return 0;
 	int32 zones = 0;
 	int32 s = current.sequence;
+	if(current.location == LOCATION_SZONE) {
+		if(s > 4)
+			return 0;
+		if(is_link_marker(LINK_MARKER_TOP_LEFT) && s != 0)
+			zones |= 1u << (s - 1);
+		if(is_link_marker(LINK_MARKER_TOP) && s != 0)
+			zones |= 1u << s;
+		if(is_link_marker(LINK_MARKER_TOP_RIGHT) && s != 4)
+			zones |= 1u << (s + 1);
+	}
 	if(s > 0 && s <= 4 && is_link_marker(LINK_MARKER_LEFT))
 		zones |= 1u << (s - 1);
 	if(s <= 3 && is_link_marker(LINK_MARKER_RIGHT))
@@ -1299,7 +1318,7 @@ uint32 card::get_linked_zone() {
 }
 void card::get_linked_cards(card_set* cset) {
 	cset->clear();
-	if(!(data.type & TYPE_LINK) || current.location != LOCATION_MZONE)
+	if((!(data.type & TYPE_LINK) || current.location != LOCATION_MZONE) && (!is_affected_by_effect(EFFECT_LINK_SPELL_KOISHI) || current.location != LOCATION_SZONE))
 		return;
 	int32 p = current.controler;
 	uint32 linked_zone = get_linked_zone();
@@ -3306,7 +3325,7 @@ int32 card::is_affect_by_effect(effect* peffect) {
 int32 card::is_destructable() {
 	if(overlay_target)
 		return FALSE;
-	if(current.location & (LOCATION_GRAVE + LOCATION_REMOVED))
+	if(current.location & (LOCATION_GRAVE | LOCATION_REMOVED))
 		return FALSE;
 	return TRUE;
 }
@@ -3430,7 +3449,7 @@ int32 card::is_releasable_by_summon(uint8 playerid, card *pcard) {
 		return FALSE;
 	if(overlay_target)
 		return FALSE;
-	if(current.location & (LOCATION_GRAVE + LOCATION_REMOVED))
+	if(current.location & (LOCATION_GRAVE | LOCATION_REMOVED))
 		return FALSE;
 	if(!pduel->game_field->is_player_can_release(playerid, this))
 		return FALSE;
@@ -3445,7 +3464,7 @@ int32 card::is_releasable_by_nonsummon(uint8 playerid) {
 		return FALSE;
 	if(overlay_target)
 		return FALSE;
-	if(current.location & (LOCATION_GRAVE + LOCATION_REMOVED))
+	if(current.location & (LOCATION_GRAVE | LOCATION_REMOVED))
 		return FALSE;
 	if((current.location == LOCATION_HAND) && (data.type & (TYPE_SPELL | TYPE_TRAP)))
 		return FALSE;

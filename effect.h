@@ -100,6 +100,8 @@ public:
 	int32 in_range(card* pcard);
 	int32 in_range(const chain& ch);
 	void set_activate_location();
+	void set_active_type();
+	uint32 get_active_type();
 	bool is_flag(effect_flag flag) const {
 		return !!(this->flag[0] & flag);
 	}
@@ -121,6 +123,7 @@ public:
 #define EFFECT_REMOVE_SUMMON_TYPE_KOISHI	37564159
 #define EFFECT_CHANGE_SUMMON_TYPE_KOISHI	37564160
 #define EFFECT_CHANGE_SUMMON_LOCATION_KOISHI				37564161
+#define EFFECT_LINK_SPELL_KOISHI			37564162
 
 //status
 #define EFFECT_STATUS_AVAILABLE	0x0001
@@ -199,7 +202,7 @@ enum effect_flag : uint32 {
 //	EFFECT_FLAG_AVAILABLE_BD		= 0x2000000,
 	EFFECT_FLAG_CLIENT_HINT			= 0x4000000,
 //	EFFECT_FLAG_CHAIN_UNIQUE		= 0x8000000,
-//	EFFECT_FLAG_NAGA				= 0x10000000,
+	EFFECT_FLAG_LIMIT_ZONE			= 0x10000000,
 //	EFFECT_FLAG_COF					= 0x20000000,
 //	EFFECT_FLAG_CVAL_CHECK			= 0x40000000,
 	EFFECT_FLAG_IMMEDIATELY_APPLY	= 0x80000000,
@@ -492,6 +495,9 @@ inline effect_flag operator|(effect_flag flag1, effect_flag flag2)
 #define EVENT_DAMAGE				1111
 #define EVENT_RECOVER				1112
 #define EVENT_PREDRAW				1113
+#define EVENT_SUMMON_NEGATED		1114
+#define EVENT_FLIP_SUMMON_NEGATED	1115
+#define EVENT_SPSUMMON_NEGATED		1116
 #define EVENT_CONTROL_CHANGED		1120
 #define EVENT_EQUIP					1121
 #define EVENT_ATTACK_ANNOUNCE		1130
