@@ -4333,7 +4333,7 @@ int32 field::move_to_field(uint16 step, card* target, uint32 enable, uint32 ret,
 			if(!(target->current.location & LOCATION_ONFIELD))
 				target->clear_relate_effect();
 		}
-		if(ret != 1 && location != target->current.location
+		if(ret == 0 && location != target->current.location
 			|| ret == 1 && target->turnid != infos.turn_id) {
 			target->set_status(STATUS_SUMMON_TURN, FALSE);
 			target->set_status(STATUS_FLIP_SUMMON_TURN, FALSE);
@@ -4425,6 +4425,32 @@ int32 field::move_to_field(uint16 step, card* target, uint32 enable, uint32 ret,
 					value = value >> 16;
 				if(value & (0x1 << target->current.sequence)) {
 					peffect->dec_count();
+				}
+			}
+			effect* teffect;
+			if(teffect = target->is_affected_by_effect(EFFECT_PRE_MONSTER)) {
+				uint32 type = teffect->value;
+				if(type & TYPE_TRAP)
+					type |= TYPE_TRAPMONSTER | target->data.type;
+				target->reset(EFFECT_PRE_MONSTER, RESET_CODE);
+				effect* peffect = pduel->new_effect();
+				peffect->owner = target;
+				peffect->type = EFFECT_TYPE_SINGLE;
+				peffect->code = EFFECT_CHANGE_TYPE;
+				peffect->flag[0] = EFFECT_FLAG_CANNOT_DISABLE;
+				peffect->reset_flag = RESET_EVENT + 0x1fc0000;
+				peffect->value = TYPE_MONSTER | type;
+				target->add_effect(peffect);
+				if(type & TYPE_TRAPMONSTER) {
+					peffect = pduel->new_effect();
+					peffect->owner = target;
+					peffect->type = EFFECT_TYPE_FIELD;
+					peffect->range = LOCATION_MZONE;
+					peffect->code = EFFECT_USE_EXTRA_SZONE;
+					peffect->flag[0] = EFFECT_FLAG_CANNOT_DISABLE;
+					peffect->reset_flag = RESET_EVENT + 0x1fe0000;
+					peffect->value = 1 + (0x10000 << target->previous.sequence);
+					target->add_effect(peffect);
 				}
 			}
 		}
@@ -4878,13 +4904,13 @@ int32 field::select_synchro_material(int16 step, uint8 playerid, card* pcard, in
 		}
 		if(mg) {
 			for(auto& pm : mg->container) {
-				if(check_tuner_material(pcard, pm, -2, -1, min, max, smat, mg))
+				if(check_tuner_material(pcard, pm, -3, -2, min, max, smat, mg))
 					core.select_cards.push_back(pm);
 			}
 		} else {
 			for(uint8 p = 0; p < 2; ++p) {
 				for(auto& tuner : player[p].list_mzone) {
-					if(check_tuner_material(pcard, tuner, -2, -1, min, max, smat, mg))
+					if(check_tuner_material(pcard, tuner, -3, -2, min, max, smat, mg))
 						core.select_cards.push_back(tuner);
 				}
 			}
@@ -4900,7 +4926,7 @@ int32 field::select_synchro_material(int16 step, uint8 playerid, card* pcard, in
 	}
 	case 1: {
 		if(returns.ivalue[0] == -1) {
-			lua_pop(pduel->lua->current_state, 2);
+			lua_pop(pduel->lua->current_state, 3);
 			pduel->lua->add_param((void*)0, PARAM_TYPE_GROUP);
 			core.limit_tuner = 0;
 			return TRUE;
@@ -4916,7 +4942,7 @@ int32 field::select_synchro_material(int16 step, uint8 playerid, card* pcard, in
 				return FALSE;
 			core.synchro_materials.clear();
 			pduel->lua->add_param(pcard, PARAM_TYPE_CARD);
-			pduel->lua->add_param(-1, PARAM_TYPE_INDEX);
+			pduel->lua->add_param(-2, PARAM_TYPE_INDEX);
 			pduel->lua->add_param(min, PARAM_TYPE_INT);
 			pduel->lua->add_param(max, PARAM_TYPE_INT);
 			core.sub_solving_event.push_back(nil_event);
@@ -4927,7 +4953,7 @@ int32 field::select_synchro_material(int16 step, uint8 playerid, card* pcard, in
 		return FALSE;
 	}
 	case 2: {
-		lua_pop(pduel->lua->current_state, 2);
+		lua_pop(pduel->lua->current_state, 3);
 		group* pgroup = pduel->new_group(core.synchro_materials);
 		pgroup->container.insert(core.limit_tuner);
 		pduel->lua->add_param(pgroup, PARAM_TYPE_GROUP);
@@ -5004,7 +5030,7 @@ int32 field::select_synchro_material(int16 step, uint8 playerid, card* pcard, in
 					pcheck->get_value(pm);
 				if(pm->current.location == LOCATION_MZONE && !pm->is_position(POS_FACEUP))
 					continue;
-				if(!pduel->lua->check_matching(pm, -1, 0))
+				if(!pduel->lua->check_matching(pm, -2, 1))
 					continue;
 				nsyn.push_back(pm);
 				pm->sum_param = pm->get_synchro_level(pcard);
@@ -5030,7 +5056,7 @@ int32 field::select_synchro_material(int16 step, uint8 playerid, card* pcard, in
 					pcheck->get_value(pm);
 				if(pm->current.location == LOCATION_MZONE && !pm->is_position(POS_FACEUP))
 					continue;
-				if(!pduel->lua->check_matching(pm, -1, 0))
+				if(!pduel->lua->check_matching(pm, -2, 1))
 					continue;
 				nsyn.push_back(pm);
 				pm->sum_param = pm->get_synchro_level(pcard);
@@ -5159,7 +5185,7 @@ int32 field::select_synchro_material(int16 step, uint8 playerid, card* pcard, in
 		return FALSE;
 	}
 	case 8: {
-		lua_pop(pduel->lua->current_state, 2);
+		lua_pop(pduel->lua->current_state, 3);
 		group* pgroup = pduel->new_group();
 		int32 mcount = core.must_select_cards.size();
 		for(int32 i = mcount; i < returns.bvalue[0]; ++i) {
@@ -5174,7 +5200,7 @@ int32 field::select_synchro_material(int16 step, uint8 playerid, card* pcard, in
 		return TRUE;
 	}
 	case 9: {
-		lua_pop(pduel->lua->current_state, 2);
+		lua_pop(pduel->lua->current_state, 3);
 		group* pgroup = pduel->new_group();
 		pgroup->container.insert(core.limit_tuner);
 		pgroup->container.insert(smat);
