@@ -191,6 +191,7 @@ struct processor {
 	event_list sub_solving_event;
 	chain_array select_chains;
 	chain_array current_chain;
+	chain_array tmp_chains;
 	chain_list continuous_chain;
 	chain_list solving_continuous;
 	chain_list sub_solving_continuous;
@@ -230,8 +231,8 @@ struct processor {
 	card_set set_group_pre_set;
 	card_set set_group_set;
 	effect_set_v disfield_effects;
-	effect_set_v extram_effects;
-	effect_set_v extras_effects;
+	effect_set_v extra_mzone_effects;
+	effect_set_v extra_szone_effects;
 	std::set<effect*> reseted_effects;
 	std::unordered_map<card*, uint32> readjust_map;
 	std::unordered_set<card*> unique_cards[2];
@@ -554,16 +555,16 @@ public:
 	int32 summon(uint16 step, uint8 sumplayer, card* target, effect* proc, uint8 ignore_count, uint8 min_tribute, uint32 zone);
 	int32 flip_summon(uint16 step, uint8 sumplayer, card* target);
 	int32 mset(uint16 step, uint8 setplayer, card* ptarget, effect* proc, uint8 ignore_count, uint8 min_tribute, uint32 zone);
-	int32 sset(uint16 step, uint8 setplayer, uint8 toplayer, card* ptarget);
+	int32 sset(uint16 step, uint8 setplayer, uint8 toplayer, card* ptarget, uint32 zone = 0xff);
 	int32 sset_g(uint16 step, uint8 setplayer, uint8 toplayer, group* ptarget, uint8 confirm);
 	int32 special_summon_rule(uint16 step, uint8 sumplayer, card* target, uint32 summon_type);
 	int32 special_summon_step(uint16 step, group* targets, card* target, uint32 zone);
 	int32 special_summon(uint16 step, effect* reason_effect, uint8 reason_player, group* targets, uint32 zone);
-	int32 destroy(uint16 step, group* targets, card* target, uint8 battle);
+	int32 destroy_replace(uint16 step, group* targets, card* target, uint8 battle);
 	int32 destroy(uint16 step, group* targets, effect* reason_effect, uint32 reason, uint8 reason_player);
-	int32 release(uint16 step, group* targets, card* target);
+	int32 release_replace(uint16 step, group* targets, card* target);
 	int32 release(uint16 step, group* targets, effect* reason_effect, uint32 reason, uint8 reason_player);
-	int32 send_to(uint16 step, group* targets, card* target);
+	int32 send_replace(uint16 step, group* targets, card* target);
 	int32 send_to(uint16 step, group* targets, effect* reason_effect, uint32 reason, uint8 reason_player);
 	int32 discard_deck(uint16 step, uint8 playerid, uint8 count, uint32 reason);
 	int32 move_to_field(uint16 step, card* target, uint32 enable, uint32 ret, uint32 is_equip, uint32 zone);
@@ -710,9 +711,9 @@ public:
 #define PROCESSOR_MOVETOFIELD		53
 #define PROCESSOR_CHANGEPOS			54
 #define PROCESSOR_OPERATION_REPLACE	55
-#define PROCESSOR_DESTROY_STEP		56
-#define PROCESSOR_RELEASE_STEP		57
-#define PROCESSOR_SENDTO_STEP		58
+#define PROCESSOR_DESTROY_REPLACE	56
+#define PROCESSOR_RELEASE_REPLACE	57
+#define PROCESSOR_SENDTO_REPLACE	58
 #define PROCESSOR_SUMMON_RULE		60
 #define PROCESSOR_SPSUMMON_RULE		61
 #define PROCESSOR_SPSUMMON			62
