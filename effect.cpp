@@ -129,7 +129,7 @@ int32 effect::is_available() {
 				return FALSE;
 			if(powner == phandler && !is_flag(EFFECT_FLAG_CANNOT_DISABLE) && phandler->get_status(STATUS_DISABLED))
 				return FALSE;
-			if(phandler->is_status(STATUS_BATTLE_DESTROYED))
+			if(phandler->is_status(STATUS_BATTLE_DESTROYED) && !is_flag(EFFECT_FLAG2_AVAILABLE_BD))
 				return FALSE;
 		}
 	}
@@ -168,7 +168,6 @@ int32 effect::check_count_limit(uint8 playerid) {
 }
 // check if an EFFECT_TYPE_ACTIONS effect can be activated
 // for triggering effects, it checks EFFECT_FLAG_DAMAGE_STEP, EFFECT_FLAG_SET_AVAILABLE
-// for continuous effect, it checks EFFECT_FLAG_AVAILABLE_BD
 int32 effect::is_activateable(uint8 playerid, const tevent& e, int32 neglect_cond, int32 neglect_cost, int32 neglect_target, int32 neglect_loc, int32 neglect_faceup) {
 	if(!(type & EFFECT_TYPE_ACTIONS))
 		return FALSE;
@@ -286,7 +285,7 @@ int32 effect::is_activateable(uint8 playerid, const tevent& e, int32 neglect_con
 				return FALSE;
 		} else {
 			card* phandler = get_handler();
-			if((type & EFFECT_TYPE_FIELD) && phandler->is_status(STATUS_BATTLE_DESTROYED))
+			if(!is_flag(EFFECT_FLAG2_AVAILABLE_BD) && (type & EFFECT_TYPE_FIELD) && phandler->is_status(STATUS_BATTLE_DESTROYED))
 				return FALSE;
 			if(((type & EFFECT_TYPE_FIELD) || ((type & EFFECT_TYPE_SINGLE) && is_flag(EFFECT_FLAG_SINGLE_RANGE))) && (phandler->current.location & LOCATION_ONFIELD)
 			        && (!phandler->is_position(POS_FACEUP) || !phandler->is_status(STATUS_EFFECT_ENABLED)))
@@ -549,7 +548,7 @@ int32 effect::is_chainable(uint8 tp) {
 	return TRUE;
 }
 //return: this can be reset by reset_level or not
-//RESET_CODE can only reset single effects without EFFECT_FLAG_SINGLE_RANGE
+//RESET_CODE can only reset single effects without EFFECT_FLAG_SINGLE_RANGE, EFFECT_FLAG_OWNER_RELATE
 //RESET_DISABLE is valid only when owner == handler
 int32 effect::reset(uint32 reset_level, uint32 reset_type) {
 	switch (reset_type) {
@@ -582,7 +581,7 @@ int32 effect::reset(uint32 reset_level, uint32 reset_type) {
 	}
 	case RESET_CODE: {
 		return (code == reset_level) && (type & EFFECT_TYPE_SINGLE) && !(type & EFFECT_TYPE_ACTIONS) 
-			&& !is_flag(EFFECT_FLAG_SINGLE_RANGE);
+			&& !is_flag(EFFECT_FLAG_SINGLE_RANGE) && !is_flag(EFFECT_FLAG_OWNER_RELATE);
 		break;
 	}
 	case RESET_COPY: {
