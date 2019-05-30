@@ -193,7 +193,7 @@ struct processor {
 	event_list sub_solving_event;
 	chain_array select_chains;
 	chain_array current_chain;
-	chain_array tmp_chains;
+	chain_array ignition_priority_chains;
 	chain_list continuous_chain;
 	chain_list solving_continuous;
 	chain_list sub_solving_continuous;
@@ -563,8 +563,8 @@ public:
 	int32 summon(uint16 step, uint8 sumplayer, card* target, effect* proc, uint8 ignore_count, uint8 min_tribute, uint32 zone);
 	int32 flip_summon(uint16 step, uint8 sumplayer, card* target);
 	int32 mset(uint16 step, uint8 setplayer, card* ptarget, effect* proc, uint8 ignore_count, uint8 min_tribute, uint32 zone);
-	int32 sset(uint16 step, uint8 setplayer, uint8 toplayer, card* ptarget, uint32 zone = 0xff);
-	int32 sset_g(uint16 step, uint8 setplayer, uint8 toplayer, group* ptarget, uint8 confirm);
+	int32 sset(uint16 step, uint8 setplayer, uint8 toplayer, card* ptarget, effect* reason_effect, uint32 zone = 0xff);
+	int32 sset_g(uint16 step, uint8 setplayer, uint8 toplayer, group* ptarget, uint8 confirm, effect* reason_effect);
 	int32 special_summon_rule(uint16 step, uint8 sumplayer, card* target, uint32 summon_type);
 	int32 special_summon_step(uint16 step, group* targets, card* target, uint32 zone);
 	int32 special_summon(uint16 step, effect* reason_effect, uint8 reason_player, group* targets, uint32 zone);
