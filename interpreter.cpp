@@ -550,6 +550,7 @@ static const struct luaL_Reg duellib[] = {
 	{ "SetOperationInfo", scriptlib::duel_set_operation_info },
 	{ "GetOperationInfo", scriptlib::duel_get_operation_info },
 	{ "GetOperationCount", scriptlib::duel_get_operation_count },
+	{ "ClearOperationInfo", scriptlib::duel_clear_operation_info },
 	{ "CheckXyzMaterial", scriptlib::duel_check_xyz_material },
 	{ "SelectXyzMaterial", scriptlib::duel_select_xyz_material },
 	{ "Overlay", scriptlib::duel_overlay },
@@ -586,6 +587,8 @@ static const struct luaL_Reg duellib[] = {
 	{ "IsPlayerCanDiscardDeck", scriptlib::duel_is_player_can_discard_deck },
 	{ "IsPlayerCanDiscardDeckAsCost", scriptlib::duel_is_player_can_discard_deck_as_cost },
 	{ "IsPlayerCanSummon", scriptlib::duel_is_player_can_summon },
+	{ "IsPlayerCanMSet", scriptlib::duel_is_player_can_mset },
+	{ "IsPlayerCanSSet", scriptlib::duel_is_player_can_sset },
 	{ "IsPlayerCanSpecialSummon", scriptlib::duel_is_player_can_spsummon },
 	{ "IsPlayerCanFlipSummon", scriptlib::duel_is_player_can_flipsummon },
 	{ "IsPlayerCanSpecialSummonMonster", scriptlib::duel_is_player_can_spsummon_monster },
@@ -606,7 +609,6 @@ static const struct luaL_Reg duellib[] = {
 	{ "GetCustomActivityCount", scriptlib::duel_get_custom_activity_count },
 	{ "GetBattledCount", scriptlib::duel_get_battled_count },
 	{ "IsAbleToEnterBP", scriptlib::duel_is_able_to_enter_bp },
-	{ "VenomSwampCheck", scriptlib::duel_venom_swamp_check },
 	{ "SwapDeckAndGrave", scriptlib::duel_swap_deck_and_grave },
 	{ "MajesticCopy", scriptlib::duel_majestic_copy },
 	{ NULL, NULL }
@@ -1153,7 +1155,7 @@ int32 interpreter::get_operation_value(card* pcard, int32 findex, int32 extraarg
 		}
 		return OPERATION_FAIL;
 	}
-	int32 result = std::round(lua_tonumber(current_state, -1));
+	int32 result = lua_isinteger(current_state, -1) ? lua_tointeger(current_state, -1) : std::round(lua_tonumber(current_state, -1));
 	lua_pop(current_state, 1);
 	no_action--;
 	call_depth--;
@@ -1172,8 +1174,10 @@ int32 interpreter::get_function_value(int32 f, uint32 param_count) {
 	call_depth++;
 	if (call_function(f, param_count, 1)) {
 		int32 result = 0;
-		if (lua_isboolean(current_state, -1))
+		if(lua_isboolean(current_state, -1))
 			result = lua_toboolean(current_state, -1);
+		else if(lua_isinteger(current_state, -1))
+			result = lua_tointeger(current_state, -1);
 		else
 			result = std::round(lua_tonumber(current_state, -1));
 		lua_pop(current_state, 1);
@@ -1206,8 +1210,10 @@ int32 interpreter::get_function_value(int32 f, uint32 param_count, std::vector<i
 		int32 stack_newtop = lua_gettop(current_state);
 		for (int32 index = stack_top + 1; index <= stack_newtop; ++index) {
 			int32 return_value = 0;
-			if (lua_isboolean(current_state, index))
+			if(lua_isboolean(current_state, index))
 				return_value = lua_toboolean(current_state, index);
+			else if(lua_isinteger(current_state, index))
+				return_value = lua_tointeger(current_state, index);
 			else
 				return_value = std::round(lua_tonumber(current_state, index));
 			result->push_back(return_value);

@@ -540,6 +540,7 @@ public:
 	static int32 duel_set_operation_info(lua_State *L);
 	static int32 duel_get_operation_info(lua_State *L);
 	static int32 duel_get_operation_count(lua_State *L);
+	static int32 duel_clear_operation_info(lua_State *L);
 	static int32 duel_check_xyz_material(lua_State *L);
 	static int32 duel_select_xyz_material(lua_State *L);
 	static int32 duel_overlay(lua_State *L);
@@ -577,6 +578,8 @@ public:
 	static int32 duel_is_player_can_discard_deck(lua_State *L);
 	static int32 duel_is_player_can_discard_deck_as_cost(lua_State *L);
 	static int32 duel_is_player_can_summon(lua_State *L);
+	static int32 duel_is_player_can_mset(lua_State *L);
+	static int32 duel_is_player_can_sset(lua_State *L);
 	static int32 duel_is_player_can_spsummon(lua_State *L);
 	static int32 duel_is_player_can_flipsummon(lua_State *L);
 	static int32 duel_is_player_can_spsummon_monster(lua_State *L);
@@ -599,7 +602,6 @@ public:
 	static int32 duel_get_battled_count(lua_State *L);
 
 	//specific card functions
-	static int32 duel_venom_swamp_check(lua_State *L);
 	static int32 duel_swap_deck_and_grave(lua_State *L);
 	static int32 duel_majestic_copy(lua_State *L);
 	
