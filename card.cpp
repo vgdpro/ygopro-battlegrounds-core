@@ -136,7 +136,6 @@ card::card(duel* pd) {
 	std::memset(&temp, 0xff, sizeof(card_state));
 	unique_pos[0] = unique_pos[1] = 0;
 	spsummon_counter[0] = spsummon_counter[1] = 0;
-	spsummon_counter_rst[0] = spsummon_counter_rst[1] = 0;
 	unique_code = 0;
 	unique_fieldid = 0;
 	assume_type = 0;
@@ -530,8 +529,6 @@ uint32 card::get_link_type() {
 		return data.type;
 	return get_type();
 }
-// Atk and def are sepcial cases since text atk/def ? are involved.
-// Asuumption: we can only change the atk/def of cards in LOCATION_MZONE.
 int32 card::get_base_attack() {
 	if(!(data.type & TYPE_MONSTER) && !(get_type() & TYPE_MONSTER) && !is_affected_by_effect(EFFECT_PRE_MONSTER))
 		return 0;
@@ -916,10 +913,22 @@ int32 card::get_defense() {
 	temp.defense = -1;
 	return def;
 }
-// Level/Attribute/Race is available for:
-// 1. cards with original type TYPE_MONSTER or
-// 2. cards with current type TYPE_MONSTER or
-// 3. cards with EFFECT_PRE_MONSTER
+int32 card::get_battle_attack() {
+	effect_set eset;
+	filter_effect(EFFECT_SET_BATTLE_ATTACK, &eset);
+	if(eset.size())
+		return eset.get_last()->get_value(this);
+	else
+		return get_attack();
+}
+int32 card::get_battle_defense() {
+	effect_set eset;
+	filter_effect(EFFECT_SET_BATTLE_DEFENSE, &eset);
+	if(eset.size())
+		return eset.get_last()->get_value(this);
+	else
+		return get_defense();
+}
 uint32 card::get_level() {
 	if((data.type & (TYPE_XYZ | TYPE_LINK)) || (status & STATUS_NO_LEVEL)
 	        || (!(data.type & TYPE_MONSTER) && !(get_type() & TYPE_MONSTER) && !is_affected_by_effect(EFFECT_PRE_MONSTER)))
@@ -1058,7 +1067,6 @@ uint32 card::check_xyz_level(card* pcard, uint32 lv) {
 	}
 	return 0;
 }
-// see get_level()
 uint32 card::get_attribute() {
 	if(assume_type == ASSUME_ATTRIBUTE)
 		return assume_value;
@@ -1109,7 +1117,6 @@ uint32 card::get_link_attribute(uint8 playerid) {
 	}
 	return attribute;
 }
-// see get_level()
 uint32 card::get_race() {
 	if(assume_type == ASSUME_RACE)
 		return assume_value;
@@ -1519,64 +1526,88 @@ void card::xyz_overlay(card_set* materials) {
 	if(materials->size() == 0)
 		return;
 	card_set des;
-	if(materials->size() == 1) {
-		card* pcard = *materials->begin();
+	field::card_vector cv;
+	for(auto& pcard : *materials)
+		cv.push_back(pcard);
+	std::sort(cv.begin(), cv.end(), card::card_operation_sort);
+	if(pduel->game_field->core.global_flag & GLOBALFLAG_DECK_REVERSE_CHECK) {
+		int32 d0 = (int32)pduel->game_field->player[0].list_main.size() - 1, s0 = d0;
+		int32 d1 = (int32)pduel->game_field->player[1].list_main.size() - 1, s1 = d1;
+		for(auto& pcard : cv) {
+			if(pcard->current.location != LOCATION_DECK)
+				continue;
+			if((pcard->current.controler == 0) && (pcard->current.sequence == s0))
+				s0--;
+			if((pcard->current.controler == 1) && (pcard->current.sequence == s1))
+				s1--;
+		}
+		if((s0 != d0) && (s0 > 0)) {
+			card* ptop = pduel->game_field->player[0].list_main[s0];
+			if(pduel->game_field->core.deck_reversed || (ptop->current.position == POS_FACEUP_DEFENSE)) {
+				pduel->write_buffer8(MSG_DECK_TOP);
+				pduel->write_buffer8(0);
+				pduel->write_buffer8(d0 - s0);
+				if(ptop->current.position != POS_FACEUP_DEFENSE)
+					pduel->write_buffer32(ptop->data.code);
+				else
+					pduel->write_buffer32(ptop->data.code | 0x80000000);
+			}
+		}
+		if((s1 != d1) && (s1 > 0)) {
+			card* ptop = pduel->game_field->player[1].list_main[s1];
+			if(pduel->game_field->core.deck_reversed || (ptop->current.position == POS_FACEUP_DEFENSE)) {
+				pduel->write_buffer8(MSG_DECK_TOP);
+				pduel->write_buffer8(1);
+				pduel->write_buffer8(d1 - s1);
+				if(ptop->current.position != POS_FACEUP_DEFENSE)
+					pduel->write_buffer32(ptop->data.code);
+				else
+					pduel->write_buffer32(ptop->data.code | 0x80000000);
+			}
+		}
+	}
+	for(auto& pcard : cv) {
+		if(pcard->overlay_target == this)
+			continue;
+		pcard->current.reason = REASON_XYZ + REASON_MATERIAL;
 		pcard->reset(RESET_LEAVE + RESET_OVERLAY, RESET_EVENT);
 		if(pcard->unique_code)
 			pduel->game_field->remove_unique_card(pcard);
 		if(pcard->equiping_target)
 			pcard->unequip();
-		pcard->clear_card_target();
-		xyz_add(pcard, &des);
-	} else {
-		field::card_vector cv;
-		for(auto& pcard : *materials)
-			cv.push_back(pcard);
-		std::sort(cv.begin(), cv.end(), card::card_operation_sort);
-		for(auto& pcard : cv) {
-			pcard->reset(RESET_LEAVE + RESET_OVERLAY, RESET_EVENT);
-			if(pcard->unique_code)
-				pduel->game_field->remove_unique_card(pcard);
-			if(pcard->equiping_target)
-				pcard->unequip();
-			pcard->clear_card_target();
-			xyz_add(pcard, &des);
+		for(auto cit = pcard->equiping_cards.begin(); cit != pcard->equiping_cards.end();) {
+			card* equipc = *cit++;
+			des.insert(equipc);
+			equipc->unequip();
 		}
+		pcard->clear_card_target();
+		pduel->write_buffer8(MSG_MOVE);
+		pduel->write_buffer32(pcard->data.code);
+		pduel->write_buffer32(pcard->get_info_location());
+		if(pcard->overlay_target) {
+			pcard->overlay_target->xyz_remove(pcard);
+		} else {
+			pcard->enable_field_effect(false);
+			pduel->game_field->remove_card(pcard);
+			pduel->game_field->add_to_disable_check_list(pcard);
+		}
+		xyz_add(pcard);
+		pduel->write_buffer32(pcard->get_info_location());
+		pduel->write_buffer32(pcard->current.reason);
 	}
 	if(des.size())
 		pduel->game_field->destroy(&des, 0, REASON_LOST_TARGET + REASON_RULE, PLAYER_NONE);
 	else
 		pduel->game_field->adjust_instant();
 }
-void card::xyz_add(card* mat, card_set* des) {
-	if(mat->overlay_target == this)
+void card::xyz_add(card* mat) {
+	if(mat->current.location != 0)
 		return;
-	pduel->write_buffer8(MSG_MOVE);
-	pduel->write_buffer32(mat->data.code);
-	pduel->write_buffer32(mat->get_info_location());
-	if(mat->overlay_target) {
-		mat->overlay_target->xyz_remove(mat);
-	} else {
-		mat->enable_field_effect(false);
-		pduel->game_field->remove_card(mat);
-		pduel->game_field->add_to_disable_check_list(mat);
-	}
-	pduel->write_buffer8(current.controler);
-	pduel->write_buffer8(current.location | LOCATION_OVERLAY);
-	pduel->write_buffer8(current.sequence);
-	pduel->write_buffer8(current.position);
-	pduel->write_buffer32(REASON_XYZ + REASON_MATERIAL);
 	xyz_materials.push_back(mat);
-	for(auto cit = mat->equiping_cards.begin(); cit != mat->equiping_cards.end();) {
-		auto rm = cit++;
-		des->insert(*rm);
-		(*rm)->unequip();
-	}
 	mat->overlay_target = this;
 	mat->current.controler = PLAYER_NONE;
 	mat->current.location = LOCATION_OVERLAY;
 	mat->current.sequence = (uint8)xyz_materials.size() - 1;
-	mat->current.reason = REASON_XYZ + REASON_MATERIAL;
 	for(auto& eit : mat->xmaterial_effect) {
 		effect* peffect = eit.second;
 		if(peffect->type & EFFECT_TYPE_FIELD)
@@ -1615,7 +1646,6 @@ void card::apply_field_effect() {
 	if(unique_code && (current.location & unique_location))
 		pduel->game_field->add_unique_card(this);
 	spsummon_counter[0] = spsummon_counter[1] = 0;
-	spsummon_counter_rst[0] = spsummon_counter_rst[1] = 0;
 }
 void card::cancel_field_effect() {
 	if (current.controler == PLAYER_NONE)
@@ -1666,7 +1696,6 @@ void card::enable_field_effect(bool enabled) {
 	filter_disable_related_cards();
 }
 int32 card::add_effect(effect* peffect) {
-	effect_container::iterator eit;
 	if (get_status(STATUS_COPYING_EFFECT) && peffect->is_flag(EFFECT_FLAG_UNCOPYABLE)) {
 		pduel->uncopy.insert(peffect);
 		return 0;
@@ -1674,6 +1703,7 @@ int32 card::add_effect(effect* peffect) {
 	if (indexer.find(peffect) != indexer.end())
 		return 0;
 	card_set check_target = { this };
+	effect_container::iterator eit;
 	if (peffect->type & EFFECT_TYPE_SINGLE) {
 		if((peffect->code == EFFECT_SET_ATTACK || peffect->code == EFFECT_SET_BASE_ATTACK) && !peffect->is_flag(EFFECT_FLAG_SINGLE_RANGE)) {
 			for(auto it = single_effect.begin(); it != single_effect.end();) {
@@ -1748,8 +1778,11 @@ int32 card::add_effect(effect* peffect) {
 	}
 	indexer.emplace(peffect, eit);
 	peffect->handler = this;
-	if (peffect->in_range(this) && (peffect->type & EFFECT_TYPE_FIELD))
-		pduel->game_field->add_effect(peffect);
+	if((peffect->type & EFFECT_TYPE_FIELD)) {
+		if(peffect->in_range(this)
+			|| current.controler != PLAYER_NONE && ((peffect->range & LOCATION_HAND) && (peffect->type & EFFECT_TYPE_TRIGGER_O) && !(peffect->code & EVENT_PHASE)))
+			pduel->game_field->add_effect(peffect);
+	}
 	if (current.controler != PLAYER_NONE && !check_target.empty()) {
 		if(peffect->is_disable_related())
 			for(auto& target : check_target)
@@ -1816,7 +1849,8 @@ void card::remove_effect(effect* peffect, effect_container::iterator it) {
 			pduel->game_field->update_disable_check_list(peffect);
 		}
 		field_effect.erase(it);
-		if (peffect->in_range(this))
+		if(peffect->in_range(this)
+			|| current.controler != PLAYER_NONE && ((peffect->range & LOCATION_HAND) && (peffect->type & EFFECT_TYPE_TRIGGER_O) && !(peffect->code & EVENT_PHASE)))
 			pduel->game_field->remove_effect(peffect);
 	}
 	if ((current.controler != PLAYER_NONE) && !get_status(STATUS_DISABLED | STATUS_FORBIDDEN) && !check_target.empty()) {
@@ -3733,7 +3767,8 @@ int32 card::is_control_can_be_changed(int32 ignore_mzone, uint32 zone) {
 		return FALSE;
 	if(!ignore_mzone && pduel->game_field->get_useable_count(this, 1 - current.controler, LOCATION_MZONE, current.controler, LOCATION_REASON_CONTROL, zone) <= 0)
 		return FALSE;
-	if((get_type() & TYPE_TRAPMONSTER) && pduel->game_field->get_useable_count(this, 1 - current.controler, LOCATION_SZONE, current.controler, LOCATION_REASON_CONTROL) <= 0)
+	if(pduel->game_field->core.duel_rule <= 4 && (get_type() & TYPE_TRAPMONSTER)
+		&& pduel->game_field->get_useable_count(this, 1 - current.controler, LOCATION_SZONE, current.controler, LOCATION_REASON_CONTROL) <= 0)
 		return FALSE;
 	if(is_affected_by_effect(EFFECT_CANNOT_CHANGE_CONTROL))
 		return FALSE;
