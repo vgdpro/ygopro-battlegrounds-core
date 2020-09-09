@@ -50,20 +50,6 @@ int32 scriptlib::duel_get_start_count(lua_State * L) {
 	lua_pushinteger(L, pduel->game_field->player[p].start_count);
 	return 1;
 }
-int32 scriptlib::duel_reset_time_limit(lua_State * L) {
-	check_param_count(L, 1);
-	int32 p = lua_tointeger(L, 1);
-	int32 time = 0;
-	if(p != 0 && p != 1)
-		luaL_error(L, "Parameter 1 should be 0 or 1.", 2);
-	if(lua_gettop(L) >= 2)
-		time = lua_tointeger(L, 2);
-	duel* pduel = interpreter::get_duel_info(L);
-	pduel->write_buffer8(MSG_RESET_TIME);
-	pduel->write_buffer8(p);
-	pduel->write_buffer8(time);	
-	return 0;
-}
 int32 scriptlib::duel_select_field(lua_State * L) {
 	check_action_permission(L);
 	check_param_count(L, 4);
@@ -279,6 +265,23 @@ int32 scriptlib::duel_load_script(lua_State *L) {
 	sprintf(filename, "./script/%s", pstr);
 	lua_pushboolean(L, pduel->lua->load_script(filename));
 	return 1;
+}
+
+int32 scriptlib::duel_reset_time_limit(lua_State * L) {
+	check_param_count(L, 1);
+	int32 p = lua_tointeger(L, 1);
+	int32 time = 0;
+	if(p != 0 && p != 1)
+		luaL_error(L, "Parameter 1 should be 0 or 1.", 2);
+	if(lua_gettop(L) >= 2)
+		time = lua_tointeger(L, 2);
+	if(time < 0 || time > 0x7fff)
+		luaL_error(L, "Invalid time value.", 2);
+	duel* pduel = interpreter::get_duel_info(L);
+	pduel->write_buffer8(MSG_RESET_TIME);
+	pduel->write_buffer8(p);
+	pduel->write_buffer16(time);	
+	return 0;
 }
 
 int32 scriptlib::duel_enable_global_flag(lua_State *L) {
@@ -1989,6 +1992,8 @@ int32 scriptlib::duel_break_effect(lua_State *L) {
 	check_action_permission(L);
 	duel* pduel = interpreter::get_duel_info(L);
 	pduel->game_field->break_effect();
+	pduel->game_field->raise_event((card*)0, EVENT_BREAK_EFFECT, 0, 0, PLAYER_NONE, PLAYER_NONE, 0);
+	pduel->game_field->process_instant_event();
 	return lua_yield(L, 0);
 }
 int32 scriptlib::duel_change_effect(lua_State *L) {
@@ -4738,7 +4743,6 @@ static const struct luaL_Reg duellib[] = {
 	{ "SavePickDeck", scriptlib::duel_save_pick_deck },
 	{ "IsPlayerNeedToPickDeck", scriptlib::duel_is_player_need_to_pick_deck },
 	{ "GetStartCount", scriptlib::duel_get_start_count },
-	{ "ResetTimeLimit", scriptlib::duel_reset_time_limit },
 
 	{ "SelectField", scriptlib::duel_select_field },
 	{ "GetMasterRule", scriptlib::duel_get_master_rule },
@@ -4751,6 +4755,7 @@ static const struct luaL_Reg duellib[] = {
 	{ "XyzSummonByRose", scriptlib::duel_xyz_summon_by_rose },
 	{ "LoadScript", scriptlib::duel_load_script },
 	{ "AnnounceCardFilter", scriptlib::duel_announce_card }, // For compat
+	{ "ResetTimeLimit", scriptlib::duel_reset_time_limit },
 
 	{ "EnableGlobalFlag", scriptlib::duel_enable_global_flag },
 	{ "GetLP", scriptlib::duel_get_lp },

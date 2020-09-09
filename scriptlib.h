@@ -20,7 +20,6 @@ public:
 	static int32 duel_save_pick_deck(lua_State *L);
 	static int32 duel_is_player_need_to_pick_deck(lua_State *L);
 	static int32 duel_get_start_count(lua_State *L);
-	static int32 duel_reset_time_limit(lua_State *L);
 	//millux
 	static int32 card_is_ritual_type(lua_State *L);
 	static int32 card_set_entity_code(lua_State *L);
@@ -42,6 +41,7 @@ public:
 	static int32 duel_get_cards_in_zone(lua_State *L);
 	static int32 duel_xyz_summon_by_rose(lua_State *L);
 	static int32 duel_load_script(lua_State *L);
+	static int32 duel_reset_time_limit(lua_State *L);
 	//card lib
 	static int32 card_get_code(lua_State *L);
 	static int32 card_get_origin_code(lua_State *L);
