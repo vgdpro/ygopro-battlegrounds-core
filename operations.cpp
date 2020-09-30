@@ -1064,13 +1064,16 @@ int32 field::swap_control(uint16 step, effect* reason_effect, uint8 reason_playe
 		uint8 s1 = pcard1->current.sequence;
 		uint32 flag;
 		get_useable_count(NULL, p1, LOCATION_MZONE, reason_player, LOCATION_REASON_CONTROL, 0xff, &flag);
-		flag = (flag & ~(1 << s1) & 0xff) | ~0x1f;
+		if(reason_player == p1)
+			flag = (flag & ~(1 << s1) & 0xff) | ~0x1f;
+		else
+			flag = ((flag & ~(1 << s1)) << 16 & 0xff0000) | ~0x1f0000;
 		card* pcard2 = *targets2->it;
 		pduel->write_buffer8(MSG_HINT);
 		pduel->write_buffer8(HINT_SELECTMSG);
-		pduel->write_buffer8(p1);
+		pduel->write_buffer8(reason_player);
 		pduel->write_buffer32(pcard2->data.code);
-		add_process(PROCESSOR_SELECT_PLACE, 0, 0, 0, p1, flag, 1);
+		add_process(PROCESSOR_SELECT_PLACE, 0, 0, 0, reason_player, flag, 1);
 		return FALSE;
 	}
 	case 2: {
@@ -1080,13 +1083,16 @@ int32 field::swap_control(uint16 step, effect* reason_effect, uint8 reason_playe
 		uint8 s2 = pcard2->current.sequence;
 		uint32 flag;
 		get_useable_count(NULL, p2, LOCATION_MZONE, reason_player, LOCATION_REASON_CONTROL, 0xff, &flag);
-		flag = (flag & ~(1 << s2) & 0xff) | ~0x1f;
+		if(reason_player == p2)
+			flag = (flag & ~(1 << s2) & 0xff) | ~0x1f;
+		else
+			flag = ((flag & ~(1 << s2)) << 16 & 0xff0000) | ~0x1f0000;
 		card* pcard1 = *targets1->it;
 		pduel->write_buffer8(MSG_HINT);
 		pduel->write_buffer8(HINT_SELECTMSG);
-		pduel->write_buffer8(p2);
+		pduel->write_buffer8(reason_player);
 		pduel->write_buffer32(pcard1->data.code);
-		add_process(PROCESSOR_SELECT_PLACE, 0, 0, 0, p2, flag, 1);
+		add_process(PROCESSOR_SELECT_PLACE, 0, 0, 0, reason_player, flag, 1);
 		return FALSE;
 	}
 	case 3: {
@@ -2203,7 +2209,7 @@ int32 field::mset(uint16 step, uint8 setplayer, card* target, effect* proc, uint
 					int32 rcount = target->get_set_tribute_count();
 					int32 min = rcount & 0xffff;
 					int32 max = (rcount >> 16) & 0xffff;
-					if(!is_player_can_summon(SUMMON_TYPE_ADVANCE, setplayer, target, setplayer))
+					if(!is_player_can_mset(SUMMON_TYPE_ADVANCE, setplayer, target, setplayer))
 						max = 0;
 					if(min < (int32)min_tribute)
 						min = min_tribute;
@@ -4216,6 +4222,7 @@ int32 field::send_to(uint16 step, group * targets, effect * reason_effect, uint3
 				else
 					pcard->reset(RESET_REMOVE, RESET_EVENT);
 			}
+			pcard->refresh_disable_status();
 		}
 		for(auto& pcard : param->leave)
 			raise_single_event(pcard, 0, EVENT_LEAVE_FIELD, pcard->current.reason_effect, pcard->current.reason, pcard->current.reason_player, 0, 0);
