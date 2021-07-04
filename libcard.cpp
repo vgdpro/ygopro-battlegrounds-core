@@ -686,6 +686,18 @@ int32 scriptlib::card_get_link_attribute(lua_State *L) {
 	lua_pushinteger(L, pcard->get_link_attribute(playerid));
 	return 1;
 }
+int32 scriptlib::card_get_attribute_in_grave(lua_State *L) {
+	check_param_count(L, 1);
+	check_param(L, PARAM_TYPE_CARD, 1);
+	card* pcard = *(card**)lua_touserdata(L, 1);
+	int32 playerid = PLAYER_NONE;
+	if(lua_gettop(L) > 1 && !lua_isnil(L, 2))
+		playerid = (int32)lua_tointeger(L, 2);
+	else
+		playerid = pcard->pduel->game_field->core.reason_player;
+	lua_pushinteger(L, pcard->get_grave_attribute(playerid));
+	return 1;
+}
 int32 scriptlib::card_get_race(lua_State *L) {
 	check_param_count(L, 1);
 	check_param(L, PARAM_TYPE_CARD, 1);
@@ -713,6 +725,18 @@ int32 scriptlib::card_get_link_race(lua_State *L) {
 	else
 		playerid = pcard->pduel->game_field->core.reason_player;
 	lua_pushinteger(L, pcard->get_link_race(playerid));
+	return 1;
+}
+int32 scriptlib::card_get_race_in_grave(lua_State *L) {
+	check_param_count(L, 1);
+	check_param(L, PARAM_TYPE_CARD, 1);
+	card* pcard = *(card**)lua_touserdata(L, 1);
+	int32 playerid = PLAYER_NONE;
+	if(lua_gettop(L) > 1 && !lua_isnil(L, 2))
+		playerid = (int32)lua_tointeger(L, 2);
+	else
+		playerid = pcard->pduel->game_field->core.reason_player;
+	lua_pushinteger(L, pcard->get_grave_race(playerid));
 	return 1;
 }
 int32 scriptlib::card_get_attack(lua_State *L) {
@@ -855,6 +879,14 @@ int32 scriptlib::card_get_previous_controler(lua_State *L) {
 	card* pcard = *(card**) lua_touserdata(L, 1);
 	lua_pushinteger(L, pcard->previous.controler);
 	return 1;
+}
+int32 scriptlib::card_set_reason(lua_State *L) {
+	check_param_count(L, 2);
+	check_param(L, PARAM_TYPE_CARD, 1);
+	card* pcard = *(card**)lua_touserdata(L, 1);
+	uint32 reason = (uint32)lua_tointeger(L, 2);
+	pcard->current.reason = reason;
+	return 0;
 }
 int32 scriptlib::card_get_reason(lua_State *L) {
 	check_param_count(L, 1);
@@ -1823,22 +1855,18 @@ int32 scriptlib::card_is_has_effect(lua_State *L) {
 	}
 	effect_set eset;
 	pcard->filter_effect(code, &eset);
-	int32 size = eset.size();
-	if(!size) {
-		lua_pushnil(L);
-		return 1;
-	}
 	int32 check_player = PLAYER_NONE;
 	if(lua_gettop(L) >= 3) {
 		check_player = (int32)lua_tointeger(L, 3);
 		if(check_player > PLAYER_NONE)
 			check_player = PLAYER_NONE;
 	}
+	int32 size = 0;
 	for(int32 i = 0; i < eset.size(); ++i) {
-		if(check_player == PLAYER_NONE || eset[i]->check_count_limit(check_player))
+		if(check_player == PLAYER_NONE || eset[i]->check_count_limit(check_player)) {
 			interpreter::effect2value(L, eset[i]);
-		else
-			size--;
+			size++;
+		}
 	}
 	if(!size) {
 		lua_pushnil(L);
@@ -3414,9 +3442,11 @@ static const struct luaL_Reg cardlib[] = {
 	{ "GetOriginalAttribute", scriptlib::card_get_origin_attribute },
 	{ "GetFusionAttribute", scriptlib::card_get_fusion_attribute },
 	{ "GetLinkAttribute", scriptlib::card_get_link_attribute },
+	{ "GetAttributeInGrave", scriptlib::card_get_attribute_in_grave },
 	{ "GetRace", scriptlib::card_get_race },
 	{ "GetOriginalRace", scriptlib::card_get_origin_race },
 	{ "GetLinkRace", scriptlib::card_get_link_race },
+	{ "GetRaceInGrave", scriptlib::card_get_race_in_grave },
 	{ "GetAttack", scriptlib::card_get_attack },
 	{ "GetBaseAttack", scriptlib::card_get_origin_attack },
 	{ "GetTextAttack", scriptlib::card_get_text_attack },
@@ -3434,6 +3464,7 @@ static const struct luaL_Reg cardlib[] = {
 	{ "GetOwner", scriptlib::card_get_owner },
 	{ "GetControler", scriptlib::card_get_controler },
 	{ "GetPreviousControler", scriptlib::card_get_previous_controler },
+	{ "SetReason", scriptlib::card_set_reason },
 	{ "GetReason", scriptlib::card_get_reason },
 	{ "GetReasonCard", scriptlib::card_get_reason_card },
 	{ "GetReasonPlayer", scriptlib::card_get_reason_player },
