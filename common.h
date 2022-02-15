@@ -8,13 +8,12 @@
 #ifndef COMMON_H_
 #define COMMON_H_
 
-typedef unsigned long uptr;
+#include <stdint.h>
 typedef unsigned long long uint64;
 typedef unsigned int uint32;
 typedef unsigned short uint16;
 typedef unsigned char uint8;
 typedef unsigned char byte;
-typedef long ptr;
 typedef long long int64;
 typedef int int32;
 typedef short int16;
@@ -53,6 +52,10 @@ struct card_sort {
 //For redirect
 #define LOCATION_DECKBOT	0x10001		//Return to deck bottom
 #define LOCATION_DECKSHF	0x20001		//Return to deck and shuffle
+//For Duel.SendtoDeck
+#define SEQ_DECKTOP			0			//Return to deck top
+#define SEQ_DECKBOTTOM		1			//Return to deck bottom
+#define SEQ_DECKSHUFFLE		2			//Return to deck and shuffle
 
 //Positions
 #define POS_FACEUP_ATTACK		0x1
@@ -183,7 +186,7 @@ struct card_sort {
 #define STATUS_FUTURE_FUSION		0x100000
 #define STATUS_ATTACK_CANCELED		0x200000
 #define STATUS_INITIALIZING			0x400000
-//#define STATUS_ACTIVATED			0x800000
+#define STATUS_TO_HAND_WITHOUT_CONFIRM	0x800000
 #define STATUS_JUST_POS				0x1000000
 #define STATUS_CONTINUOUS_POS		0x2000000
 #define STATUS_FORBIDDEN			0x4000000
@@ -399,7 +402,16 @@ struct card_sort {
 #define DUEL_PSEUDO_SHUFFLE		0x10
 #define DUEL_TAG_MODE			0x20
 #define DUEL_SIMPLE_AI			0x40
+#define DUEL_RETURN_DECK_TOP	0x80
 
+//Activity
+#define ACTIVITY_SUMMON			1
+#define ACTIVITY_NORMALSUMMON	2
+#define ACTIVITY_SPSUMMON		3
+#define ACTIVITY_FLIPSUMMON		4
+#define ACTIVITY_ATTACK			5
+#define ACTIVITY_BATTLE_PHASE	6
+#define ACTIVITY_CHAIN			7
 //card datas for Duel.ReadCard / Card.SetCardData, arranged by database format
 #define CARDDATA_CODE			1
 #define CARDDATA_ALIAS			2
