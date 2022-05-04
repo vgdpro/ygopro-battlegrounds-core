@@ -265,7 +265,7 @@ void field::move_card(uint8 playerid, card* pcard, uint8 location, uint8 sequenc
 		pcard->sendto_param.position = POS_FACEDOWN_DEFENSE;
 	}
 	if (pcard->current.location) {
-		if (pcard->current.location == location) {
+		if (pcard->current.location == location && pcard->current.pzone == !!pzone) {
 			if (pcard->current.location == LOCATION_DECK) {
 				if(preplayer == playerid) {
 					pduel->write_buffer8(MSG_MOVE);
@@ -983,14 +983,14 @@ void field::shuffle(uint8 playerid, uint8 location) {
 		}
 	}
 	if(location == LOCATION_HAND || !(core.duel_options & DUEL_PSEUDO_SHUFFLE)) {
-		uint32 s = (uint32)svector.size();
+		int32 s = (int32)svector.size();
 		if(location == LOCATION_EXTRA)
-			s = s - player[playerid].extra_p_count;
+			s = s - (int32)player[playerid].extra_p_count;
 		if(s > 1) {
 			if (core.duel_options & DUEL_OLD_REPLAY)
-				pduel->random.shuffle_vector_old(svector);
+				pduel->random.shuffle_vector_old(svector, 0, s - 1);
 			else
-				pduel->random.shuffle_vector(svector);
+				pduel->random.shuffle_vector(svector, 0, s - 1);
 			reset_sequence(playerid, location);
 		}
 	}
@@ -1850,6 +1850,9 @@ int32 field::get_summon_count_limit(uint8 playerid) {
 	return count;
 }
 int32 field::get_draw_count(uint8 playerid) {
+	if ((core.duel_rule >= 3) && (infos.turn_id == 1) && (infos.turn_player == playerid)) {
+		return 0;
+	}
 	effect_set eset;
 	filter_player_effect(playerid, EFFECT_DRAW_COUNT, &eset);
 	int32 count = player[playerid].draw_count;
@@ -1889,7 +1892,8 @@ void field::get_ritual_material(uint8 playerid, effect* peffect, card_set* mater
 				&& (no_level || pcard->get_level() > 0))
 			material->insert(pcard);
 	for(auto& pcard : player[playerid].list_extra)
-		if(pcard && (pcard->get_level() || pcard->is_affected_by_effect(EFFECT_MINIATURE_GARDEN_GIRL)) && (pcard->data.type & TYPE_MONSTER) && pcard->is_affected_by_effect(EFFECT_MAP_OF_HEAVEN) && pcard->is_capable_send_to_grave(playerid))
+		if(((pcard->is_affected_by_effect(EFFECT_EXTRA_RITUAL_MATERIAL) || pcard->data.type & TYPE_MONSTER) && pcard->is_affected_by_effect(EFFECT_MAP_OF_HEAVEN) && pcard->is_capable_send_to_grave(playerid))
+				&& (no_level || pcard->get_level() > 0 || pcard->is_affected_by_effect(EFFECT_MINIATURE_GARDEN_GIRL)))
 			material->insert(pcard);
 }
 void field::get_fusion_material(uint8 playerid, card_set* material_all, card_set* material_base, uint32 location) {
@@ -1954,21 +1958,17 @@ void field::get_fusion_material(uint8 playerid, card_set* material_all, card_set
 void field::ritual_release(card_set* material) {
 	card_set rel;
 	card_set rem;
-	card_set xyz;
-	card_set tg;
+	card_set tgy;
 	for(auto& pcard : *material) {
 		if(pcard->current.location == LOCATION_GRAVE)
 			rem.insert(pcard);
-		else if (pcard->current.location == LOCATION_EXTRA && pcard->is_affected_by_effect(EFFECT_MAP_OF_HEAVEN))
-			tg.insert(pcard);
-		else if(pcard->current.location == LOCATION_OVERLAY)
-			xyz.insert(pcard);
+		else if(pcard->current.location == LOCATION_OVERLAY || pcard->current.location == LOCATION_EXTRA)
+			tgy.insert(pcard);
 		else
 			rel.insert(pcard);
 	}
-	send_to(&xyz, core.reason_effect, REASON_RITUAL + REASON_EFFECT + REASON_MATERIAL, core.reason_player, PLAYER_NONE, LOCATION_GRAVE, 0, POS_FACEUP);
+	send_to(&tgy, core.reason_effect, REASON_RITUAL + REASON_EFFECT + REASON_MATERIAL, core.reason_player, PLAYER_NONE, LOCATION_GRAVE, 0, POS_FACEUP);
 	release(&rel, core.reason_effect, REASON_RITUAL + REASON_EFFECT + REASON_MATERIAL, core.reason_player);
-	send_to(&tg, core.reason_effect, REASON_RITUAL + REASON_EFFECT + REASON_MATERIAL, core.reason_player, PLAYER_NONE, LOCATION_GRAVE, 0, POS_FACEUP);
 	send_to(&rem, core.reason_effect, REASON_RITUAL + REASON_EFFECT + REASON_MATERIAL, core.reason_player, PLAYER_NONE, LOCATION_REMOVED, 0, POS_FACEUP);
 }
 void field::get_xyz_material(card* scard, int32 findex, uint32 lv, int32 maxc, group* mg) {
@@ -3430,8 +3430,9 @@ int32 field::get_cteffect(effect* peffect, int32 playerid, int32 store) {
 			continue;
 		uint32 code = efit.first;
 		if(code == EVENT_FREE_CHAIN || code == EVENT_PHASE + infos.phase) {
-			nil_event.event_code = code;
-			if(get_cteffect_evt(feffect, playerid, nil_event, store) && !store)
+			tevent test_event;
+			test_event.event_code = code;
+			if(get_cteffect_evt(feffect, playerid, test_event, store) && !store)
 				return TRUE;
 		} else {
 			for(const auto& ev : core.point_event) {
@@ -3480,8 +3481,9 @@ int32 field::check_cteffect_hint(effect* peffect, uint8 playerid) {
 			continue;
 		uint32 code = efit.first;
 		if(code == EVENT_FREE_CHAIN || code == EVENT_PHASE + infos.phase) {
-			nil_event.event_code = code;
-			if(get_cteffect_evt(feffect, playerid, nil_event, FALSE)
+			tevent test_event;
+			test_event.event_code = code;
+			if(get_cteffect_evt(feffect, playerid, test_event, FALSE)
 				&& (code != EVENT_FREE_CHAIN || check_hint_timing(feffect)))
 				return TRUE;
 		} else {
