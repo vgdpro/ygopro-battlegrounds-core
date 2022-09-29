@@ -2147,6 +2147,13 @@ int32 scriptlib::card_is_summonable(lua_State *L) {
 	lua_pushboolean(L, pcard->is_summonable_card());
 	return 1;
 }
+int32 scriptlib::card_is_special_summonable_card(lua_State *L) {
+	check_param_count(L, 1);
+	check_param(L, PARAM_TYPE_CARD, 1);
+	card* pcard = *(card**) lua_touserdata(L, 1);
+	lua_pushboolean(L, pcard->is_spsummonable_card());
+	return 1;
+}
 int32 scriptlib::card_is_fusion_summonable_card(lua_State *L) {
 	check_param_count(L, 1);
 	check_param(L, PARAM_TYPE_CARD, 1);
@@ -3128,6 +3135,15 @@ int32 scriptlib::card_is_immune_to_effect(lua_State *L) {
 	lua_pushboolean(L, !pcard->is_affect_by_effect(peffect));
 	return 1;
 }
+int32 scriptlib::card_is_can_be_disabled_by_effect(lua_State* L) {
+	check_param_count(L, 2);
+	check_param(L, PARAM_TYPE_CARD, 1);
+	check_param(L, PARAM_TYPE_EFFECT, 2);
+	card* pcard = *(card**)lua_touserdata(L, 1);
+	effect* peffect = *(effect**)lua_touserdata(L, 2);
+	lua_pushboolean(L, pcard->is_can_be_disabled_by_effect(peffect));
+	return 1;
+}
 int32 scriptlib::card_is_can_be_effect_target(lua_State *L) {
 	check_param_count(L, 1);
 	check_param(L, PARAM_TYPE_CARD, 1);
@@ -3572,6 +3588,7 @@ static const struct luaL_Reg cardlib[] = {
 	{ "IsDisabled", scriptlib::card_is_disabled },
 	{ "IsDestructable", scriptlib::card_is_destructable },
 	{ "IsSummonableCard", scriptlib::card_is_summonable },
+	{ "IsSpecialSummonableCard", scriptlib::card_is_special_summonable_card },
 	{ "IsFusionSummonableCard", scriptlib::card_is_fusion_summonable_card },
 	{ "IsSpecialSummonable", scriptlib::card_is_special_summonable },
 	{ "IsSynchroSummonable", scriptlib::card_is_synchro_summonable },
@@ -3642,6 +3659,7 @@ static const struct luaL_Reg cardlib[] = {
 	{ "CheckFusionMaterial", scriptlib::card_check_fusion_material },
 	{ "CheckFusionSubstitute", scriptlib::card_check_fusion_substitute },
 	{ "IsImmuneToEffect", scriptlib::card_is_immune_to_effect },
+	{ "IsCanBeDisabledByEffect", scriptlib::card_is_can_be_disabled_by_effect },
 	{ "IsCanBeEffectTarget", scriptlib::card_is_can_be_effect_target },
 	{ "IsCanBeBattleTarget", scriptlib::card_is_can_be_battle_target },
 	{ "AddMonsterAttribute", scriptlib::card_add_monster_attribute },

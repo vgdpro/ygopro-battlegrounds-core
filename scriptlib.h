@@ -221,6 +221,7 @@ public:
 	static int32 card_is_disabled(lua_State *L);
 	static int32 card_is_destructable(lua_State *L);
 	static int32 card_is_summonable(lua_State *L);
+	static int32 card_is_special_summonable_card(lua_State *L);
 	static int32 card_is_fusion_summonable_card(lua_State *L);
 	static int32 card_is_msetable(lua_State *L);
 	static int32 card_is_ssetable(lua_State *L);
@@ -293,6 +294,7 @@ public:
 	static int32 card_check_fusion_material(lua_State *L);
 	static int32 card_check_fusion_substitute(lua_State *L);
 	static int32 card_is_immune_to_effect(lua_State *L);
+	static int32 card_is_can_be_disabled_by_effect(lua_State* L);
 	static int32 card_is_can_be_effect_target(lua_State *L);
 	static int32 card_is_can_be_battle_target(lua_State *L);
 	static int32 card_add_monster_attribute(lua_State *L);
@@ -358,6 +360,7 @@ public:
 	static int32 effect_is_activatable(lua_State *L);
 	static int32 effect_is_activated(lua_State *L);
 	static int32 effect_is_cost_checked(lua_State *L);
+	static int32 effect_set_cost_check(lua_State *L);
 	static int32 effect_get_activate_location(lua_State *L);
 	static int32 effect_get_activate_sequence(lua_State *L);
 	static int32 effect_check_count_limit(lua_State *L);
@@ -451,7 +454,6 @@ public:
 	static int32 duel_raise_event(lua_State *L);
 	static int32 duel_raise_single_event(lua_State *L);
 	static int32 duel_check_timing(lua_State *L);
-	static int32 duel_get_environment(lua_State *L);
 	static int32 duel_is_environment(lua_State *L);
 
 	static int32 duel_win(lua_State *L);
@@ -502,6 +504,7 @@ public:
 	static int32 duel_get_chain_info(lua_State *L);
 	static int32 duel_get_chain_event(lua_State *L);
 	static int32 duel_get_first_target(lua_State *L);
+	static int32 duel_get_targets_relate_to_chain(lua_State *L);
 	static int32 duel_get_current_phase(lua_State *L);
 	static int32 duel_skip_phase(lua_State *L);
 	static int32 duel_is_damage_calculated(lua_State *L);
