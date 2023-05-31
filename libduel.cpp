@@ -218,6 +218,7 @@ int32 scriptlib::duel_get_random_number(lua_State * L) {
 		max = lua_tointeger(L, 1);
 	}
 	lua_pushinteger(L, pduel->get_next_integer(min, max));
+	return 1;
 }
 
 int32 scriptlib::duel_enable_global_flag(lua_State *L) {
