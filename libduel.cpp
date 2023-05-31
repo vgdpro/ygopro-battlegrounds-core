@@ -200,6 +200,25 @@ int32 scriptlib::duel_set_summon_cancelable(lua_State *L) {
 	pduel->game_field->core.summon_cancelable = lua_toboolean(L, 1);
 	return 0;
 }
+int32 scriptlib::duel_get_random_number(lua_State * L) {
+	//check_action_permission(L); Don't check action permission
+	duel* pduel = interpreter::get_duel_info(L);
+	int32 min = 0;
+	int32 max = 2147483647;
+	uint32 count = lua_gettop(L);
+	//Duel.GetRandomNumber() returns a number from [0,2147483647]
+	if(count > 1) {
+		//Duel.GetRandomNumber(n,m) returns a number from [n,m]
+		min = lua_tointeger(L, 1);
+		max = lua_tointeger(L, 2);
+	}
+	else if(count > 0) {
+		// Duel.GetRandomNumber(n) returns a number from [1,n]
+		min = 1;
+		max = lua_tointeger(L, 1);
+	}
+	lua_pushinteger(L, pduel->get_next_integer(min, max));
+}
 
 int32 scriptlib::duel_enable_global_flag(lua_State *L) {
 	check_param_count(L, 1);
@@ -4870,6 +4889,7 @@ static const struct luaL_Reg duellib[] = {
 	{ "AnnounceCardFilter", scriptlib::duel_announce_card }, // For compat
 	{ "ResetTimeLimit", scriptlib::duel_reset_time_limit },
 	{ "SetSummonCancelable", scriptlib::duel_set_summon_cancelable },
+	{ "GetRandomNumber", scriptlib::duel_get_random_number },
 
 	{ "EnableGlobalFlag", scriptlib::duel_enable_global_flag },
 	{ "GetLP", scriptlib::duel_get_lp },
