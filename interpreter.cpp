@@ -49,7 +49,7 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	//extra scripts
 	load_script("./script/constant.lua");
 	load_script("./script/utility.lua");
-<<<<<<< HEAD
+	load_script("./script/procedure.lua");
 	//load kpro constant
 	//card data constants
 	lua_pushinteger(lua_state, CARDDATA_CODE);
@@ -129,9 +129,6 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	lua_pushboolean(lua_state, 1);
 	lua_setglobal(lua_state, "_WIN32");
 #endif
-=======
-	load_script("./script/procedure.lua");
->>>>>>> 6cb447a4032292f582f396ddeeceac3c3956f4bb
 }
 interpreter::~interpreter() {
 	lua_close(lua_state);
