@@ -12,6 +12,7 @@
 #include "mtrandom.h"
 #include <set>
 #include <unordered_set>
+#include <cstring>
 
 class card;
 class group;
