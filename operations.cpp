@@ -1913,7 +1913,7 @@ int32 field::summon(uint16 step, uint8 sumplayer, card* target, effect* proc, ui
 			core.units.begin()->ptr2 = 0;
 		}
 		if(target->current.location == LOCATION_MZONE)
-			send_to(target, 0, REASON_RULE, sumplayer, sumplayer, LOCATION_GRAVE, 0, 0);
+			send_to(target, 0, REASON_RULE, PLAYER_NONE, sumplayer, LOCATION_GRAVE, 0, 0);
 		adjust_instant();
 		add_process(PROCESSOR_POINT_EVENT, 0, 0, 0, FALSE, 0);
 		return TRUE;
@@ -2020,7 +2020,7 @@ int32 field::flip_summon(uint16 step, uint8 sumplayer, card * target) {
 			core.units.begin()->ptr1 = 0;
 		}
 		if(target->current.location == LOCATION_MZONE)
-			send_to(target, 0, REASON_RULE, sumplayer, sumplayer, LOCATION_GRAVE, 0, 0);
+			send_to(target, 0, REASON_RULE, PLAYER_NONE, sumplayer, LOCATION_GRAVE, 0, 0);
 		add_process(PROCESSOR_POINT_EVENT, 0, 0, 0, FALSE, 0);
 		return TRUE;
 	}
@@ -2902,7 +2902,7 @@ int32 field::special_summon_rule(uint16 step, uint8 sumplayer, card* target, uin
 			core.units.begin()->ptr1 = 0;
 		}
 		if(target->current.location == LOCATION_MZONE)
-			send_to(target, 0, REASON_RULE, sumplayer, sumplayer, LOCATION_GRAVE, 0, 0);
+			send_to(target, 0, REASON_RULE, PLAYER_NONE, sumplayer, LOCATION_GRAVE, 0, 0);
 		adjust_instant();
 		add_process(PROCESSOR_POINT_EVENT, 0, 0, 0, FALSE, 0);
 		return TRUE;
@@ -2981,7 +2981,7 @@ int32 field::special_summon_rule(uint16 step, uint8 sumplayer, card* target, uin
 				|| check_unique_onfield(pcard, sumplayer, LOCATION_MZONE)
 				|| pcard->is_affected_by_effect(EFFECT_CANNOT_SPECIAL_SUMMON)) {
 				cit = pgroup->container.erase(cit);
-			    continue;
+				continue;
 			}
 			effect_set eset;
 			pcard->filter_effect(EFFECT_SPSUMMON_COST, &eset);
@@ -3091,7 +3091,7 @@ int32 field::special_summon_rule(uint16 step, uint8 sumplayer, card* target, uin
 				++cit;
 		}
 		if(cset.size()) {
-			send_to(&cset, 0, REASON_RULE, sumplayer, sumplayer, LOCATION_GRAVE, 0, 0);
+			send_to(&cset, 0, REASON_RULE, PLAYER_NONE, sumplayer, LOCATION_GRAVE, 0, 0);
 			adjust_instant();
 		}
 		if(pgroup->container.size() == 0) {
@@ -3726,6 +3726,7 @@ int32 field::destroy(uint16 step, group * targets, effect * reason_effect, uint3
 					pcard->current.reason_player = pcard->temp.reason_player;
 					core.destroy_canceled.insert(pcard);
 					cit = targets->container.erase(cit);
+					continue;
 				}
 			}
 			++cit;
