@@ -1434,7 +1434,7 @@ int32 field::equip(uint16 step, uint8 equip_player, card * equip_card, card * ta
 			peffect->owner = equip_card;
 			peffect->handler = equip_card;
 			peffect->type = EFFECT_TYPE_SINGLE;
-			if(equip_card->get_type() == TYPE_TRAP) {
+			if(equip_card->get_type() & TYPE_TRAP) {
 				peffect->code = EFFECT_ADD_TYPE;
 				peffect->value = TYPE_EQUIP;
 			} else if(equip_card->data.type & TYPE_UNION) {
@@ -1458,8 +1458,6 @@ int32 field::equip(uint16 step, uint8 equip_player, card * equip_card, card * ta
 			cset.insert(equip_card);
 			raise_single_event(target, &cset, EVENT_EQUIP, core.reason_effect, 0, core.reason_player, PLAYER_NONE, 0);
 			raise_event(&cset, EVENT_EQUIP, core.reason_effect, 0, core.reason_player, PLAYER_NONE, 0);
-			if (equip_card->is_position(POS_FACEDOWN))
-				raise_event(&cset, EVENT_SSET, core.reason_effect, 0, core.reason_player, 0, 0);
 			core.hint_timing[target->current.controler] |= TIMING_EQUIP;
 			process_single_event();
 			process_instant_event();
@@ -3987,16 +3985,9 @@ int32 field::send_to(uint16 step, group * targets, effect * reason_effect, uint3
 						pcard->previous.defense = atk_def.second;
 					}
 				} else {
-					effect_set eset;
-					pcard->filter_effect(EFFECT_ADD_CODE, &eset);
-					if(pcard->data.alias && !eset.size())
-						pcard->previous.code = pcard->data.alias;
-					else
-						pcard->previous.code = pcard->data.code;
-					if(eset.size())
-						pcard->previous.code2 = eset.get_last()->get_value(pcard);
-					else
-						pcard->previous.code2 = 0;
+					auto codes = pcard->get_original_code_rule();
+					pcard->previous.code = std::get<0>(codes);
+					pcard->previous.code2 = std::get<1>(codes);
 					pcard->previous.type = pcard->data.type;
 					pcard->previous.level = pcard->data.level;
 					pcard->previous.rank = pcard->data.level;
