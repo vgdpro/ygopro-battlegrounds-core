@@ -978,7 +978,7 @@ int32 scriptlib::card_get_summon_type(lua_State *L) {
 	check_param_count(L, 1);
 	check_param(L, PARAM_TYPE_CARD, 1);
 	card* pcard = *(card**) lua_touserdata(L, 1);
-	lua_pushinteger(L, pcard->get_summon_info() & 0xff00ffff);
+	lua_pushinteger(L, pcard->get_summon_info() & DEFAULT_SUMMON_TYPE);
 	return 1;
 }
 int32 scriptlib::card_get_summon_location(lua_State *L) {
@@ -1404,7 +1404,7 @@ int32 scriptlib::card_is_summon_type(lua_State *L) {
 	check_param(L, PARAM_TYPE_CARD, 1);
 	card* pcard = *(card**)lua_touserdata(L, 1);
 	uint32 ttype = (uint32)lua_tointeger(L, 2);
-	if(((pcard->get_summon_info() & 0xff00ffff) & ttype) == ttype)
+	if(((pcard->get_summon_info() & DEFAULT_SUMMON_TYPE) & ttype) == ttype)
 		lua_pushboolean(L, 1);
 	else
 		lua_pushboolean(L, 0);
