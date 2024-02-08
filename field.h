@@ -22,6 +22,10 @@
 
 #define MAX_COIN_COUNT	20
 
+//summon action type
+#define SUMMON_IN_IDLE	0
+#define SUMMON_IN_CHAIN	1
+
 class card;
 struct card_data;
 class duel;
@@ -140,12 +144,16 @@ struct processor_unit {
 	uint16 step{ 0 };
 	effect* peffect{ nullptr };
 	group* ptarget{ nullptr };
-	int32 arg1{ 0 };
-	int32 arg2{ 0 };
-	int32 arg3{ 0 };
-	int32 arg4{ 0 };
+	uint32 arg1{ 0 };
+	uint32 arg2{ 0 };
+	uint32 arg3{ 0 };
+	uint32 arg4{ 0 };
 	void* ptr1{ nullptr };
 	void* ptr2{ nullptr };
+	int32 value1{ 0 };
+	int32 value2{ 0 };
+	int32 value3{ 0 };
+	int32 value4{ 0 };
 };
 union return_value {
 	int8 bvalue[64];
@@ -552,9 +560,9 @@ public:
 	void draw(effect* reason_effect, uint32 reason, uint32 reason_player, uint32 playerid, int32 count);
 	void damage(effect* reason_effect, uint32 reason, uint32 reason_player, card* reason_card, uint32 playerid, int32 amount, uint32 is_step = FALSE);
 	void recover(effect* reason_effect, uint32 reason, uint32 reason_player, uint32 playerid, int32 amount, uint32 is_step = FALSE);
-	void summon(uint32 sumplayer, card* target, effect* proc, uint32 ignore_count, uint32 min_tribute, uint32 zone = 0x1f);
-	void mset(uint32 setplayer, card* target, effect* proc, uint32 ignore_count, uint32 min_tribute, uint32 zone = 0x1f);
-	void special_summon_rule(uint32 sumplayer, card* target, uint32 summon_type);
+	void summon(uint32 sumplayer, card* target, effect* proc, uint32 ignore_count, uint32 min_tribute, uint32 zone = 0x1f, uint32 action_type = SUMMON_IN_IDLE);
+	void mset(uint32 setplayer, card* target, effect* proc, uint32 ignore_count, uint32 min_tribute, uint32 zone = 0x1f, uint32 action_type = SUMMON_IN_IDLE);
+	void special_summon_rule(uint32 sumplayer, card* target, uint32 summon_type, uint32 action_type = SUMMON_IN_IDLE);
 	void special_summon(card_set* target, uint32 sumtype, uint32 sumplayer, uint32 playerid, uint32 nocheck, uint32 nolimit, uint32 positions, uint32 zone);
 	void special_summon_step(card* target, uint32 sumtype, uint32 sumplayer, uint32 playerid, uint32 nocheck, uint32 nolimit, uint32 positions, uint32 zone);
 	void special_summon_complete(effect* reason_effect, uint8 reason_player);
@@ -708,10 +716,6 @@ public:
 #define GLOBALFLAG_ACTIVATION_COUNT		0x800
 //
 
-//summon action type
-#define SUMMON_IN_IDLE	0
-#define SUMMON_IN_CHAIN	1
-
 #define PROCESSOR_ADJUST			1
 #define PROCESSOR_HINT				2
 #define PROCESSOR_TURN				3
@@ -755,17 +759,17 @@ public:
 #define PROCESSOR_DESTROY_REPLACE	56
 #define PROCESSOR_RELEASE_REPLACE	57
 #define PROCESSOR_SENDTO_REPLACE	58
-#define PROCESSOR_SUMMON_RULE		60
-#define PROCESSOR_SPSUMMON_RULE		61
+#define PROCESSOR_SUMMON_RULE		60  //arg1, arg2
+#define PROCESSOR_SPSUMMON_RULE		61  //arg1, arg2, arg3
 #define PROCESSOR_SPSUMMON			62
-#define PROCESSOR_FLIP_SUMMON		63
-#define PROCESSOR_MSET				64
+#define PROCESSOR_FLIP_SUMMON		63  //arg1, arg2
+#define PROCESSOR_MSET				64  //arg1, arg2
 #define PROCESSOR_SSET				65
 #define PROCESSOR_SPSUMMON_STEP		66
 #define PROCESSOR_SSET_G			67
 #define PROCESSOR_DRAW				70
-#define PROCESSOR_DAMAGE			71
-#define PROCESSOR_RECOVER			72
+#define PROCESSOR_DAMAGE			71  //arg1, arg2, arg3
+#define PROCESSOR_RECOVER			72  //arg1, arg2, arg3
 #define PROCESSOR_EQUIP				73
 #define PROCESSOR_GET_CONTROL		74
 #define PROCESSOR_SWAP_CONTROL		75

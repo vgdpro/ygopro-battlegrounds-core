@@ -364,7 +364,7 @@ uint32 field::process() {
 		return pduel->message_buffer.size();
 	}
 	case PROCESSOR_SUMMON_RULE: {
-		if (summon(it->step, it->arg1 & 0xff, (card*)it->ptarget, it->peffect, (it->arg1 >> 8) & 0xff, (it->arg1 >> 16) & 0xff, (it->arg1 >> 24) & 0xff, it->arg3))
+		if (summon(it->step, it->arg1 & 0xff, (card*)it->ptarget, it->peffect, (it->arg1 >> 8) & 0xff, (it->arg1 >> 16) & 0xff, (it->arg1 >> 24) & 0xff, it->arg2))
 			core.units.pop_front();
 		else
 			++it->step;
@@ -385,14 +385,14 @@ uint32 field::process() {
 		return pduel->message_buffer.size();
 	}
 	case PROCESSOR_FLIP_SUMMON: {
-		if (flip_summon(it->step, it->arg1, (card*)(it->ptarget), it->arg3))
+		if (flip_summon(it->step, it->arg1, (card*)(it->ptarget), it->arg2))
 			core.units.pop_front();
 		else
 			++it->step;
 		return pduel->message_buffer.size();
 	}
 	case PROCESSOR_MSET: {
-		if (mset(it->step, it->arg1 & 0xff, (card*)it->ptarget, it->peffect, (it->arg1 >> 8) & 0xff, (it->arg1 >> 16) & 0xff, (it->arg1 >> 24) & 0xff, it->arg3))
+		if (mset(it->step, it->arg1 & 0xff, (card*)it->ptarget, it->peffect, (it->arg1 >> 8) & 0xff, (it->arg1 >> 16) & 0xff, (it->arg1 >> 24) & 0xff, it->arg2))
 			core.units.pop_front();
 		else
 			++it->step;
@@ -1638,8 +1638,8 @@ int32 field::process_quick_effect(int16 step, int32 skip_freechain, uint8 priori
 		chain newchain;
 		if(core.ignition_priority_chains.size())
 			core.select_chains.swap(core.ignition_priority_chains);
-		for(const auto* ev_list : { &core.point_event, &core.instant_event }) {
-			for(const auto& ev : *ev_list) {
+		for(const auto& ev_list : { core.point_event, core.instant_event }) {
+			for(const auto& ev : ev_list) {
 				auto pr = effects.activate_effect.equal_range(ev.event_code);
 				for(auto eit = pr.first; eit != pr.second;) {
 					effect* peffect = eit->second;
