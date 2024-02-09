@@ -882,12 +882,15 @@ int32 scriptlib::duel_sendto_deck(lua_State *L) {
 	uint32 sequence = (uint32)lua_tointeger(L, 3);
 	uint32 reason = (uint32)lua_tointeger(L, 4);
 	uint32 reason_player = pduel->game_field->core.reason_player;
+	uint8 send_activating = FALSE;
 	if (lua_gettop(L) >= 5)
 		reason_player = (uint32)lua_tointeger(L, 5);
-	if(pcard)
-		pduel->game_field->send_to(pcard, pduel->game_field->core.reason_effect, reason, reason_player, playerid, LOCATION_DECK, sequence, POS_FACEUP);
+	if (lua_gettop(L) >= 6)
+		send_activating = (uint8)lua_toboolean(L, 6);
+	if (pcard)
+		pduel->game_field->send_to(pcard, pduel->game_field->core.reason_effect, reason, reason_player, playerid, LOCATION_DECK, sequence, POS_FACEUP, send_activating);
 	else
-		pduel->game_field->send_to(&(pgroup->container), pduel->game_field->core.reason_effect, reason, reason_player, playerid, LOCATION_DECK, sequence, POS_FACEUP);
+		pduel->game_field->send_to(&(pgroup->container), pduel->game_field->core.reason_effect, reason, reason_player, playerid, LOCATION_DECK, sequence, POS_FACEUP, send_activating);
 	return lua_yieldk(L, 0, (lua_KContext)pduel, [](lua_State *L, int32 status, lua_KContext ctx) {
 		duel* pduel = (duel*)ctx;
 		lua_pushinteger(L, pduel->game_field->returns.ivalue[0]);
@@ -2051,30 +2054,66 @@ int32 scriptlib::duel_disable_summon(lua_State *L) {
 		pduel = pgroup->pduel;
 	} else
 		return luaL_error(L, "Parameter %d should be \"Card\" or \"Group\".", 1);
+	uint32 sumtype = 0;
+	if (pduel->game_field->check_event(EVENT_SUMMON)) {
+		if (pduel->game_field->core.is_gemini_summoning)
+			sumtype = SUMMON_TYPE_DUAL;
+		else
+			sumtype = SUMMON_TYPE_NORMAL;
+	}
+	else if (pduel->game_field->check_event(EVENT_FLIP_SUMMON))
+		sumtype = SUMMON_TYPE_FLIP;
+	else if (pduel->game_field->check_event(EVENT_SPSUMMON))
+		sumtype = SUMMON_TYPE_SPECIAL;
+	else
+		return 0;
+	if (sumtype & SUMMON_TYPE_NORMAL || sumtype & SUMMON_TYPE_FLIP) {
+		if (pgroup && pgroup->container.size() != 1)
+			return 0;
+		if (!pcard)
+			pcard = *pgroup->container.begin();
+	}
 	uint8 sumplayer = PLAYER_NONE;
-	if(pcard) {
+	effect* reason_effect = pduel->game_field->core.reason_effect;
+	field::card_set negated_cards;
+	if (sumtype == SUMMON_TYPE_DUAL || sumtype & SUMMON_TYPE_FLIP) {
+		if (!pcard->is_summon_negatable(sumtype, reason_effect))
+			return 0;
 		sumplayer = pcard->summon_player;
-		pcard->set_status(STATUS_SUMMONING, FALSE);
+		pcard->set_status(STATUS_FLIP_SUMMONING, FALSE);
 		pcard->set_status(STATUS_SUMMON_DISABLED, TRUE);
-		if (!match_all(pcard->summon_info, SUMMON_TYPE_FLIP) && !match_all(pcard->summon_info, SUMMON_TYPE_DUAL))
-			pcard->set_status(STATUS_PROC_COMPLETE, FALSE);
-	} else {
-		for(auto& pcard : pgroup->container) {
+	}
+	else {
+		if (pcard) {
+			if (!pcard->is_summon_negatable(sumtype, reason_effect))
+				return 0;
 			sumplayer = pcard->summon_player;
 			pcard->set_status(STATUS_SUMMONING, FALSE);
 			pcard->set_status(STATUS_SUMMON_DISABLED, TRUE);
-			if (!match_all(pcard->summon_info, SUMMON_TYPE_FLIP) && !match_all(pcard->summon_info, SUMMON_TYPE_DUAL))
+			pcard->set_status(STATUS_PROC_COMPLETE, FALSE);
+		}
+		else {
+			for (auto& pcard : pgroup->container) {
+				if (!pcard->is_summon_negatable(sumtype, reason_effect))
+					continue;
+				sumplayer = pcard->summon_player;
+				pcard->set_status(STATUS_SUMMONING, FALSE);
+				pcard->set_status(STATUS_SUMMON_DISABLED, TRUE);
 				pcard->set_status(STATUS_PROC_COMPLETE, FALSE);
+				negated_cards.insert(pcard);
+			}
+			if (!negated_cards.size())
+				return 0;
 		}
 	}
+	pduel->game_field->core.is_summon_negated = true;
 	uint32 event_code = 0;
-	if(pduel->game_field->check_event(EVENT_SUMMON))
+	if(sumtype & SUMMON_TYPE_NORMAL)
 		event_code = EVENT_SUMMON_NEGATED;
-	else if(pduel->game_field->check_event(EVENT_FLIP_SUMMON))
+	else if(sumtype & SUMMON_TYPE_FLIP)
 		event_code = EVENT_FLIP_SUMMON_NEGATED;
-	else if(pduel->game_field->check_event(EVENT_SPSUMMON))
+	else if(sumtype & SUMMON_TYPE_SPECIAL)
 		event_code = EVENT_SPSUMMON_NEGATED;
-	effect* reason_effect = pduel->game_field->core.reason_effect;
 	uint8 reason_player = pduel->game_field->core.reason_player;
 	if(pcard)
 		pduel->game_field->raise_event(pcard, event_code, reason_effect, REASON_EFFECT, reason_player, sumplayer, 0);
@@ -4547,8 +4586,10 @@ int32 scriptlib::duel_is_player_can_spsummon_monster(lua_State * L) {
 	::read_card(code, &dat);
 	dat.code = code;
 	dat.alias = 0;
-	if(!lua_isnil(L, 3))
-		dat.setcode = lua_tointeger(L, 3);
+	if(!lua_isnil(L, 3)) {
+		uint64 setcode_list = lua_tointeger(L, 3);
+		dat.set_setcode(setcode_list);
+	}
 	if(!lua_isnil(L, 4))
 		dat.type = (uint32)lua_tointeger(L, 4);
 	if(!lua_isnil(L, 5))

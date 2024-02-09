@@ -466,7 +466,7 @@ uint32 card::get_info_location() {
 }
 // get the printed code on card
 uint32 card::get_original_code() const {
-	if (data.alias && (data.alias < data.code + CARD_ARTWORK_VERSIONS_OFFSET) && (data.code < data.alias + CARD_ARTWORK_VERSIONS_OFFSET))
+	if (data.is_alternative())
 		return data.alias;
 	else
 		return data.code;
@@ -521,95 +521,66 @@ uint32 card::get_another_code() {
 		return otcode;
 	return 0;
 }
+inline bool check_setcode(uint16_t setcode, uint32 value) {
+	uint16_t settype = value & 0x0fff;
+	uint16_t setsubtype = value & 0xf000;
+	return (setcode & 0x0fff) == settype && (setcode & 0xf000 & setsubtype) == setsubtype;
+}
+bool card::check_card_setcode(uint32 code, uint32 value) {
+	card_data dat;
+	::read_card(code, &dat);
+	return dat.is_setcode(value);
+}
 int32 card::is_set_card(uint32 set_code) {
-	uint32 code = get_code();
-	uint64 setcode;
-	if (code == data.code) {
-		setcode = data.setcode;
-	} else {
-		card_data dat;
-		::read_card(code, &dat);
-		setcode = dat.setcode;
-	}
-	uint32 settype = set_code & 0xfff;
-	uint32 setsubtype = set_code & 0xf000;
-	while(setcode) {
-		if ((setcode & 0xfff) == settype && (setcode & 0xf000 & setsubtype) == setsubtype)
+	uint32 code1 = get_code();
+	card_data dat1;
+	if (code1 == data.code) {
+		if (data.is_setcode(set_code))
 			return TRUE;
-		setcode = setcode >> 16;
 	}
+	else {
+		if (check_card_setcode(code1, set_code))
+			return TRUE;
+	}
+	uint32 code2 = get_another_code();
+	if (code2 && check_card_setcode(code2, set_code))
+		return TRUE;
 	//add set code
 	effect_set eset;
 	filter_effect(EFFECT_ADD_SETCODE, &eset);
 	for(int32 i = 0; i < eset.size(); ++i) {
 		uint32 value = eset[i]->get_value(this);
-		if ((value & 0xfff) == settype && (value & 0xf000 & setsubtype) == setsubtype)
+		uint16_t new_setcode = value & 0xffff;
+		if (check_setcode(new_setcode, set_code))
 			return TRUE;
-	}
-	//another code
-	uint32 code2 = get_another_code();
-	uint64 setcode2;
-	if (code2 != 0) {
-		card_data dat;
-		::read_card(code2, &dat);
-		setcode2 = dat.setcode;
-	} else {
-		return FALSE;
-	}
-	while(setcode2) {
-		if ((setcode2 & 0xfff) == settype && (setcode2 & 0xf000 & setsubtype) == setsubtype)
-			return TRUE;
-		setcode2 = setcode2 >> 16;
 	}
 	return FALSE;
 }
 int32 card::is_origin_set_card(uint32 set_code) {
-	uint64 setcode = data.setcode;
-	uint32 settype = set_code & 0xfff;
-	uint32 setsubtype = set_code & 0xf000;
-	while(setcode) {
-		if((setcode & 0xfff) == settype && (setcode & 0xf000 & setsubtype) == setsubtype)
-			return TRUE;
-		setcode = setcode >> 16;
-	}
+	if (data.is_setcode(set_code))
+		return TRUE;
+	uint32 code2 = std::get<1>(get_original_code_rule());
+	if (code2 && check_card_setcode(code2, set_code))
+		return TRUE;
 	return FALSE;
 }
 int32 card::is_pre_set_card(uint32 set_code) {
 	uint32 code = previous.code;
-	uint64 setcode;
 	if (code == data.code) {
-		setcode = data.setcode;
-	} else {
-		card_data dat;
-		::read_card(code, &dat);
-		setcode = dat.setcode;
-	}
-	uint32 settype = set_code & 0xfff;
-	uint32 setsubtype = set_code & 0xf000;
-	while(setcode) {
-		if ((setcode & 0xfff) == settype && (setcode & 0xf000 & setsubtype) == setsubtype)
+		if (data.is_setcode(set_code))
 			return TRUE;
-		setcode = setcode >> 16;
 	}
+	else {
+		if (check_card_setcode(code, set_code))
+			return TRUE;
+	}
+	uint32 code2 = previous.code2;
+	if (code2 && check_card_setcode(code2, set_code))
+		return TRUE;
 	//add set code
 	for(auto& presetcode : previous.setcode) {
-		if (presetcode && (presetcode & 0xfff) == settype && (presetcode & 0xf000 & setsubtype) == setsubtype)
+		if (check_setcode(presetcode, set_code))
 			return TRUE;
-	}
-	//another code
-	uint32 code2 = previous.code2;
-	uint64 setcode2;
-	if (code2 != 0) {
-		card_data dat;
-		::read_card(code2, &dat);
-		setcode2 = dat.setcode;
-	} else {
-		return FALSE;
-	}
-	while(setcode2) {
-		if ((setcode2 & 0xfff) == settype && (setcode2 & 0xf000 & setsubtype) == setsubtype)
-			return TRUE;
-		setcode2 = setcode2 >> 16;
 	}
 	return FALSE;
 }
@@ -618,26 +589,19 @@ int32 card::is_fusion_set_card(uint32 set_code) {
 		return TRUE;
 	if(pduel->game_field->core.not_material)
 		return FALSE;
-	uint32 settype = set_code & 0xfff;
-	uint32 setsubtype = set_code & 0xf000;
 	effect_set eset;
 	filter_effect(EFFECT_ADD_FUSION_CODE, &eset);
 	for(int32 i = 0; i < eset.size(); ++i) {
 		uint32 code = eset[i]->get_value(this);
-		card_data dat;
-		::read_card(code, &dat);
-		uint64 setcode = dat.setcode;
-		while(setcode) {
-			if ((setcode & 0xfff) == settype && (setcode & 0xf000 & setsubtype) == setsubtype)
-				return TRUE;
-			setcode = setcode >> 16;
-		}
+		if (check_card_setcode(code, set_code))
+			return TRUE;
 	}
 	eset.clear();
 	filter_effect(EFFECT_ADD_FUSION_SETCODE, &eset);
 	for(int32 i = 0; i < eset.size(); ++i) {
-		uint32 setcode = eset[i]->get_value(this);
-		if ((setcode & 0xfff) == settype && (setcode & 0xf000 & setsubtype) == setsubtype)
+		uint32 value = eset[i]->get_value(this);
+		uint16_t new_setcode = value & 0xffff;
+		if (check_setcode(new_setcode, set_code))
 			return TRUE;
 	}
 	return FALSE;
@@ -651,53 +615,22 @@ int32 card::is_link_set_card(uint32 set_code) {
 	filter_effect(EFFECT_ADD_LINK_CODE, &eset);
 	for(int32 i = 0; i < eset.size(); ++i) {
 		uint32 code = eset[i]->get_value(this);
-		card_data dat;
-		::read_card(code, &dat);
-		uint64 setcode = dat.setcode;
-		while(setcode) {
-			if ((setcode & 0xfff) == settype && (setcode & 0xf000 & setsubtype) == setsubtype)
-				return TRUE;
-			setcode = setcode >> 16;
-		}
+		if (check_card_setcode(code, set_code))
+			return TRUE;
 	}
 	return FALSE;
 }
 int32 card::is_special_summon_set_card(uint32 set_code) {
 	uint32 code = spsummon.code;
-	uint64 setcode;
-	if (code == data.code) {
-		setcode = data.setcode;
-	} else {
-		card_data dat;
-		::read_card(code, &dat);
-		setcode = dat.setcode;
-	}
-	uint32 settype = set_code & 0xfff;
-	uint32 setsubtype = set_code & 0xf000;
-	while(setcode) {
-		if ((setcode & 0xfff) == settype && (setcode & 0xf000 & setsubtype) == setsubtype)
-			return TRUE;
-		setcode = setcode >> 16;
-	}
+	if (check_card_setcode(code, set_code))
+		return TRUE;
+	uint32 code2 = spsummon.code2;
+	if (code2 && check_card_setcode(code2, set_code))
+		return TRUE;
 	//add set code
 	for(auto& spsetcode : spsummon.setcode) {
-		if (spsetcode && (spsetcode & 0xfff) == settype && (spsetcode & 0xf000 & setsubtype) == setsubtype)
+		if (check_setcode(spsetcode, set_code))
 			return TRUE;
-	}
-	//another code
-	uint32 code2 = spsummon.code2;
-	uint64 setcode2;
-	if (code2 != 0) {
-		card_data dat;
-		::read_card(code2, &dat);
-		setcode2 = dat.setcode;
-	} else {
-		return FALSE;
-	}
-	while(setcode2) {
-		if ((setcode2 & 0xfff) == settype && (setcode2 & 0xf000 & setsubtype) == setsubtype)
-			return TRUE;
-		setcode2 = setcode2 >> 16;
 	}
 	return FALSE;
 }
@@ -2725,7 +2658,7 @@ void card::set_special_summon_status(effect* peffect) {
 		effect_set eset;
 		pcard->filter_effect(EFFECT_ADD_SETCODE, &eset);
 		for(int32 i = 0; i < eset.size(); ++i) {
-			spsummon.setcode.push_back((uint32)eset[i]->get_value(pcard));
+			spsummon.setcode.push_back((uint32)eset[i]->get_value(pcard) & 0xffff);
 		}
 		spsummon.reason_effect = peffect;
 		spsummon.reason_player = peffect->get_handler_player();
@@ -2744,7 +2677,7 @@ void card::set_special_summon_status(effect* peffect) {
 		effect_set eset;
 		pcard->filter_effect(EFFECT_ADD_SETCODE, &eset);
 		for(int32 i = 0; i < eset.size(); ++i) {
-			spsummon.setcode.push_back((uint32)eset[i]->get_value(pcard));
+			spsummon.setcode.push_back((uint32)eset[i]->get_value(pcard) & 0xffff);
 		}
 		spsummon.reason_effect = cait->triggering_effect;
 		spsummon.reason_player = cait->triggering_player;
@@ -3576,6 +3509,28 @@ int32 card::is_can_be_summoned(uint8 playerid, uint8 ignore_count, effect* peffe
 	pduel->game_field->restore_lp_cost();
 	return TRUE;
 }
+int32 card::is_summon_negatable(uint32 sumtype, effect* reason_effect) {
+	uint32 code = 0;
+	if (sumtype & SUMMON_TYPE_NORMAL)
+		code = EFFECT_CANNOT_DISABLE_SUMMON;
+	else if (sumtype & SUMMON_TYPE_FLIP)
+		code = EFFECT_CANNOT_DISABLE_FLIP_SUMMON;
+	else if (sumtype & SUMMON_TYPE_SPECIAL)
+		code = EFFECT_CANNOT_DISABLE_SPSUMMON;
+	else
+		return FALSE;
+	if (is_affected_by_effect(code))
+		return FALSE;
+	if (sumtype == SUMMON_TYPE_DUAL || sumtype & SUMMON_TYPE_FLIP) {
+		if (!is_status(STATUS_FLIP_SUMMONING))
+			return FALSE;
+		if (!is_affect_by_effect(reason_effect))
+			return FALSE;
+		if (sumtype == SUMMON_TYPE_DUAL && (!is_affected_by_effect(EFFECT_DUAL_SUMMONABLE) || is_affected_by_effect(EFFECT_DUAL_STATUS)))
+			return FALSE;
+	}
+	return TRUE;
+}
 int32 card::get_summon_tribute_count() {
 	int32 min = 0, max = 0;
 	int32 level = get_level();
@@ -4047,8 +4002,8 @@ int32 card::is_capable_send_to_hand(uint8 playerid) {
 		return FALSE;
 	return TRUE;
 }
-int32 card::is_capable_send_to_deck(uint8 playerid) {
-	if(is_status(STATUS_LEAVE_CONFIRMED))
+int32 card::is_capable_send_to_deck(uint8 playerid, uint8 send_activating) {
+	if(!send_activating && is_status(STATUS_LEAVE_CONFIRMED))
 		return FALSE;
 	if((current.location == LOCATION_EXTRA) && is_extra_deck_monster())
 		return FALSE;
