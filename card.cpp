@@ -189,6 +189,7 @@ card::card(duel* pd) {
 	assume_value = 0;
 	spsummon_code = 0;
 	current.controler = PLAYER_NONE;
+	to_leave_fromex = FALSE;
 }
 inline void update_cache(uint32& tdata, uint32& cache, int32*& p, uint32& query_flag, const uint32 flag) {
 	if (tdata != cache) {
@@ -1421,7 +1422,7 @@ uint32 card::get_link_marker() {
 			return 0;
 		for (int32 i = 0; i < effects3.size(); ++i) {
 			card* ocard = effects3[i]->get_handler();
-			if (!(effects3[i]->type & EFFECT_TYPE_FIELD) || !(ocard && ocard->get_status(STATUS_TO_LEAVE_FROMEX)))
+			if (!(effects3[i]->type & EFFECT_TYPE_FIELD) || !(ocard && ocard->to_leave_fromex))
 				link_marker = effects3[i]->get_value(this);
 		}
 	}
@@ -1430,14 +1431,14 @@ uint32 card::get_link_marker() {
 	filter_effect(EFFECT_CHANGE_LINK_MARKER_KOISHI, &effects2);
 	for (int32 i = 0; i < effects.size(); ++i) {
 		card* ocard = effects[i]->get_handler();
-		if (effects[i]->code == EFFECT_ADD_LINK_MARKER_KOISHI && (!(effects[i]->type & EFFECT_TYPE_FIELD) || !(ocard && ocard->get_status(STATUS_TO_LEAVE_FROMEX))))
+		if (effects[i]->code == EFFECT_ADD_LINK_MARKER_KOISHI && (!(effects[i]->type & EFFECT_TYPE_FIELD) || !(ocard && ocard->to_leave_fromex)))
 			link_marker |= effects[i]->get_value(this);
-		else if (effects[i]->code == EFFECT_REMOVE_LINK_MARKER_KOISHI && (!(effects[i]->type & EFFECT_TYPE_FIELD) || !(ocard && ocard->get_status(STATUS_TO_LEAVE_FROMEX))))
+		else if (effects[i]->code == EFFECT_REMOVE_LINK_MARKER_KOISHI && (!(effects[i]->type & EFFECT_TYPE_FIELD) || !(ocard && ocard->to_leave_fromex)))
 			link_marker &= ~(effects[i]->get_value(this));
 	}
 	for (int32 i = 0; i < effects2.size(); ++i) {
 		card* ocard = effects2[i]->get_handler();
-		if (!(effects2[i]->type & EFFECT_TYPE_FIELD) || !(ocard && ocard->get_status(STATUS_TO_LEAVE_FROMEX)))
+		if (!(effects2[i]->type & EFFECT_TYPE_FIELD) || !(ocard && ocard->to_leave_fromex))
 			link_marker = effects2[i]->get_value(this);
 	}
 	return link_marker;
