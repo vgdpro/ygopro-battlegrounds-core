@@ -1772,6 +1772,14 @@ int32 scriptlib::duel_disable_self_destroy_check(lua_State* L) {
 	pduel->game_field->core.selfdes_disabled = disable;
 	return 0;
 }
+int32 scriptlib::duel_preserve_select_deck_seq(lua_State* L) {
+	duel* pduel = interpreter::get_duel_info(L);
+	uint8 preserve = TRUE;
+	if(lua_gettop(L) > 0)
+		preserve = lua_toboolean(L, 1);
+	pduel->game_field->core.select_deck_seq_preserved = preserve;
+	return 0;
+}
 int32 scriptlib::duel_shuffle_deck(lua_State *L) {
 	check_param_count(L, 1);
 	uint32 playerid = (uint32)lua_tointeger(L, 1);
@@ -2089,7 +2097,7 @@ int32 scriptlib::duel_disable_summon(lua_State *L) {
 			return 0;
 		sumplayer = pcard->summon_player;
 		pcard->set_status(STATUS_FLIP_SUMMONING, FALSE);
-		pcard->set_status(STATUS_SUMMON_DISABLED, TRUE);
+		pcard->set_status(STATUS_FLIP_SUMMON_DISABLED, TRUE);
 	}
 	else {
 		if (pcard) {
@@ -4745,6 +4753,11 @@ int32 scriptlib::duel_is_player_can_additional_summon(lua_State * L) {
 		lua_pushboolean(L, 0);
 	return 1;
 }
+int32 scriptlib::duel_is_chain_solving(lua_State * L) {
+	duel* pduel = interpreter::get_duel_info(L);
+	lua_pushboolean(L, pduel->game_field->core.chain_solving);
+	return 1;
+}
 int32 scriptlib::duel_is_chain_negatable(lua_State * L) {
 	check_param_count(L, 1);
 	lua_pushboolean(L, 1);
@@ -5092,6 +5105,7 @@ static const struct luaL_Reg duellib[] = {
 	{ "DiscardHand", scriptlib::duel_discard_hand },
 	{ "DisableShuffleCheck", scriptlib::duel_disable_shuffle_check },
 	{ "DisableSelfDestroyCheck", scriptlib::duel_disable_self_destroy_check },
+	{ "PreserveSelectDeckSequence", scriptlib::duel_preserve_select_deck_seq },
 	{ "ShuffleDeck", scriptlib::duel_shuffle_deck },
 	{ "ShuffleExtra", scriptlib::duel_shuffle_extra },
 	{ "ShuffleHand", scriptlib::duel_shuffle_hand },
@@ -5235,6 +5249,7 @@ static const struct luaL_Reg duellib[] = {
 	{ "IsPlayerCanSendtoGrave", scriptlib::duel_is_player_can_send_to_grave },
 	{ "IsPlayerCanSendtoDeck", scriptlib::duel_is_player_can_send_to_deck },
 	{ "IsPlayerCanAdditionalSummon", scriptlib::duel_is_player_can_additional_summon },
+	{ "IsChainSolving", scriptlib::duel_is_chain_solving },
 	{ "IsChainNegatable", scriptlib::duel_is_chain_negatable },
 	{ "IsChainDisablable", scriptlib::duel_is_chain_disablable },
 	{ "IsChainDisabled", scriptlib::duel_is_chain_disabled },

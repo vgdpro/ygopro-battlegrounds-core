@@ -482,6 +482,7 @@ public:
 	static int32 duel_discard_hand(lua_State *L);
 	static int32 duel_disable_shuffle_check(lua_State *L);
 	static int32 duel_disable_self_destroy_check(lua_State *L);
+	static int32 duel_preserve_select_deck_seq(lua_State *L);
 	static int32 duel_shuffle_deck(lua_State *L);
 	static int32 duel_shuffle_extra(lua_State *L);
 	static int32 duel_shuffle_hand(lua_State *L);
@@ -629,6 +630,7 @@ public:
 	static int32 duel_is_player_can_send_to_grave(lua_State *L);
 	static int32 duel_is_player_can_send_to_deck(lua_State *L);
 	static int32 duel_is_player_can_additional_summon(lua_State *L);
+	static int32 duel_is_chain_solving(lua_State *L);
 	static int32 duel_is_chain_negatable(lua_State *L);
 	static int32 duel_is_chain_disablable(lua_State *L);
 	static int32 duel_is_chain_disabled(lua_State *L);

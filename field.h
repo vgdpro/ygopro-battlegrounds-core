@@ -279,6 +279,8 @@ struct processor {
 	uint8 summon_cancelable{ FALSE };
 	card* attacker{ nullptr };
 	card* attack_target{ nullptr };
+	uint8 attacker_player{ PLAYER_NONE };
+	uint8 attack_target_player{ PLAYER_NONE };
 	uint32 limit_extra_summon_zone{ 0 };
 	uint32 limit_extra_summon_releasable{ 0 };
 	card* limit_tuner{ nullptr };
@@ -344,6 +346,7 @@ struct processor {
 	uint32 hint_timing[2]{};
 	uint8 current_player{ PLAYER_NONE };
 	uint8 conti_player{ PLAYER_NONE };
+	uint8 select_deck_seq_preserved{ FALSE };
 	std::unordered_map<uint32, std::pair<uint32, uint32>> summon_counter;
 	std::unordered_map<uint32, std::pair<uint32, uint32>> normalsummon_counter;
 	std::unordered_map<uint32, std::pair<uint32, uint32>> spsummon_counter;
