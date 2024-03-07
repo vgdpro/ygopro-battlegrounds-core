@@ -215,6 +215,8 @@ public:
 	effect_relation relate_effect;
 	effect_set_v immune_effect;
 
+	uint8 to_leave_fromex;
+
 	explicit card(duel* pd);
 	~card() = default;
 	static bool card_operation_sort(card* c1, card* c2);

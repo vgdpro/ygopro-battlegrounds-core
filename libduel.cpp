@@ -2264,12 +2264,12 @@ int32 scriptlib::duel_get_location_count_fromex(lua_State *L) {
 	if(lua_gettop(L) >= 3 && !lua_isnil(L, 3)) {
 		if(check_param(L, PARAM_TYPE_CARD, 3, TRUE)) {
 			mcard = *(card**) lua_touserdata(L, 3);
-			mcard->set_status(STATUS_TO_LEAVE_FROMEX, TRUE);
+			mcard->to_leave_fromex = TRUE;
 		} else if(check_param(L, PARAM_TYPE_GROUP, 3, TRUE)) {
 			mgroup = *(group**) lua_touserdata(L, 3);
 			for(auto cit = mgroup->container.begin(); cit != mgroup->container.end(); ++cit) {
 				card* gcard = *cit;
-				gcard->set_status(STATUS_TO_LEAVE_FROMEX, TRUE);
+				gcard->to_leave_fromex = TRUE;
 			}
 		} else
 			return luaL_error(L, "Parameter %d should be \"Card\" or \"Group\".", 3);
@@ -2313,11 +2313,11 @@ int32 scriptlib::duel_get_location_count_fromex(lua_State *L) {
 	lua_pushinteger(L, pduel->game_field->get_useable_count_fromex(scard, playerid, uplayer, zone, &list));
 	lua_pushinteger(L, list);
 	if(mcard)
-		mcard->set_status(STATUS_TO_LEAVE_FROMEX, FALSE);
+		mcard->to_leave_fromex = FALSE;
 	if(mgroup){
 		for(auto cit = mgroup->container.begin(); cit != mgroup->container.end(); ++cit) {
 			card* gcard = *cit;
-			gcard->set_status(STATUS_TO_LEAVE_FROMEX, FALSE);
+			gcard->to_leave_fromex = FALSE;
 		}		
 	}
 	if(swapped) {
