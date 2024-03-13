@@ -48,9 +48,17 @@ int32 scriptlib::card_set_card_data(lua_State *L) {
 	case CARDDATA_ALIAS:
 		pcard->data.alias = lua_tointeger(L, 3);
 		break;
-	case CARDDATA_SETCODE:
-		pcard->data.setcode = lua_tointeger(L, 3);
+	case CARDDATA_SETCODE: {
+		unsigned long setcode = lua_tointeger(L, 3);
+		for (int i = 0 ;; ++i)
+		{
+			if(setcode == 0)
+				break;
+			pcard->data.setcode[i] = setcode & 0xffff;
+			setcode >>= 16;
+		}
 		break;
+	}
 	case CARDDATA_TYPE:
 		pcard->data.type = lua_tointeger(L, 3);
 		break;

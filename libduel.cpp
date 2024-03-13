@@ -40,9 +40,17 @@ int32 scriptlib::duel_read_card(lua_State *L) {
 		case CARDDATA_ALIAS:
 			lua_pushinteger(L, dat.alias);
 			break;
-		case CARDDATA_SETCODE:
-			lua_pushinteger(L, dat.setcode);
+		case CARDDATA_SETCODE: {
+			unsigned long setcode = 0;
+			for (int i = 0;; ++i) {
+				uint16_t sc = dat.setcode[i];
+				if (!sc)
+					break;
+				setcode |= sc << (16 * i);
+			}
+			lua_pushinteger(L, setcode);
 			break;
+		}
 		case CARDDATA_TYPE:
 			lua_pushinteger(L, dat.type);
 			break;
