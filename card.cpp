@@ -1393,7 +1393,7 @@ uint32 card::get_linked_zone() {
 			return 0;
 		if(is_link_marker(LINK_MARKER_TOP_LEFT) && s != 0)
 			zones |= 1u << (s - 1);
-		if(is_link_marker(LINK_MARKER_TOP) && s != 0)
+		if(is_link_marker(LINK_MARKER_TOP))
 			zones |= 1u << s;
 		if(is_link_marker(LINK_MARKER_TOP_RIGHT) && s != 4)
 			zones |= 1u << (s + 1);
