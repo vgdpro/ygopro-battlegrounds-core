@@ -1664,7 +1664,6 @@ uint32 card::get_select_info_location(uint8 *deck_seq_pointer) {
 int32 card::is_treated_as_not_on_field() {
 	return get_status(STATUS_SUMMONING | STATUS_SUMMON_DISABLED | STATUS_ACTIVATE_DISABLED | STATUS_SPSUMMON_STEP);
 }
-
 void card::equip(card* target, uint32 send_msg) {
 	if (equiping_target)
 		return;

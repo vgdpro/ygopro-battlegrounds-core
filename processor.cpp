@@ -4168,6 +4168,30 @@ int32 field::add_chain(uint16 step) {
 		if(clit.required_handorset_effects.size() == 1) {
 			returns.ivalue[0] = 0;
 			return FALSE;
+		} else {
+			// check if there's only one type of ceffects
+			auto peffect = clit.triggering_effect;
+			auto playerid = clit.triggering_player;
+			int32 ceffect_unique_id = 0;
+			for(int32 i = 0; i < clit.required_handorset_effects.size(); ++i) {
+				pduel->lua->add_param(peffect, PARAM_TYPE_EFFECT);
+				pduel->lua->add_param(playerid, PARAM_TYPE_INT);
+				auto id = clit.required_handorset_effects[i]->get_value(2);
+				if (id) {
+					if(!ceffect_unique_id) {
+						ceffect_unique_id = id;
+					} else if (ceffect_unique_id != id) {
+						// there are more than one types, so we can't skip
+						ceffect_unique_id = 0;
+						break;
+					}
+				}
+			}
+			if (ceffect_unique_id) {
+				// all ceffects are the same type, so skip asking
+				returns.ivalue[0] = 0;
+				return FALSE;
+			}
 		}
 		core.select_options.clear();
 		for(int32 i = 0; i < clit.required_handorset_effects.size(); ++i) {
@@ -4187,6 +4211,7 @@ int32 field::add_chain(uint16 step) {
 			pduel->write_buffer32(ceffect->description);
 		}
 		if(ceffect->cost) {
+			pduel->lua->add_param(clit.triggering_effect, PARAM_TYPE_EFFECT);
 			core.sub_solving_event.push_back(clit.evt);
 			add_process(PROCESSOR_EXECUTE_COST, 0, ceffect, 0, clit.triggering_player, 0);
 		}
