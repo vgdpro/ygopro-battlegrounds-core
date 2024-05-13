@@ -248,12 +248,11 @@ int32 field::select_card(uint16 step, uint8 playerid, uint8 cancelable, uint8 mi
 		pduel->write_buffer8(min);
 		pduel->write_buffer8(max);
 		pduel->write_buffer8((uint8)core.select_cards.size());
-		uint8 deck_seq_pointer[2];
-		deck_seq_pointer[0] = 0;
-		deck_seq_pointer[1] = 0;
+		pduel->game_field->core.select_deck_seq_pointer[0] = 0;
+		pduel->game_field->core.select_deck_seq_pointer[1] = 0;
 		for(auto& pcard : core.select_cards) {
 			pduel->write_buffer32(pcard->data.code);
-			pduel->write_buffer32(pcard->get_select_info_location(deck_seq_pointer));
+			pduel->write_buffer32(pcard->get_select_info_location());
 		}
 		return FALSE;
 	} else {
@@ -299,17 +298,16 @@ int32 field::select_unselect_card(uint16 step, uint8 playerid, uint8 cancelable,
 		pduel->write_buffer8(min);
 		pduel->write_buffer8(max);
 		pduel->write_buffer8((uint8)core.select_cards.size());
-		uint8 deck_seq_pointer[2];
-		deck_seq_pointer[0] = 0;
-		deck_seq_pointer[1] = 0;
+		pduel->game_field->core.select_deck_seq_pointer[0] = 0;
+		pduel->game_field->core.select_deck_seq_pointer[1] = 0;
 		for(auto& pcard : core.select_cards) {
 			pduel->write_buffer32(pcard->data.code);
-			pduel->write_buffer32(pcard->get_select_info_location(deck_seq_pointer));
+			pduel->write_buffer32(pcard->get_select_info_location());
 		}
 		pduel->write_buffer8((uint8)core.unselect_cards.size());
 		for(auto& pcard : core.unselect_cards) {
 			pduel->write_buffer32(pcard->data.code);
-			pduel->write_buffer32(pcard->get_select_info_location(deck_seq_pointer));
+			pduel->write_buffer32(pcard->get_select_info_location());
 		}
 		return FALSE;
 	} else {
@@ -526,14 +524,13 @@ int32 field::select_tribute(uint16 step, uint8 playerid, uint8 cancelable, uint8
 		pduel->write_buffer8(min);
 		pduel->write_buffer8(max);
 		pduel->write_buffer8((uint8)core.select_cards.size());
-		uint8 deck_seq_pointer[2];
-		deck_seq_pointer[0] = 0;
-		deck_seq_pointer[1] = 0;
+		pduel->game_field->core.select_deck_seq_pointer[0] = 0;
+		pduel->game_field->core.select_deck_seq_pointer[1] = 0;
 		for(auto& pcard : core.select_cards) {
 			pduel->write_buffer32(pcard->data.code);
 			pduel->write_buffer8(pcard->current.controler);
 			pduel->write_buffer8(pcard->current.location);
-			pduel->write_buffer8(pcard->get_select_sequence(deck_seq_pointer));
+			pduel->write_buffer8(pcard->get_select_sequence());
 			pduel->write_buffer8(pcard->release_param);
 		}
 		return FALSE;
@@ -598,14 +595,13 @@ int32 field::select_counter(uint16 step, uint8 playerid, uint16 countertype, uin
 		pduel->write_buffer16(count);
 		pduel->write_buffer8((uint8)core.select_cards.size());
 		std::sort(core.select_cards.begin(), core.select_cards.end(), card::card_operation_sort);
-		uint8 deck_seq_pointer[2];
-		deck_seq_pointer[0] = 0;
-		deck_seq_pointer[1] = 0;
+		pduel->game_field->core.select_deck_seq_pointer[0] = 0;
+		pduel->game_field->core.select_deck_seq_pointer[1] = 0;
 		for(auto& pcard : core.select_cards) {
 			pduel->write_buffer32(pcard->data.code);
 			pduel->write_buffer8(pcard->current.controler);
 			pduel->write_buffer8(pcard->current.location);
-			pduel->write_buffer8(pcard->get_select_sequence(deck_seq_pointer));
+			pduel->write_buffer8(pcard->get_select_sequence());
 			pduel->write_buffer16(pcard->get_counter(countertype));
 		}
 		return FALSE;
@@ -657,14 +653,13 @@ int32 field::select_with_sum_limit(int16 step, uint8 playerid, int32 acc, int32 
 		pduel->write_buffer8(min);
 		pduel->write_buffer8(max);
 		pduel->write_buffer8((uint8)core.must_select_cards.size());
-		uint8 deck_seq_pointer[2];
-		deck_seq_pointer[0] = 0;
-		deck_seq_pointer[1] = 0;
+		pduel->game_field->core.select_deck_seq_pointer[0] = 0;
+		pduel->game_field->core.select_deck_seq_pointer[1] = 0;
 		for(auto& pcard : core.must_select_cards) {
 			pduel->write_buffer32(pcard->data.code);
 			pduel->write_buffer8(pcard->current.controler);
 			pduel->write_buffer8(pcard->current.location);
-			pduel->write_buffer8(pcard->get_select_sequence(deck_seq_pointer));
+			pduel->write_buffer8(pcard->get_select_sequence());
 			pduel->write_buffer32(pcard->sum_param);
 		}
 		pduel->write_buffer8((uint8)core.select_cards.size());
@@ -672,7 +667,7 @@ int32 field::select_with_sum_limit(int16 step, uint8 playerid, int32 acc, int32 
 			pduel->write_buffer32(pcard->data.code);
 			pduel->write_buffer8(pcard->current.controler);
 			pduel->write_buffer8(pcard->current.location);
-			pduel->write_buffer8(pcard->get_select_sequence(deck_seq_pointer));
+			pduel->write_buffer8(pcard->get_select_sequence());
 			pduel->write_buffer32(pcard->sum_param);
 		}
 		return FALSE;

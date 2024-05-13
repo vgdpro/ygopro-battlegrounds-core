@@ -1536,18 +1536,18 @@ int32 card::is_all_column() {
 		return TRUE;
 	return FALSE;
 }
-uint8 card::get_select_sequence(uint8 *deck_seq_pointer) {
+uint8 card::get_select_sequence() {
 	if(current.location == LOCATION_DECK && !pduel->game_field->core.select_deck_seq_preserved) {
-		return deck_seq_pointer[current.controler]++;
+		return pduel->game_field->core.select_deck_seq_pointer[current.controler == 1 ? 1 : 0]++;
 	} else {
 		return current.sequence;
 	}
 }
-uint32 card::get_select_info_location(uint8 *deck_seq_pointer) {
+uint32 card::get_select_info_location() {
 	if(current.location == LOCATION_DECK) {
 		uint32 c = current.controler;
 		uint32 l = current.location;
-		uint32 s = get_select_sequence(deck_seq_pointer);
+		uint32 s = get_select_sequence();
 		uint32 ss = current.position;
 		return c + (l << 8) + (s << 16) + (ss << 24);
 	} else {
