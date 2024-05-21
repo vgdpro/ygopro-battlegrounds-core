@@ -22,6 +22,9 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	no_action = 0;
 	call_depth = 0;
 	//Initial
+#ifdef YGOPRO_NO_LUA_SAFE
+	luaL_openlibs(lua_state);
+#else
 	luaL_requiref(lua_state, "base", luaopen_base, 0);
 	lua_pop(lua_state, 1);
 	luaL_requiref(lua_state, "string", luaopen_string, 1);
@@ -32,6 +35,7 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	lua_pop(lua_state, 1);
 	luaL_requiref(lua_state, "math", luaopen_math, 1);
 	lua_pop(lua_state, 1);
+#endif
 	//open all libs
 	scriptlib::open_cardlib(lua_state);
 	scriptlib::open_effectlib(lua_state);
