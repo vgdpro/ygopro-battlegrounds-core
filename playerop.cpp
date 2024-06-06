@@ -226,8 +226,12 @@ int32 field::select_card(uint16 step, uint8 playerid, uint8 cancelable, uint8 mi
 		returns.bvalue[0] = 0;
 		if(max == 0 || core.select_cards.empty())
 			return TRUE;
-		if(max > 127)
-			max = 127;
+		core.selecting_player = playerid;
+		std::sort(core.select_cards.begin(), core.select_cards.end(), card::card_operation_sort);
+		if (core.select_cards.size() > UINT8_MAX)
+			core.select_cards.resize(UINT8_MAX);
+		if (max > SIZE_RETURN_VALUE - 1)
+			max = SIZE_RETURN_VALUE - 1;
 		if(max > core.select_cards.size())
 			max = (uint8)core.select_cards.size();
 		if(min > max)
@@ -245,10 +249,10 @@ int32 field::select_card(uint16 step, uint8 playerid, uint8 cancelable, uint8 mi
 		pduel->write_buffer8(min);
 		pduel->write_buffer8(max);
 		pduel->write_buffer8((uint8)core.select_cards.size());
-		std::sort(core.select_cards.begin(), core.select_cards.end(), card::card_operation_sort);
+		uint8 deck_seq_pointer = 0;
 		for(auto& pcard : core.select_cards) {
 			pduel->write_buffer32(pcard->data.code);
-			pduel->write_buffer32(pcard->get_info_location());
+			pduel->write_buffer32(pcard->get_select_info_location(&deck_seq_pointer));
 		}
 		return FALSE;
 	} else {
@@ -282,6 +286,12 @@ int32 field::select_unselect_card(uint16 step, uint8 playerid, uint8 cancelable,
 				returns.bvalue[i + 1] = i;
 			return TRUE;
 		}
+		core.selecting_player = playerid;
+		std::sort(core.select_cards.begin(), core.select_cards.end(), card::card_operation_sort);
+		if (core.select_cards.size() > UINT8_MAX)
+			core.select_cards.resize(UINT8_MAX);
+		if (core.unselect_cards.size() > UINT8_MAX)
+			core.unselect_cards.resize(UINT8_MAX);
 		pduel->write_buffer8(MSG_SELECT_UNSELECT_CARD);
 		pduel->write_buffer8(playerid);
 		pduel->write_buffer8(finishable);
@@ -289,15 +299,15 @@ int32 field::select_unselect_card(uint16 step, uint8 playerid, uint8 cancelable,
 		pduel->write_buffer8(min);
 		pduel->write_buffer8(max);
 		pduel->write_buffer8((uint8)core.select_cards.size());
-		std::sort(core.select_cards.begin(), core.select_cards.end(), card::card_operation_sort);
+		uint8 deck_seq_pointer = 0;
 		for(auto& pcard : core.select_cards) {
 			pduel->write_buffer32(pcard->data.code);
-			pduel->write_buffer32(pcard->get_info_location());
+			pduel->write_buffer32(pcard->get_select_info_location(&deck_seq_pointer));
 		}
 		pduel->write_buffer8((uint8)core.unselect_cards.size());
 		for(auto& pcard : core.unselect_cards) {
 			pduel->write_buffer32(pcard->data.code);
-			pduel->write_buffer32(pcard->get_info_location());
+			pduel->write_buffer32(pcard->get_select_info_location(&deck_seq_pointer));
 		}
 		return FALSE;
 	} else {
@@ -311,7 +321,7 @@ int32 field::select_unselect_card(uint16 step, uint8 playerid, uint8 cancelable,
 			pduel->write_buffer8(MSG_RETRY);
 			return FALSE;
 		}
-		uint8 m = (uint8)core.select_cards.size() + (uint8)core.unselect_cards.size();
+		int32 m = core.select_cards.size() + core.unselect_cards.size();
 		uint8 v = returns.bvalue[1];
 		if(v < 0 || v >= m) {
 			pduel->write_buffer8(MSG_RETRY);
@@ -495,6 +505,10 @@ int32 field::select_tribute(uint16 step, uint8 playerid, uint8 cancelable, uint8
 		returns.bvalue[0] = 0;
 		if(max == 0 || core.select_cards.empty())
 			return TRUE;
+		core.selecting_player = playerid;
+		std::sort(core.select_cards.begin(), core.select_cards.end(), card::card_operation_sort);
+		if (core.select_cards.size() > UINT8_MAX)
+			core.select_cards.resize(UINT8_MAX);
 		uint8 tm = 0;
 		for(auto& pcard : core.select_cards)
 			tm += pcard->release_param;
@@ -511,12 +525,12 @@ int32 field::select_tribute(uint16 step, uint8 playerid, uint8 cancelable, uint8
 		pduel->write_buffer8(min);
 		pduel->write_buffer8(max);
 		pduel->write_buffer8((uint8)core.select_cards.size());
-		std::sort(core.select_cards.begin(), core.select_cards.end(), card::card_operation_sort);
+		uint8 deck_seq_pointer = 0;
 		for(auto& pcard : core.select_cards) {
 			pduel->write_buffer32(pcard->data.code);
 			pduel->write_buffer8(pcard->current.controler);
 			pduel->write_buffer8(pcard->current.location);
-			pduel->write_buffer8(pcard->current.sequence);
+			pduel->write_buffer8(pcard->get_select_sequence(&deck_seq_pointer));
 			pduel->write_buffer8(pcard->release_param);
 		}
 		return FALSE;
@@ -580,18 +594,20 @@ int32 field::select_counter(uint16 step, uint8 playerid, uint16 countertype, uin
 		pduel->write_buffer16(countertype);
 		pduel->write_buffer16(count);
 		pduel->write_buffer8((uint8)core.select_cards.size());
+		core.selecting_player = playerid;
 		std::sort(core.select_cards.begin(), core.select_cards.end(), card::card_operation_sort);
+		uint8 deck_seq_pointer = 0;
 		for(auto& pcard : core.select_cards) {
 			pduel->write_buffer32(pcard->data.code);
 			pduel->write_buffer8(pcard->current.controler);
 			pduel->write_buffer8(pcard->current.location);
-			pduel->write_buffer8(pcard->current.sequence);
+			pduel->write_buffer8(pcard->get_select_sequence(&deck_seq_pointer));
 			pduel->write_buffer16(pcard->get_counter(countertype));
 		}
 		return FALSE;
 	} else {
 		uint16 ct = 0;
-		for(uint32 i = 0; i < core.select_cards.size(); ++i) {
+		for(int32 i = 0; i < (int32)core.select_cards.size(); ++i) {
 			if(core.select_cards[i]->get_counter(countertype) < returns.svalue[i]) {
 				pduel->write_buffer8(MSG_RETRY);
 				return FALSE;
@@ -620,6 +636,12 @@ int32 field::select_with_sum_limit(int16 step, uint8 playerid, int32 acc, int32 
 		returns.bvalue[0] = 0;
 		if(core.select_cards.empty())
 			return TRUE;
+		core.selecting_player = playerid;
+		std::sort(core.select_cards.begin(), core.select_cards.end(), card::card_operation_sort);
+		if (core.select_cards.size() > UINT8_MAX)
+			core.select_cards.resize(UINT8_MAX);
+		if (core.must_select_cards.size() > UINT8_MAX)
+			core.must_select_cards.resize(UINT8_MAX);
 		pduel->write_buffer8(MSG_SELECT_SUM);
 		if(max)
 			pduel->write_buffer8(0);
@@ -632,20 +654,20 @@ int32 field::select_with_sum_limit(int16 step, uint8 playerid, int32 acc, int32 
 		pduel->write_buffer8(min);
 		pduel->write_buffer8(max);
 		pduel->write_buffer8((uint8)core.must_select_cards.size());
+		uint8 deck_seq_pointer = 0;
 		for(auto& pcard : core.must_select_cards) {
 			pduel->write_buffer32(pcard->data.code);
 			pduel->write_buffer8(pcard->current.controler);
 			pduel->write_buffer8(pcard->current.location);
-			pduel->write_buffer8(pcard->current.sequence);
+			pduel->write_buffer8(pcard->get_select_sequence(&deck_seq_pointer));
 			pduel->write_buffer32(pcard->sum_param);
 		}
 		pduel->write_buffer8((uint8)core.select_cards.size());
-		std::sort(core.select_cards.begin(), core.select_cards.end(), card::card_operation_sort);
 		for(auto& pcard : core.select_cards) {
 			pduel->write_buffer32(pcard->data.code);
 			pduel->write_buffer8(pcard->current.controler);
 			pduel->write_buffer8(pcard->current.location);
-			pduel->write_buffer8(pcard->current.sequence);
+			pduel->write_buffer8(pcard->get_select_sequence(&deck_seq_pointer));
 			pduel->write_buffer32(pcard->sum_param);
 		}
 		return FALSE;
@@ -723,6 +745,8 @@ int32 field::sort_card(int16 step, uint8 playerid) {
 		}
 		if(core.select_cards.empty())
 			return TRUE;
+		if (core.select_cards.size() > UINT8_MAX)
+			core.select_cards.resize(UINT8_MAX);
 		pduel->write_buffer8(MSG_SORT_CARD);
 		pduel->write_buffer8(playerid);
 		pduel->write_buffer8((uint8)core.select_cards.size());
@@ -755,7 +779,7 @@ int32 field::announce_race(int16 step, uint8 playerid, int32 count, int32 availa
 		int32 scount = 0;
 		for(int32 ft = 0x1; ft < (1 << RACES_COUNT); ft <<= 1) {
 			if(ft & available)
-				scount++;
+				++scount;
 		}
 		if(scount <= count) {
 			count = scount;
@@ -775,7 +799,7 @@ int32 field::announce_race(int16 step, uint8 playerid, int32 count, int32 availa
 				pduel->write_buffer8(MSG_RETRY);
 				return FALSE;
 			}
-			sel++;
+			++sel;
 		}
 		if(sel != count) {
 			pduel->write_buffer8(MSG_RETRY);
@@ -794,7 +818,7 @@ int32 field::announce_attribute(int16 step, uint8 playerid, int32 count, int32 a
 		int32 scount = 0;
 		for(int32 ft = 0x1; ft != 0x80; ft <<= 1) {
 			if(ft & available)
-				scount++;
+				++scount;
 		}
 		if(scount <= count) {
 			count = scount;
@@ -814,7 +838,7 @@ int32 field::announce_attribute(int16 step, uint8 playerid, int32 count, int32 a
 				pduel->write_buffer8(MSG_RETRY);
 				return FALSE;
 			}
-			sel++;
+			++sel;
 		}
 		if(sel != count) {
 			pduel->write_buffer8(MSG_RETRY);
@@ -920,15 +944,7 @@ static int32 is_declarable(card_data const& cd, const std::vector<uint32>& opcod
 			if(stack.size() >= 1) {
 				int32 set_code = stack.top();
 				stack.pop();
-				uint64 sc = cd.setcode;
-				bool res = false;
-				uint32 settype = set_code & 0xfff;
-				uint32 setsubtype = set_code & 0xf000;
-				while(sc) {
-					if((sc & 0xfff) == settype && (sc & 0xf000 & setsubtype) == setsubtype)
-						res = true;
-					sc = sc >> 16;
-				}
+				bool res = cd.is_setcode(set_code);
 				stack.push(res);
 			}
 			break;
@@ -966,7 +982,7 @@ static int32 is_declarable(card_data const& cd, const std::vector<uint32>& opcod
 	if(stack.size() != 1 || stack.top() == 0)
 		return FALSE;
 	return cd.code == CARD_MARINE_DOLPHIN || cd.code == CARD_TWINKLE_MOSS
-		|| (!cd.alias && (cd.type & (TYPE_MONSTER + TYPE_TOKEN)) != (TYPE_MONSTER + TYPE_TOKEN));
+		|| (!cd.alias && (cd.type & (TYPE_MONSTER | TYPE_TOKEN)) != (TYPE_MONSTER | TYPE_TOKEN));
 }
 int32 field::announce_card(int16 step, uint8 playerid) {
 	if(step == 0) {
@@ -979,7 +995,7 @@ int32 field::announce_card(int16 step, uint8 playerid) {
 	} else {
 		int32 code = returns.ivalue[0];
 		card_data data;
-		read_card(code, &data);
+		::read_card(code, &data);
 		if(!data.code) {
 			pduel->write_buffer8(MSG_RETRY);
 			return FALSE;
@@ -999,6 +1015,8 @@ int32 field::announce_card(int16 step, uint8 playerid) {
 }
 int32 field::announce_number(int16 step, uint8 playerid) {
 	if(step == 0) {
+		if (core.select_options.size() > UINT8_MAX)
+			core.select_options.resize(UINT8_MAX);
 		pduel->write_buffer8(MSG_ANNOUNCE_NUMBER);
 		pduel->write_buffer8(playerid);
 		pduel->write_buffer8((uint8)core.select_options.size());
