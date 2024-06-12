@@ -14,7 +14,7 @@
 #include "ocgapi.h"
 
 int32 scriptlib::debug_message(lua_State *L) {
-#ifndef YGOPRO_SERVER_MODE
+#if !defined(YGOPRO_SERVER_MODE) || defined(YGOPRO_ENABLE_DEBUG_FUNC)
 	duel* pduel = interpreter::get_duel_info(L);
 	lua_getglobal(L, "tostring");
 	lua_pushvalue(L, -2);
@@ -187,7 +187,7 @@ int32 scriptlib::debug_set_ai_name(lua_State *L) {
 	return 0;
 }
 int32 scriptlib::debug_show_hint(lua_State *L) {
-#ifndef YGOPRO_SERVER_MODE
+#if !defined(YGOPRO_SERVER_MODE) || defined(YGOPRO_ENABLE_DEBUG_FUNC)
 	check_param_count(L, 1);
 	check_param(L, PARAM_TYPE_STRING, 1);
 	duel* pduel = interpreter::get_duel_info(L);
