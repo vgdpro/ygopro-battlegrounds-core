@@ -160,8 +160,8 @@ constexpr int SIZE_SVALUE = SIZE_RETURN_VALUE / 2;
 constexpr int SIZE_IVALUE = SIZE_RETURN_VALUE / 4;
 constexpr int SIZE_LVALUE = SIZE_RETURN_VALUE / 8;
 union return_value {
-	int8 bvalue[SIZE_RETURN_VALUE];
-	int16 svalue[SIZE_SVALUE];
+	uint8 bvalue[SIZE_RETURN_VALUE];
+	uint16 svalue[SIZE_SVALUE];
 	int32 ivalue[SIZE_IVALUE];
 	int64 lvalue[SIZE_LVALUE];
 };
@@ -305,7 +305,7 @@ struct processor {
 	int32 spe_effect[2]{};
 	int32 last_select_hint[2]{ 0 };
 	int32 duel_options{ 0 };
-	int32 duel_rule{ CURRENT_RULE };	//current rule: 5, Master Rule 2020
+	int32 duel_rule{ CURRENT_RULE };
 	uint32 copy_reset{ 0 };
 	uint8 copy_reset_count{ 0 };
 	uint32 last_control_changed_id{ 0 };
@@ -407,6 +407,8 @@ public:
 	int32 get_spsummonable_count_fromex_rule4(card* pcard, uint8 playerid, uint8 uplayer, uint32 zone = 0xff, uint32* list = nullptr);
 	int32 get_mzone_limit(uint8 playerid, uint8 uplayer, uint32 reason);
 	int32 get_szone_limit(uint8 playerid, uint8 uplayer, uint32 reason);
+	int32 get_kaiser_limit(uint8 playerid, card_set* using_cards);
+	int32 get_kaiser_limit(uint8 playerid, card* using_card);
 	uint32 get_linked_zone(int32 playerid);
 	uint32 get_rule_zone_fromex(int32 playerid, card* pcard);
 	void filter_must_use_mzone(uint8 playerid, uint8 uplayer, uint32 reason, card* pcard, uint32* flag);
@@ -630,6 +632,7 @@ public:
 	int32 toss_dice(uint16 step, effect* reason_effect, uint8 reason_player, uint8 playerid, uint8 count1, uint8 count2);
 	int32 rock_paper_scissors(uint16 step, uint8 repeat);
 
+	bool check_response(int32 vector_size, int32 min_len, int32 max_len) const;
 	int32 select_battle_command(uint16 step, uint8 playerid);
 	int32 select_idle_command(uint16 step, uint8 playerid);
 	int32 select_effect_yes_no(uint16 step, uint8 playerid, uint32 description, card* pcard);

@@ -2235,14 +2235,25 @@ int32 scriptlib::duel_get_mzone_count(lua_State *L) {
 	if(lua_gettop(L) >= 5)
 		zone = (uint32)lua_tointeger(L, 5);
 	uint32 list = 0;
-	lua_pushinteger(L, pduel->game_field->get_useable_count(nullptr, playerid, LOCATION_MZONE, uplayer, reason, zone, &list));
-	lua_pushinteger(L, list);
+	auto count = pduel->game_field->get_useable_count(nullptr, playerid, LOCATION_MZONE, uplayer, reason, zone, &list);
 	if(swapped) {
 		pduel->game_field->player[0].used_location = used_location[0];
 		pduel->game_field->player[1].used_location = used_location[1];
 		pduel->game_field->player[0].list_mzone.swap(list_mzone[0]);
 		pduel->game_field->player[1].list_mzone.swap(list_mzone[1]);
 	}
+	if(uplayer == playerid && reason == LOCATION_REASON_TOFIELD) {
+		int32 kaiser_limit = 0xff;
+		if(mcard) {
+			kaiser_limit = pduel->game_field->get_kaiser_limit(playerid, mcard);
+		} else if (mgroup) {
+			kaiser_limit = pduel->game_field->get_kaiser_limit(playerid, &mgroup->container);
+		}
+		if (kaiser_limit < count)
+			count = kaiser_limit;
+	}
+	lua_pushinteger(L, count);
+	lua_pushinteger(L, list);
 	return 2;
 }
 // Condition: uplayer moves scard or any card with type from Extra Deck to playerid's field
@@ -2310,8 +2321,7 @@ int32 scriptlib::duel_get_location_count_fromex(lua_State *L) {
 	if(lua_gettop(L) >= 5)
 		zone = (uint32)lua_tointeger(L, 5);
 	uint32 list = 0;
-	lua_pushinteger(L, pduel->game_field->get_useable_count_fromex(scard, playerid, uplayer, zone, &list));
-	lua_pushinteger(L, list);
+	auto count = pduel->game_field->get_useable_count_fromex(scard, playerid, uplayer, zone, &list);
 	if(mcard)
 		mcard->to_leave_fromex = FALSE;
 	if(mgroup){
@@ -2326,6 +2336,18 @@ int32 scriptlib::duel_get_location_count_fromex(lua_State *L) {
 		pduel->game_field->player[0].list_mzone.swap(list_mzone[0]);
 		pduel->game_field->player[1].list_mzone.swap(list_mzone[1]);
 	}
+	if(uplayer == playerid) {
+		int32 kaiser_limit = 0xff;
+		if(mcard) {
+			kaiser_limit = pduel->game_field->get_kaiser_limit(playerid, mcard);
+		} else if (mgroup) {
+			kaiser_limit = pduel->game_field->get_kaiser_limit(playerid, &mgroup->container);
+		}
+		if (kaiser_limit < count)
+			count = kaiser_limit;
+	}
+	lua_pushinteger(L, count);
+	lua_pushinteger(L, list);
 	if(use_temp_card) {
 		scard->current.location = 0;
 		scard->data.type = 0;
@@ -2333,7 +2355,7 @@ int32 scriptlib::duel_get_location_count_fromex(lua_State *L) {
 	}
 	return 2;
 }
-// Return the number of available grids in playerid's Main MZONE and Extra MZONE
+// Return the number of available slots in the Main MZONE and Extra MZONE of `playerid`.
 int32 scriptlib::duel_get_usable_mzone_count(lua_State *L) {
 	check_param_count(L, 1);
 	uint32 playerid = (uint32)lua_tointeger(L, 1);
@@ -2881,7 +2903,7 @@ int32 scriptlib::duel_is_existing_matching_card(lua_State *L) {
 	uint32 location1 = (uint32)lua_tointeger(L, 3);
 	uint32 location2 = (uint32)lua_tointeger(L, 4);
 	uint32 fcount = (uint32)lua_tointeger(L, 5);
-	lua_pushboolean(L, pduel->game_field->filter_matching_card(1, (uint8)self, location1, location2, 0, pexception, pexgroup, extraargs, 0, fcount));
+	lua_pushboolean(L, pduel->game_field->filter_matching_card(1, (uint8)self, location1, location2, 0, pexception, pexgroup, extraargs, nullptr, fcount));
 	return 1;
 }
 /**
@@ -3229,7 +3251,7 @@ int32 scriptlib::duel_get_target_count(lua_State *L) {
 	uint32 location2 = (uint32)lua_tointeger(L, 4);
 	group* pgroup = pduel->new_group();
 	uint32 count = 0;
-	pduel->game_field->filter_matching_card(1, (uint8)self, location1, location2, pgroup, pexception, pexgroup, extraargs, 0, 0, TRUE);
+	pduel->game_field->filter_matching_card(1, (uint8)self, location1, location2, pgroup, pexception, pexgroup, extraargs, nullptr, 0, TRUE);
 	count = (uint32)pgroup->container.size();
 	lua_pushinteger(L, count);
 	return 1;
@@ -3255,7 +3277,7 @@ int32 scriptlib::duel_is_existing_target(lua_State *L) {
 	uint32 location1 = (uint32)lua_tointeger(L, 3);
 	uint32 location2 = (uint32)lua_tointeger(L, 4);
 	uint32 count = (uint32)lua_tointeger(L, 5);
-	lua_pushboolean(L, pduel->game_field->filter_matching_card(1, (uint8)self, location1, location2, 0, pexception, pexgroup, extraargs, 0, count, TRUE));
+	lua_pushboolean(L, pduel->game_field->filter_matching_card(1, (uint8)self, location1, location2, 0, pexception, pexgroup, extraargs, nullptr, count, TRUE));
 	return 1;
 }
 /**
@@ -3287,7 +3309,7 @@ int32 scriptlib::duel_select_target(lua_State *L) {
 	if(pduel->game_field->core.current_chain.size() == 0)
 		return 0;
 	group* pgroup = pduel->new_group();
-	pduel->game_field->filter_matching_card(2, (uint8)self, location1, location2, pgroup, pexception, pexgroup, extraargs, 0, 0, TRUE);
+	pduel->game_field->filter_matching_card(2, (uint8)self, location1, location2, pgroup, pexception, pexgroup, extraargs, nullptr, 0, TRUE);
 	pduel->game_field->core.select_cards.assign(pgroup->container.begin(), pgroup->container.end());
 	pduel->game_field->add_process(PROCESSOR_SELECT_CARD, 0, 0, 0, playerid, min + (max << 16));
 	return lua_yieldk(L, 0, (lua_KContext)pduel, [](lua_State *L, int32 status, lua_KContext ctx) {
