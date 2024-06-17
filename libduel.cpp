@@ -2094,7 +2094,7 @@ int32 scriptlib::duel_get_location_count_fromex(lua_State *L) {
 	}
 	return 2;
 }
-// Return the number of available grids in playerid's Main MZONE and Extra MZONE
+// Return the number of available slots in the Main MZONE and Extra MZONE of `playerid`.
 int32 scriptlib::duel_get_usable_mzone_count(lua_State *L) {
 	check_param_count(L, 1);
 	uint32 playerid = (uint32)lua_tointeger(L, 1);
@@ -3703,11 +3703,23 @@ int32 scriptlib::duel_hint(lua_State * L) {
 	if(htype == HINT_OPSELECTED)
 		playerid = 1 - playerid;
 	duel* pduel = interpreter::get_duel_info(L);
+	if(htype == HINT_SELECTMSG)
+		pduel->game_field->core.last_select_hint[playerid] = desc;
 	pduel->write_buffer8(MSG_HINT);
 	pduel->write_buffer8(htype);
 	pduel->write_buffer8(playerid);
 	pduel->write_buffer32(desc);
 	return 0;
+}
+int32 scriptlib::duel_get_last_select_hint(lua_State* L) {
+	duel* pduel = interpreter::get_duel_info(L);
+	uint8 playerid = pduel->game_field->core.reason_player;
+	if(lua_gettop(L) >= 1)
+		playerid = (uint8)lua_tointeger(L, 1);
+	if(playerid != 0 && playerid != 1)
+		return 0;
+	lua_pushinteger(L, pduel->game_field->core.last_select_hint[playerid]);
+	return 1;
 }
 int32 scriptlib::duel_hint_selection(lua_State *L) {
 	check_param_count(L, 1);
@@ -4963,6 +4975,7 @@ static const struct luaL_Reg duellib[] = {
 	{ "CheckRemoveOverlayCard", scriptlib::duel_check_remove_overlay_card },
 	{ "RemoveOverlayCard", scriptlib::duel_remove_overlay_card },
 	{ "Hint", scriptlib::duel_hint },
+	{ "GetLastSelectHint", scriptlib::duel_get_last_select_hint },
 	{ "HintSelection", scriptlib::duel_hint_selection },
 	{ "SelectEffectYesNo", scriptlib::duel_select_effect_yesno },
 	{ "SelectYesNo", scriptlib::duel_select_yesno },
