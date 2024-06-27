@@ -798,29 +798,6 @@ int32_t field::get_szone_limit(uint8_t playerid, uint8_t uplayer, uint32_t reaso
 	int32_t limit = max - field_used_count[used_flag];
 	return limit;
 }
-int32 field::get_kaiser_limit(uint8 playerid, card_set* using_cards) {
-	if(!is_player_affected_by_effect(playerid, EFFECT_KAISER_COLOSSEUM))
-		return 0xff;
-	auto oppo_monster_count = filter_field_card(playerid, 0, LOCATION_MZONE, 0);
-	if(!oppo_monster_count)
-		return 0xff;
-	auto limit = oppo_monster_count - filter_field_card(playerid, LOCATION_MZONE, 0, 0);
-	for(auto& pcard : *using_cards) {
-		if(pcard->current.is_location(LOCATION_MZONE)) {
-			if(pcard->current.controler == playerid)
-				++limit;
-			else
-				--limit;
-		}
-	}
-	return limit;
-}
-int32 field::get_kaiser_limit(uint8 playerid, card* using_card) {
-	card_set using_cards;
-	if(using_card)
-		using_cards.insert(using_card);
-	return get_kaiser_limit(playerid, &using_cards);
-}
 uint32_t field::get_linked_zone(int32_t playerid) {
 	uint32_t zones = 0;
 	for(const auto& pcard : player[playerid].list_mzone) {

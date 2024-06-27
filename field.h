@@ -395,8 +395,6 @@ public:
 	int32_t get_spsummonable_count_fromex_rule4(card* pcard, uint8_t playerid, uint8_t uplayer, uint32_t zone = 0xff, uint32_t* list = nullptr);
 	int32_t get_mzone_limit(uint8_t playerid, uint8_t uplayer, uint32_t reason);
 	int32_t get_szone_limit(uint8_t playerid, uint8_t uplayer, uint32_t reason);
-	int32 get_kaiser_limit(uint8 playerid, card_set* using_cards);
-	int32 get_kaiser_limit(uint8 playerid, card* using_card);
 	uint32_t get_linked_zone(int32_t playerid);
 	uint32_t get_rule_zone_fromex(int32_t playerid, card* pcard);
 	void filter_must_use_mzone(uint8_t playerid, uint8_t uplayer, uint32_t reason, card* pcard, uint32_t* flag);
