@@ -143,7 +143,7 @@ int32 scriptlib::duel_get_cards_in_zone(lua_State *L) {
 		return 0;
 	uint32 zone = lua_tointeger(L, 2);
 	duel* pduel = interpreter::get_duel_info(L);
-	field::card_set cset;
+	card_set cset;
 	pduel->game_field->get_cards_in_zone(&cset, zone, rplayer, LOCATION_MZONE);
 	pduel->game_field->get_cards_in_zone(&cset, zone >> 8, rplayer, LOCATION_SZONE);
 	pduel->game_field->get_cards_in_zone(&cset, zone >> 16, 1 - rplayer, LOCATION_MZONE);
@@ -1229,7 +1229,7 @@ int32 scriptlib::duel_confirm_decktop(lua_State *L) {
 	pduel->write_buffer8(MSG_CONFIRM_DECKTOP);
 	pduel->write_buffer8(playerid);
 	pduel->write_buffer8(count);
-	field::card_set ccards;
+	card_set ccards;
 	uint32 reason = 0;
 	if(lua_gettop(L) >= 3)
 		reason = lua_tointeger(L, 3);
