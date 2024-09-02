@@ -1133,7 +1133,7 @@ void field::refresh_player_info(uint8 playerid) {
 		if (player[playerid].list_mzone[i])
 			used_flag |= 0x1U << i;
 	}
-	for (int32 i = 0; i < (int32)player[playerid].list_szone.size(); ++i) {
+	for (int32 i = 0; i < player[playerid].szone_size; ++i) {
 		if (player[playerid].list_szone[i])
 			used_flag |= 0x100U << i;
 	}
