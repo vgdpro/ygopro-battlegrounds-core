@@ -4315,6 +4315,11 @@ int32 scriptlib::duel_announce_card(lua_State * L) {
 		return 1;
 	});
 }
+int32 scriptlib::duel_announce_card_silent(lua_State * L) {
+	duel* pduel = interpreter::get_duel_info(L);
+	pduel->game_field->core.announce_card_silent = TRUE;
+	return duel_announce_card(L);
+}
 int32 scriptlib::duel_announce_type(lua_State * L) {
 	check_action_permission(L);
 	check_param_count(L, 1);
@@ -5066,6 +5071,7 @@ static const struct luaL_Reg duellib[] = {
 	{ "XyzSummonByRose", scriptlib::duel_xyz_summon_by_rose },
 	{ "LoadScript", scriptlib::duel_load_script },
 	{ "AnnounceCardFilter", scriptlib::duel_announce_card }, // For compat
+	{ "AnnounceCardSilent", scriptlib::duel_announce_card_silent },
 	{ "ResetTimeLimit", scriptlib::duel_reset_time_limit },
 	{ "SetSummonCancelable", scriptlib::duel_set_summon_cancelable },
 	{ "GetRandomNumber", scriptlib::duel_get_random_number },
