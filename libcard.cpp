@@ -3290,7 +3290,7 @@ int32 scriptlib::card_is_immune_to_effect(lua_State *L) {
 	check_param(L, PARAM_TYPE_EFFECT, 2);
 	card* pcard = *(card**) lua_touserdata(L, 1);
 	effect* peffect = *(effect**) lua_touserdata(L, 2);
-	lua_pushboolean(L, !pcard->is_affect_by_effect(peffect));
+	lua_pushboolean(L, (int)!pcard->is_affect_by_effect(peffect));
 	return 1;
 }
 int32 scriptlib::card_is_can_be_disabled_by_effect(lua_State* L) {
@@ -3507,7 +3507,6 @@ int32 scriptlib::card_set_unique_onfield(lua_State *L) {
 	peffect->owner = pcard;
 	peffect->type = EFFECT_TYPE_SINGLE;
 	peffect->code = EFFECT_UNIQUE_CHECK;
-	peffect->flag[0] = EFFECT_FLAG_COPY_INHERIT;
 	pcard->add_effect(peffect);
 	pcard->unique_effect = peffect;
 	if(pcard->current.location & location)
