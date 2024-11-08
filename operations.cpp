@@ -4621,9 +4621,9 @@ int32 field::move_to_field(uint16 step, card* target, uint32 enable, uint32 ret,
 			}
 		} else if(pzone && location == LOCATION_SZONE && (target->data.type & TYPE_PENDULUM)) {
 			uint32 flag = 0;
-			if(is_location_useable(playerid, LOCATION_PZONE, 0))
+			if (is_location_useable(playerid, LOCATION_PZONE, 0) && zone & 0x1)
 				flag |= 0x1u << (core.duel_rule >= NEW_MASTER_RULE ? 8 : 14);
-			if(is_location_useable(playerid, LOCATION_PZONE, 1))
+			if (is_location_useable(playerid, LOCATION_PZONE, 1) && zone & 0x10)
 				flag |= 0x1u << (core.duel_rule >= NEW_MASTER_RULE ? 12 : 15);
 			if(!flag) {
 				core.units.begin()->step = 3;
@@ -4815,7 +4815,7 @@ int32 field::move_to_field(uint16 step, card* target, uint32 enable, uint32 ret,
 				peffect->reset_flag = RESET_EVENT + 0x1fc0000;
 				peffect->value = TYPE_MONSTER | type;
 				target->add_effect(peffect);
-				if(core.duel_rule <= 4 && (type & TYPE_TRAPMONSTER)) {
+				if(core.duel_rule <= NEW_MASTER_RULE && (type & TYPE_TRAPMONSTER)) {
 					peffect = pduel->new_effect();
 					peffect->owner = target;
 					peffect->type = EFFECT_TYPE_FIELD;
