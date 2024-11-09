@@ -20,16 +20,6 @@ int32 scriptlib::effect_set_owner(lua_State *L) {
 	peffect->owner = pcard;
 	return 0;
 }
-int32 scriptlib::effect_get_range(lua_State *L) {
-	check_param_count(L, 1);
-	check_param(L, PARAM_TYPE_EFFECT, 1);
-	effect* peffect = *(effect**) lua_touserdata(L, 1);
-	if (peffect) {
-		lua_pushinteger(L, peffect->range);
-		return 1;
-	}
-	return 0;
-}
 int32 scriptlib::effect_get_count_limit(lua_State *L) {
 	check_param_count(L, 1);
 	check_param(L, PARAM_TYPE_EFFECT, 1);
@@ -643,7 +633,6 @@ int32 scriptlib::effect_use_count_limit(lua_State *L) {
 
 static const struct luaL_Reg effectlib[] = {
 	{ "SetOwner", scriptlib::effect_set_owner },
-	{ "GetRange", scriptlib::effect_get_range },
 	{ "GetCountLimit", scriptlib::effect_get_count_limit },
 
 	{ "CreateEffect", scriptlib::effect_new },
