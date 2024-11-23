@@ -1345,7 +1345,7 @@ uint32 card::get_rscale() {
 	temp.rscale = UINT32_MAX;
 	return rscale;
 }
-uint32 card::get_link_marker() const {
+uint32 card::get_link_marker() {
 	effect_set effects;
 	effect_set effects2;
 	uint32 link_marker = data.link_marker;
@@ -1378,10 +1378,10 @@ uint32 card::get_link_marker() const {
 	}
 	return link_marker;
 }
-uint32 card::is_link_marker(uint32 dir) const {
+uint32 card::is_link_marker(uint32 dir) {
 	return get_link_marker() & dir;
 }
-uint32 card::get_linked_zone() const {
+uint32 card::get_linked_zone() {
 	if((!(data.type & TYPE_LINK) || current.location != LOCATION_MZONE || is_treated_as_not_on_field())
 			&& (!is_affected_by_effect(EFFECT_LINK_SPELL_KOISHI) || current.location != LOCATION_SZONE))
 		return 0;
@@ -1448,7 +1448,7 @@ void card::get_linked_cards(card_set* cset) {
 	pduel->game_field->get_cards_in_zone(cset, linked_zone, p, LOCATION_MZONE);
 	pduel->game_field->get_cards_in_zone(cset, linked_zone >> 16, 1 - p, LOCATION_MZONE);
 }
-uint32 card::get_mutual_linked_zone() const {
+uint32 card::get_mutual_linked_zone() {
 	if(!(data.type & TYPE_LINK) || current.location != LOCATION_MZONE || is_treated_as_not_on_field())
 		return 0;
 	uint32 zones = 0;
