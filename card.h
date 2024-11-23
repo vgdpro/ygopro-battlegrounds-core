@@ -219,6 +219,7 @@ public:
 	explicit card(duel* pd);
 	~card() = default;
 	static bool card_operation_sort(card* c1, card* c2);
+	static bool check_card_setcode(uint32 code, uint32 value);
 	bool is_extra_deck_monster() const { return !!(data.type & TYPES_EXTRA_DECK); }
 
 	int32 get_infos(byte* buf, uint32 query_flag, int32 use_cache = TRUE);
@@ -227,7 +228,6 @@ public:
 	std::tuple<uint32, uint32> get_original_code_rule() const;
 	uint32 get_code();
 	uint32 get_another_code();
-	static bool check_card_setcode(uint32 code, uint32 value);
 	int32 is_set_card(uint32 set_code);
 	int32 is_origin_set_card(uint32 set_code);
 	int32 is_pre_set_card(uint32 set_code);
@@ -262,15 +262,15 @@ public:
 	uint32 get_grave_race(uint8 playerid);
 	uint32 get_lscale();
 	uint32 get_rscale();
-	uint32 get_link_marker();
-	int32 is_link_marker(uint32 dir);
-	uint32 get_linked_zone();
+	uint32 get_link_marker() const;
+	uint32 is_link_marker(uint32 dir) const;
+	uint32 get_linked_zone() const;
 	void get_linked_cards(card_set* cset);
-	uint32 get_mutual_linked_zone();
+	uint32 get_mutual_linked_zone() const;
 	void get_mutual_linked_cards(card_set * cset);
 	int32 is_link_state();
 	int32 is_extra_link_state();
-	int32 is_position(int32 pos);
+	int32 is_position(uint32 pos) const;
 	void set_status(uint32 status, int32 enabled);
 	int32 get_status(uint32 status) const;
 	int32 is_status(uint32 status) const;
@@ -279,13 +279,13 @@ public:
 	int32 is_all_column();
 	uint8 get_select_sequence(uint8 *deck_seq_pointer);
 	uint32 get_select_info_location(uint8 *deck_seq_pointer);
-	int32 is_treated_as_not_on_field();
+	int32 is_treated_as_not_on_field() const;
 
 	void equip(card* target, uint32 send_msg = TRUE);
 	void unequip();
 	int32 get_union_count();
 	int32 get_old_union_count();
-	void xyz_overlay(card_set* materials);
+	void xyz_overlay(const card_set& materials);
 	void xyz_add(card* mat);
 	void xyz_remove(card* mat);
 	void apply_field_effect();

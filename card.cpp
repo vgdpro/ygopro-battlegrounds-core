@@ -133,6 +133,11 @@ bool card::card_operation_sort(card* c1, card* c2) {
 			return c1->current.sequence < c2->current.sequence;
 	}
 }
+bool card::check_card_setcode(uint32 code, uint32 value) {
+	card_data dat;
+	::read_card(code, &dat);
+	return dat.is_setcode(value);
+}
 void card::attacker_map::addcard(card* pcard) {
 	auto fid = pcard ? pcard->fieldid_r : 0;
 	auto pr = emplace(fid, std::make_pair(pcard, 0));
@@ -420,13 +425,13 @@ uint32 card::get_info_location() const {
 		uint32 l = overlay_target->current.location | LOCATION_OVERLAY;
 		uint32 s = overlay_target->current.sequence;
 		uint32 ss = current.sequence;
-		return c + (l << 8) + (s << 16) + (ss << 24);
+		return c | (l << 8) | (s << 16) | (ss << 24);
 	} else {
 		uint32 c = current.controler;
 		uint32 l = current.location;
 		uint32 s = current.sequence;
 		uint32 ss = current.position;
-		return c + (l << 8) + (s << 16) + (ss << 24);
+		return c | (l << 8) | (s << 16) | (ss << 24);
 	}
 }
 // get the printed code on card
@@ -487,11 +492,6 @@ inline bool check_setcode(uint16_t setcode, uint32 value) {
 	uint32 settype = value & 0x0fffU;
 	uint32 setsubtype = value & 0xf000U;
 	return (setcode & 0x0fffU) == settype && (setcode & 0xf000U & setsubtype) == setsubtype;
-}
-bool card::check_card_setcode(uint32 code, uint32 value) {
-	card_data dat;
-	::read_card(code, &dat);
-	return dat.is_setcode(value);
 }
 int32 card::is_set_card(uint32 set_code) {
 	uint32 code1 = get_code();
@@ -1276,18 +1276,18 @@ uint32 card::get_rscale() {
 	temp.rscale = UINT32_MAX;
 	return rscale;
 }
-uint32 card::get_link_marker() {
+uint32 card::get_link_marker() const {
 	if(!(data.type & TYPE_LINK))
 		return 0;
 	return data.link_marker;
 }
-int32 card::is_link_marker(uint32 dir) {
-	return (int32)(get_link_marker() & dir);
+uint32 card::is_link_marker(uint32 dir) const {
+	return get_link_marker() & dir;
 }
-uint32 card::get_linked_zone() {
+uint32 card::get_linked_zone() const {
 	if(!(data.type & TYPE_LINK) || current.location != LOCATION_MZONE || is_treated_as_not_on_field())
 		return 0;
-	int32 zones = 0;
+	uint32 zones = 0;
 	int32 s = current.sequence;
 	if(s > 0 && s <= 4 && is_link_marker(LINK_MARKER_LEFT))
 		zones |= 1u << (s - 1);
@@ -1340,26 +1340,26 @@ void card::get_linked_cards(card_set* cset) {
 	pduel->game_field->get_cards_in_zone(cset, linked_zone, p, LOCATION_MZONE);
 	pduel->game_field->get_cards_in_zone(cset, linked_zone >> 16, 1 - p, LOCATION_MZONE);
 }
-uint32 card::get_mutual_linked_zone() {
+uint32 card::get_mutual_linked_zone() const {
 	if(!(data.type & TYPE_LINK) || current.location != LOCATION_MZONE || is_treated_as_not_on_field())
 		return 0;
-	int32 zones = 0;
+	uint32 zones = 0;
 	int32 p = current.controler;
 	int32 s = current.sequence;
 	uint32 linked_zone = get_linked_zone();
-	uint32 icheck = 0x1;
-	for(uint32 i = 0; i < 7; ++i, icheck <<= 1) {
+	uint32 icheck = 0x1U;
+	for(int32 i = 0; i < 7; ++i, icheck <<= 1) {
 		if(icheck & linked_zone) {
 			card* pcard = pduel->game_field->player[p].list_mzone[i];
-			if(pcard && (pcard->get_linked_zone() & (1u << s)))
+			if(pcard && (pcard->get_linked_zone() & (0x1u << s)))
 				zones |= icheck;
 		}
 	}
-	icheck = 0x10000;
+	icheck = 0x10000U;
 	for(uint32 i = 0; i < 7; ++i, icheck <<= 1) {
 		if(icheck & linked_zone) {
 			card* pcard = pduel->game_field->player[1 - p].list_mzone[i];
-			if(pcard && (pcard->get_linked_zone() & (1u << (s + 16))))
+			if(pcard && (pcard->get_linked_zone() & (0x1u << (s + 16))))
 				zones |= icheck;
 		}
 	}
@@ -1383,28 +1383,28 @@ int32 card::is_link_state() {
 		return TRUE;
 	int32 p = current.controler;
 	uint32 linked_zone = pduel->game_field->get_linked_zone(p);
-	if((linked_zone >> current.sequence) & 1)
+	if((linked_zone >> current.sequence) & 0x1U)
 		return TRUE;
 	return FALSE;
 }
 int32 card::is_extra_link_state() {
 	if(current.location != LOCATION_MZONE)
 		return FALSE;
-	uint32 checked = 1u << current.sequence;
+	uint32 checked = 0x1U << current.sequence;
 	uint32 linked_zone = get_mutual_linked_zone();
 	const auto& list_mzone0 = pduel->game_field->player[current.controler].list_mzone;
 	const auto& list_mzone1 = pduel->game_field->player[1 - current.controler].list_mzone;
 	while(true) {
-		if(((linked_zone >> 5) | (linked_zone >> (16 + 6))) & ((linked_zone >> 6) | (linked_zone >> (16 + 5))) & 1)
+		if(((linked_zone >> 5) | (linked_zone >> (16 + 6))) & ((linked_zone >> 6) | (linked_zone >> (16 + 5))) & 0x1U)
 			return TRUE;
-		int32 checking = (int32)(linked_zone & ~checked);
+		uint32 checking = linked_zone & ~checked;
 		if(!checking)
 			return FALSE;
-		int32 rightmost = checking & (-checking);
-		checked |= (uint32)rightmost;
-		if(rightmost < 0x10000) {
+		uint32 rightmost = checking & (-checking);
+		checked |= rightmost;
+		if(rightmost < 0x10000U) {
 			for(int32 i = 0; i < 7; ++i) {
-				if(rightmost & 1) {
+				if(rightmost & 0x1U) {
 					card* pcard = list_mzone0[i];
 					linked_zone |= pcard->get_mutual_linked_zone();
 					break;
@@ -1414,7 +1414,7 @@ int32 card::is_extra_link_state() {
 		} else {
 			rightmost >>= 16;
 			for(int32 i = 0; i < 7; ++i) {
-				if(rightmost & 1) {
+				if(rightmost & 0x1U) {
 					card* pcard = list_mzone1[i];
 					uint32 zone = pcard->get_mutual_linked_zone();
 					linked_zone |= (zone << 16) | (zone >> 16);
@@ -1426,7 +1426,7 @@ int32 card::is_extra_link_state() {
 	}
 	return FALSE;
 }
-int32 card::is_position(int32 pos) {
+int32 card::is_position(uint32 pos) const {
 	return current.position & pos;
 }
 void card::set_status(uint32 x, int32 enabled) {
@@ -1522,7 +1522,7 @@ uint32 card::get_select_info_location(uint8 *deck_seq_pointer) {
 		return get_info_location();
 	}
 }
-int32 card::is_treated_as_not_on_field() {
+int32 card::is_treated_as_not_on_field() const {
 	return get_status(STATUS_SUMMONING | STATUS_SUMMON_DISABLED | STATUS_ACTIVATE_DISABLED | STATUS_SPSUMMON_STEP);
 }
 void card::equip(card* target, uint32 send_msg) {
@@ -1569,12 +1569,11 @@ int32 card::get_old_union_count() {
 	}
 	return count;
 }
-void card::xyz_overlay(card_set* materials) {
-	if(materials->empty())
+void card::xyz_overlay(const card_set& materials) {
+	if(materials.empty())
 		return;
 	card_set des, leave_grave, leave_deck;
-	card_vector cv;
-	cv.assign(materials->begin(), materials->end());
+	card_vector cv(materials.begin(), materials.end());
 	std::sort(cv.begin(), cv.end(), card::card_operation_sort);
 	if(pduel->game_field->core.global_flag & GLOBALFLAG_DECK_REVERSE_CHECK) {
 		int32 d0 = (int32)pduel->game_field->player[0].list_main.size() - 1, s0 = d0;
@@ -1650,16 +1649,16 @@ void card::xyz_overlay(card_set* materials) {
 	}
 	if(leave_grave.size() || leave_deck.size()) {
 		if(leave_grave.size()) {
-			pduel->game_field->raise_event(&leave_grave, EVENT_LEAVE_GRAVE, pduel->game_field->core.reason_effect, REASON_XYZ + REASON_MATERIAL, pduel->game_field->core.reason_player, 0, 0);
+			pduel->game_field->raise_event(leave_grave, EVENT_LEAVE_GRAVE, pduel->game_field->core.reason_effect, REASON_XYZ + REASON_MATERIAL, pduel->game_field->core.reason_player, 0, 0);
 		}
 		if(leave_deck.size()) {
-			pduel->game_field->raise_event(&leave_deck, EVENT_LEAVE_DECK, pduel->game_field->core.reason_effect, REASON_XYZ + REASON_MATERIAL, pduel->game_field->core.reason_player, 0, 0);
+			pduel->game_field->raise_event(leave_deck, EVENT_LEAVE_DECK, pduel->game_field->core.reason_effect, REASON_XYZ + REASON_MATERIAL, pduel->game_field->core.reason_player, 0, 0);
 		}
 		pduel->game_field->process_single_event();
 		pduel->game_field->process_instant_event();
 	}
 	if(des.size())
-		pduel->game_field->destroy(&des, 0, REASON_LOST_TARGET + REASON_RULE, PLAYER_NONE);
+		pduel->game_field->destroy(des, 0, REASON_LOST_TARGET + REASON_RULE, PLAYER_NONE);
 	else
 		pduel->game_field->adjust_instant();
 }
@@ -1959,6 +1958,7 @@ effect_indexer::iterator card::remove_effect(effect* peffect) {
 			pduel->game_field->update_disable_check_list(peffect);
 		}
 		field_effect.erase(it);
+		pduel->game_field->remove_effect(peffect);
 	}
 	if ((current.controler != PLAYER_NONE) && !get_status(STATUS_DISABLED | STATUS_FORBIDDEN) && !check_target.empty()) {
 		if (peffect->is_disable_related()) {
@@ -2002,7 +2002,6 @@ effect_indexer::iterator card::remove_effect(effect* peffect) {
 		unique_pos[0] = unique_pos[1] = 0;
 		unique_code = 0;
 	}
-	pduel->game_field->remove_effect(peffect);
 	pduel->game_field->core.reseted_effects.insert(peffect);
 	return ret;
 }
@@ -3636,7 +3635,7 @@ int32 card::is_setable_szone(uint8 playerid, uint8 ignore_fd) {
 }
 int32 card::is_affect_by_effect(effect* reason_effect) {
 	if (is_status(STATUS_SUMMONING))
-		return reason_effect && (reason_effect->code == EFFECT_CANNOT_DISABLE_SUMMON || reason_effect->code == EFFECT_CANNOT_DISABLE_SPSUMMON);
+		return reason_effect && affect_summoning_effect.find(reason_effect->code) != affect_summoning_effect.end();
 	if(!reason_effect || reason_effect->is_flag(EFFECT_FLAG_IGNORE_IMMUNE))
 		return TRUE;
 	if(reason_effect->is_immuned(this))
