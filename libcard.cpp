@@ -524,10 +524,14 @@ int32 scriptlib::card_get_current_scale(lua_State *L) {
 	check_param_count(L, 1);
 	check_param(L, PARAM_TYPE_CARD, 1);
 	card* pcard = *(card**)lua_touserdata(L, 1);
-	if(pcard->current.pzone && pcard->current.sequence == (pcard->pduel->game_field->core.duel_rule >= NEW_MASTER_RULE ? 0 : 6))
-		lua_pushinteger(L, pcard->get_lscale());
+	if (pcard->current.pzone) {
+		if (pcard->current.sequence == pcard->pduel->game_field->get_pzone_sequence(0))
+			lua_pushinteger(L, pcard->get_lscale());
+		else
+			lua_pushinteger(L, pcard->get_rscale());
+	}
 	else
-		lua_pushinteger(L, pcard->get_rscale());
+		lua_pushinteger(L, pcard->data.lscale);
 	return 1;
 }
 int32 scriptlib::card_is_link_marker(lua_State *L) {
@@ -2020,10 +2024,10 @@ int32 scriptlib::card_register_flag_effect(lua_State *L) {
 	int32 reset = (int32)lua_tointeger(L, 3);
 	uint32 flag = (uint32)lua_tointeger(L, 4);
 	int32 count = (int32)lua_tointeger(L, 5);
-	int32 lab = 0;
+	lua_Integer lab = 0;
 	int32 desc = 0;
 	if(lua_gettop(L) >= 6)
-		lab = (int32)lua_tointeger(L, 6);
+		lab = lua_tointeger(L, 6);
 	if(lua_gettop(L) >= 7)
 		desc = (int32)lua_tointeger(L, 7);
 	if(count == 0)
@@ -2067,7 +2071,7 @@ int32 scriptlib::card_set_flag_effect_label(lua_State *L) {
 	check_param(L, PARAM_TYPE_CARD, 1);
 	card* pcard = *(card**) lua_touserdata(L, 1);
 	uint32 code = (lua_tointeger(L, 2) & MAX_CARD_ID) | EFFECT_FLAG_EFFECT;
-	int32 lab = (int32)lua_tointeger(L, 3);
+	auto lab = lua_tointeger(L, 3);
 	auto eit = pcard->single_effect.find(code);
 	if(eit == pcard->single_effect.end())
 		lua_pushboolean(L, FALSE);
