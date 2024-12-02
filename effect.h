@@ -99,9 +99,9 @@ public:
 	int32 get_value(uint32 extraargs = 0);
 	int32 get_value(card* pcard, uint32 extraargs = 0);
 	int32 get_value(effect* peffect, uint32 extraargs = 0);
-	void get_value(uint32 extraargs, std::vector<int32>* result);
-	void get_value(card* pcard, uint32 extraargs, std::vector<int32>* result);
-	void get_value(effect* peffect, uint32 extraargs, std::vector<int32>* result);
+	void get_value(uint32 extraargs, std::vector<lua_Integer>& result);
+	void get_value(card* pcard, uint32 extraargs, std::vector<lua_Integer>& result);
+	void get_value(effect* peffect, uint32 extraargs, std::vector<lua_Integer>& result);
 	int32 get_integer_value();
 	int32 check_value_condition(uint32 extraargs = 0);
 	void* get_label_object();
@@ -246,12 +246,12 @@ enum effect_flag2 : uint64 {
 	EFFECT_FLAG2_ACTIVATE_MONSTER_SZONE = 0x0400,
 };
 constexpr effect_flag operator|(effect_flag flag1, effect_flag flag2) {
-	return static_cast<effect_flag>(static_cast<uint32>(flag1) | static_cast<uint32>(flag2));
+	return static_cast<effect_flag>(static_cast<uint64>(flag1) | static_cast<uint64>(flag2));
 }
-constexpr uint32 INTERNAL_FLAGS = EFFECT_FLAG_INITIAL | EFFECT_FLAG_COPY | EFFECT_FLAG_FUNC_VALUE | EFFECT_FLAG_COUNT_LIMIT | EFFECT_FLAG_FIELD_ONLY | EFFECT_FLAG_ABSOLUTE_TARGET;
+constexpr uint64 INTERNAL_FLAGS = EFFECT_FLAG_INITIAL | EFFECT_FLAG_COPY | EFFECT_FLAG_FUNC_VALUE | EFFECT_FLAG_COUNT_LIMIT | EFFECT_FLAG_FIELD_ONLY | EFFECT_FLAG_ABSOLUTE_TARGET;
 
 //Category
-enum effect_category :uint64 {
+enum effect_category : uint64 {
 	CATEGORY_DESTROY		= 0x1,
 	CATEGORY_RELEASE		= 0x2,
 	CATEGORY_REMOVE			= 0x4,
