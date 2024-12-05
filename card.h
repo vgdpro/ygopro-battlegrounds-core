@@ -109,12 +109,6 @@ struct material_info {
 };
 const material_info null_info;
 
-constexpr uint32 CARD_MARINE_DOLPHIN = 78734254;
-constexpr uint32 CARD_TWINKLE_MOSS = 13857930;
-constexpr uint32 CARD_TIMAEUS = 1784686;
-constexpr uint32 CARD_CRITIAS = 11082056;
-constexpr uint32 CARD_HERMOS = 46232525;
-
 class card {
 public:
 	struct effect_relation_hash {
@@ -156,7 +150,6 @@ public:
 		uint8 location{ 0 };
 		uint8 sequence{ 0 };
 	};
-	static const std::unordered_map<uint32, uint32> second_code;
 
 	int32 ref_handle;
 	duel* pduel;
@@ -337,6 +330,7 @@ public:
 
 	template<typename T>
 	void filter_effect_container(const effect_container& container, uint32 code, effect_filter f, T& eset);
+	void filter_effect_container(const effect_container& container, uint32 code, effect_filter f, effect_collection& eset);
 	void filter_effect(uint32 code, effect_set* eset, uint8 sort = TRUE);
 	void filter_single_continuous_effect(uint32 code, effect_set* eset, uint8 sort = TRUE);
 	void filter_self_effect(uint32 code, effect_set* eset, uint8 sort = TRUE);
