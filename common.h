@@ -10,15 +10,11 @@
 
 #include <stdint.h>
 #include <assert.h>
-typedef unsigned long long uint64;
-typedef unsigned int uint32;
-typedef unsigned short uint16;
-typedef unsigned char uint8;
 typedef unsigned char byte;
-typedef long long int64;
-typedef int int32;
-typedef short int16;
-typedef signed char int8;
+
+inline bool check_playerid(int32_t playerid) {
+	return playerid >= 0 && playerid <= 1;
+}
 
 #define MATCH_ALL(x,y) (((x)&(y))==(y))
 #define MATCH_ANY(x,y) ((x)&(y))
@@ -38,10 +34,6 @@ typedef signed char int8;
 #define PROCESSOR_NONE			0
 #define PROCESSOR_WAITING		0x10000000
 #define PROCESSOR_END			0x20000000
-
-#ifndef NULL
-#define NULL 0
-#endif
 
 #define MASTER_RULE3		3	//Master Rule 3 (2014)
 #define NEW_MASTER_RULE		4	//New Master Rule (2017)
