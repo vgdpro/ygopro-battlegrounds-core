@@ -726,32 +726,6 @@ int32_t scriptlib::group_remove(lua_State *L) {
 	}
 	return 0;
 }
-int32_t scriptlib::group_merge(lua_State *L) {
-	check_param_count(L, 2);
-	check_param(L, PARAM_TYPE_GROUP, 1);
-	check_param(L, PARAM_TYPE_GROUP, 2);
-	group* pgroup = *(group**) lua_touserdata(L, 1);
-	group* mgroup = *(group**) lua_touserdata(L, 2);
-	if(pgroup->is_readonly == GTYPE_READ_ONLY)
-		return 0;
-	pgroup->is_iterator_dirty = true;
-	pgroup->container.insert(mgroup->container.begin(), mgroup->container.end());
-	return 0;
-}
-int32_t scriptlib::group_sub(lua_State *L) {
-	check_param_count(L, 2);
-	check_param(L, PARAM_TYPE_GROUP, 1);
-	check_param(L, PARAM_TYPE_GROUP, 2);
-	group* pgroup = *(group**) lua_touserdata(L, 1);
-	group* sgroup = *(group**) lua_touserdata(L, 2);
-	if(pgroup->is_readonly == GTYPE_READ_ONLY)
-		return 0;
-	pgroup->is_iterator_dirty = true;
-	for (auto& pcard : sgroup->container) {
-		pgroup->container.erase(pcard);
-	}
-	return 0;
-}
 int32_t scriptlib::group_equal(lua_State *L) {
 	check_param_count(L, 2);
 	check_param(L, PARAM_TYPE_GROUP, 1);
