@@ -4327,10 +4327,8 @@ int32_t field::send_to(uint16_t step, group * targets, effect * reason_effect, u
 			if(nloc == LOCATION_GRAVE)
 				pcard->reset(RESET_TOGRAVE, RESET_EVENT);
 			if(nloc == LOCATION_REMOVED || ((pcard->data.type & TYPE_TOKEN) && pcard->sendto_param.location == LOCATION_REMOVED)) {
-				if(pcard->current.reason & REASON_TEMPORARY) {
+				if(pcard->current.reason & REASON_TEMPORARY)
 					pcard->reset(RESET_TEMP_REMOVE, RESET_EVENT);
-					pcard->set_status(STATUS_CANNOT_CHANGE_FORM, FALSE);
-				}
 				else
 					pcard->reset(RESET_REMOVE, RESET_EVENT);
 			}
