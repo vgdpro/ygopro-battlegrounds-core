@@ -2961,6 +2961,7 @@ int32_t field::special_summon_rule(uint16_t step, uint8_t sumplayer, card* targe
 		}
 		target->set_status(STATUS_SUMMONING, FALSE);
 		target->set_status(STATUS_PROC_COMPLETE | STATUS_SPSUMMON_TURN, TRUE);
+		target->set_status(STATUS_CANNOT_CHANGE_FORM, TRUE);
 		target->enable_field_effect(true);
 		if(target->is_status(STATUS_DISABLED))
 			target->reset(RESET_DISABLE, RESET_EVENT);
@@ -4710,10 +4711,8 @@ int32_t field::move_to_field(uint16_t step, card* target, uint32_t enable, uint3
 			target->clear_relate_effect();
 		if(ret == RETURN_TEMP_REMOVE_TO_FIELD) {
 			target->current.reason &= ~REASON_TEMPORARY;
-			target->set_status(STATUS_CANNOT_CHANGE_FORM, FALSE);
 		}
-		if(ret == 0 && location != target->current.location
-			|| ret == RETURN_TEMP_REMOVE_TO_FIELD && target->turnid != infos.turn_id) {
+		if(ret == 0 && location != target->current.location || ret == RETURN_TEMP_REMOVE_TO_FIELD) {
 			target->set_status(STATUS_SUMMON_TURN, FALSE);
 			target->set_status(STATUS_FLIP_SUMMON_TURN, FALSE);
 			target->set_status(STATUS_SPSUMMON_TURN, FALSE);
