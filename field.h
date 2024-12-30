@@ -357,7 +357,7 @@ struct processor {
 	activity_map chain_counter;
 	processor_list recover_damage_reserve;
 	effect_vector dec_count_reserve;
-	uint8 announce_card_silent{ FALSE };
+	uint8_t announce_card_silent{ FALSE };
 };
 class field {
 public:
