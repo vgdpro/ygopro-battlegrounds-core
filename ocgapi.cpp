@@ -41,8 +41,8 @@ uint32_t read_card(uint32_t code, card_data* data) {
 	}
 	return creader(code, data);
 }
-uint32_t handle_message(void* pduel, uint32_t msg_type) {
-	return mhandler((intptr_t)pduel, msg_type);
+uint32_t handle_message(void* pduel, uint32_t message_type) {
+	return mhandler((intptr_t)pduel, message_type);
 }
 byte* default_script_reader(const char* script_name, int* slen) {
 	FILE *fp;
@@ -77,11 +77,11 @@ extern "C" DECL_DLLEXPORT void start_duel(intptr_t pduel, uint32_t options) {
 	}
 	pd->game_field->core.duel_options |= options & 0xffff;
 	int32_t duel_rule = options >> 16;
-	if(duel_rule)
+	if (duel_rule >= 1 && duel_rule <= CURRENT_RULE)
 		pd->game_field->core.duel_rule = duel_rule;
 	else if(options & DUEL_OBSOLETE_RULING)		//provide backward compatibility with replay
 		pd->game_field->core.duel_rule = 1;
-	if (pd->game_field->core.duel_rule < 1 || pd->game_field->core.duel_rule > CURRENT_RULE)
+	else
 		pd->game_field->core.duel_rule = CURRENT_RULE;
 	if (pd->game_field->core.duel_rule == MASTER_RULE3) {
 		pd->game_field->player[0].szone_size = 8;
