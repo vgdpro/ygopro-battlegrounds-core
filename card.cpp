@@ -82,17 +82,17 @@ bool card::card_operation_sort(card* c1, card* c2) {
 	}
 	if(c1->current.location != c2->current.location)
 		return c1->current.location < c2->current.location;
-	if(c1->current.location & LOCATION_OVERLAY) {
+	if(c1->current.location == LOCATION_OVERLAY) {
 		if(c1->overlay_target && c2->overlay_target && c1->overlay_target->current.sequence != c2->overlay_target->current.sequence)
 			return c1->overlay_target->current.sequence < c2->overlay_target->current.sequence;
 		else
 			return c1->current.sequence < c2->current.sequence;
-	} else if (c1->current.location & LOCATION_DECK && pduel->game_field->is_select_hide_deck_sequence(cp1)) {
+	} else if (c1->current.location == LOCATION_DECK && pduel->game_field->is_select_hide_deck_sequence(cp1)) {
 		// if deck reversed and the card being at the top, it should go first
 		if(pduel->game_field->core.deck_reversed) {
-			if(c1->current.sequence == pduel->game_field->player[cp1].list_main.size() - 1)
+			if(c1 == pduel->game_field->player[cp1].list_main.back())
 				return false;
-			if(c2->current.sequence == pduel->game_field->player[cp2].list_main.size() - 1)
+			if(c2 == pduel->game_field->player[cp2].list_main.back())
 				return true;
 		}
 		// faceup deck cards should go at the very first
@@ -105,8 +105,8 @@ bool card::card_operation_sort(card* c1, card* c2) {
 				return c2_faceup;
 		}
 		// sort deck as card property
-		auto c1_type = c1->data.type & 0x7;
-		auto c2_type = c2->data.type & 0x7;
+		auto c1_type = c1->data.type & (TYPE_MONSTER | TYPE_SPELL | TYPE_TRAP);
+		auto c2_type = c2->data.type & (TYPE_MONSTER | TYPE_SPELL | TYPE_TRAP);
 		// monster should go before spell, and then trap
 		if(c1_type != c2_type)
 			return c1_type > c2_type;
@@ -974,13 +974,13 @@ uint32_t card::get_level() {
 		temp.level = level + up;
 	}
 	level += up;
-	if(level < 1 && (get_type() & TYPE_MONSTER))
+	if (level < 1)
 		level = 1;
 	temp.level = UINT32_MAX;
 	return level;
 }
 uint32_t card::get_rank() {
-	if(!(data.type & TYPE_XYZ) || (status & STATUS_NO_LEVEL))
+	if (!(data.type & TYPE_XYZ))
 		return 0;
 	if(assume_type == ASSUME_RANK)
 		return assume_value;
@@ -1007,13 +1007,13 @@ uint32_t card::get_rank() {
 		temp.level = rank + up;
 	}
 	rank += up;
-	if(rank < 1 && (get_type() & TYPE_MONSTER))
+	if (rank < 1)
 		rank = 1;
 	temp.level = UINT32_MAX;
 	return rank;
 }
 uint32_t card::get_link() {
-	if(!(data.type & TYPE_LINK) || (status & STATUS_NO_LEVEL))
+	if (!(data.type & TYPE_LINK))
 		return 0;
 	return data.level;
 }
@@ -1367,7 +1367,7 @@ int32_t card::is_extra_link_state() {
 		uint32_t checking = linked_zone & ~checked;
 		if(!checking)
 			return FALSE;
-		uint32_t rightmost = checking & (-checking);
+		uint32_t rightmost = checking & (~checking + 1);
 		checked |= rightmost;
 		if(rightmost < 0x10000U) {
 			for(int32_t i = 0; i < 7; ++i) {
