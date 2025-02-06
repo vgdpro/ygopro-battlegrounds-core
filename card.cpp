@@ -34,11 +34,13 @@ uint32_t card::set_entity_code(uint32_t entity_code, bool remove_alias) {
 	if (remove_alias && dat.alias)
 		dat.alias = 0;
 	data = dat;
-	pduel->write_buffer8(MSG_MOVE);
-	pduel->write_buffer32(data.code);
-	pduel->write_buffer32(get_info_location());
-	pduel->write_buffer32(get_info_location());
-	pduel->write_buffer32(0);
+	pduel->write_buffer8(MSG_UPDATE_CARD);
+	pduel->write_buffer8(current.controler);
+	pduel->write_buffer8(current.location);
+	pduel->write_buffer8(current.sequence);
+	unsigned char query_buffer[0x1000];
+	auto query_len = get_infos(query_buffer, 0xe81fff, 0);
+	pduel->write_buffer(query_buffer, query_len);
 	return code;
 }
 uint32_t card::get_summon_info() {
