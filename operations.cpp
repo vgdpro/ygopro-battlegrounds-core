@@ -2895,8 +2895,8 @@ int32_t field::special_summon_rule(uint16_t step, uint8_t sumplayer, card* targe
 		else if(proc->value == SUMMON_TYPE_XYZ)
 		{
 			matreason = REASON_XYZ;
-			pduel->game_field->rose_card = 0;
-			pduel->game_field->rose_level = 0;
+			rose_card = 0;
+			rose_level = 0;
 		}
 		else if(proc->value == SUMMON_TYPE_LINK)
 			matreason = REASON_LINK;
