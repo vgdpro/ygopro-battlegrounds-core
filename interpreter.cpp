@@ -113,8 +113,8 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	lua_setglobal(lua_state, "EFFECT_CHANGE_SUMMON_LOCATION_KOISHI");
 	lua_pushinteger(lua_state, EFFECT_LINK_SPELL_KOISHI);
 	lua_setglobal(lua_state, "EFFECT_LINK_SPELL_KOISHI");
-	lua_pushinteger(lua_state, EFFECT_SEA_PULSE);
-	lua_setglobal(lua_state, "EFFECT_SEA_PULSE");
+	// lua_pushinteger(lua_state, EFFECT_SEA_PULSE);
+	// lua_setglobal(lua_state, "EFFECT_SEA_PULSE");
 	lua_pushinteger(lua_state, EFFECT_MAP_OF_HEAVEN);
 	lua_setglobal(lua_state, "EFFECT_MAP_OF_HEAVEN");
 
