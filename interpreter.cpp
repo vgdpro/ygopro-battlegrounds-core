@@ -99,10 +99,10 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	lua_setglobal(lua_state, "EFFECT_EXTRA_TOMAIN_KOISHI");
 	lua_pushinteger(lua_state, EFFECT_OVERLAY_REMOVE_COST_CHANGE_KOISHI);
 	lua_setglobal(lua_state, "EFFECT_OVERLAY_REMOVE_COST_CHANGE_KOISHI");
-	lua_pushinteger(lua_state, EFFECT_ALLOW_SYNCHRO_KOISHI);
-	lua_setglobal(lua_state, "EFFECT_ALLOW_SYNCHRO_KOISHI");
-	lua_pushinteger(lua_state, EFFECT_MINIATURE_GARDEN_GIRL);
-	lua_setglobal(lua_state, "EFFECT_MINIATURE_GARDEN_GIRL");
+	lua_pushinteger(lua_state, EFFECT_ALLOW_FOR_SYNCHRO);
+	lua_setglobal(lua_state, "EFFECT_ALLOW_SYNCHRO_KOISHI"); // for compat only
+	// lua_pushinteger(lua_state, EFFECT_MINIATURE_GARDEN_GIRL);
+	// lua_setglobal(lua_state, "EFFECT_MINIATURE_GARDEN_GIRL");
 	lua_pushinteger(lua_state, EFFECT_ADD_SUMMON_TYPE_KOISHI);
 	lua_setglobal(lua_state, "EFFECT_ADD_SUMMON_TYPE_KOISHI");
 	lua_pushinteger(lua_state, EFFECT_REMOVE_SUMMON_TYPE_KOISHI);
