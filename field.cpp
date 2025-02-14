@@ -1879,7 +1879,7 @@ void field::get_ritual_material(uint8_t playerid, effect* peffect, card_set* mat
 		if(pcard && pcard->is_affect_by_effect(peffect)
 		        && pcard->is_affected_by_effect(EFFECT_EXTRA_RELEASE) && pcard->is_position(POS_FACEUP)
 		        && pcard->is_releasable_by_nonsummon(playerid, REASON_EFFECT) && pcard->is_releasable_by_effect(playerid, peffect)
-				&& (no_level || pcard->get_level() > 0 || pcard->is_affected_by_effect(EFFECT_MINIATURE_GARDEN_GIRL)))
+				&& (no_level || pcard->get_level() > 0 || pcard->is_affected_by_effect(EFFECT_ALLOW_FOR_RITUAL)))
 			material->insert(pcard);
 	}
 	for(auto& pcard : player[playerid].list_hand)
