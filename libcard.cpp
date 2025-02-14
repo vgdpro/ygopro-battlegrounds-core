@@ -87,11 +87,13 @@ int32_t scriptlib::card_set_card_data(lua_State *L) {
 		pcard->data.link_marker = lua_tointeger(L, 3);
 		break;
 	}
-	pduel->write_buffer8(MSG_MOVE);
-	pduel->write_buffer32(pcard->data.code);
-	pduel->write_buffer32(pcard->get_info_location());
-	pduel->write_buffer32(pcard->get_info_location());
-	pduel->write_buffer32(0);
+	pduel->write_buffer8(MSG_UPDATE_CARD);
+	pduel->write_buffer8(pcard->current.controler);
+	pduel->write_buffer8(pcard->current.location);
+	pduel->write_buffer8(pcard->current.sequence);
+	unsigned char query_buffer[0x1000];
+	auto query_len = pcard->get_infos(query_buffer, 0xe81fff, 0);
+	pduel->write_buffer(query_buffer, query_len);
 	return 0;
 }
 int32_t scriptlib::card_get_link_marker(lua_State *L) {
