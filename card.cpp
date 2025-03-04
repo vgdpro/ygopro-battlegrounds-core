@@ -1072,9 +1072,9 @@ uint32_t card::get_mat_level_from_effect(card* pcard, uint32_t effect_code) {
 		return 0;
 	effect_set eset;
 	filter_effect(effect_code, &eset);
-	for(int32_t i = 0; i < eset.size(); ++i) {
-		uint32_t lev = eset[i]->get_value(pcard);
-		if(lev)
+	for (auto& peffect : eset) {
+		uint32_t lev = peffect->get_value(pcard);
+		if (lev)
 			return lev;
 	}
 	return 0;
@@ -1120,7 +1120,7 @@ uint32_t card::check_xyz_level(card* pcard, uint32_t lv) {
 			return (card_lv & MAX_XYZ_LEVEL) | ((uint32_t)min_count << 12);
 		return 0;
 	}
-	for (auto& peffect: mset) {
+	for (auto& peffect: eset) {
 		pduel->lua->add_param(this, PARAM_TYPE_CARD);
 		pduel->lua->add_param(pcard, PARAM_TYPE_CARD);
 		uint32_t lev = peffect->get_value(2);
