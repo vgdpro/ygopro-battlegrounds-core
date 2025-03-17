@@ -62,6 +62,8 @@ public:
 	int32_t value{ 0 };
 	int32_t operation{ 0 };
 	uint8_t cost_checked{ FALSE };
+	uint8_t is_granted{ 0 };
+	
 	effect_set required_handorset_effects;
 	LuaParamType object_type{ PARAM_TYPE_INT };
 
