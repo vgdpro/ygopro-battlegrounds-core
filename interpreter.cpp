@@ -36,6 +36,8 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	lua_pop(lua_state, 1);
 	luaL_requiref(lua_state, "math", luaopen_math, 1);
 	lua_pop(lua_state, 1);
+	luaL_requiref(lua_state, "coroutine", luaopen_math, 1);
+	lua_pop(lua_state, 1);
 #endif
 
 	//add bit lib back
