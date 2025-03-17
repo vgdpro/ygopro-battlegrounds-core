@@ -40,9 +40,6 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	lua_pop(lua_state, 1);
 #endif
 
-	//add bit lib back
-	lua_getglobal(lua_state, "bit32");
-	lua_setglobal(lua_state, "bit");
 	//open all libs
 	scriptlib::open_cardlib(lua_state);
 	scriptlib::open_effectlib(lua_state);
