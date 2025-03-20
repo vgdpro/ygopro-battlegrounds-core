@@ -69,7 +69,7 @@ workspace "ocgcoredll"
         buildoptions { "-fPIC" }
 
     filter "system:emscripten"
-        defines { "LUA_USE_LONGJMP" }
+        defines { "LUA_USE_LONGJMP", "LUA_USE_C89" }
         buildoptions { "-fPIC" }
 
 filter {}
