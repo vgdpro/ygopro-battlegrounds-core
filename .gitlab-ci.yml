@@ -29,7 +29,7 @@ lua:
     DIST_PATH: build/bin/x64/Release
   script:
     - ln -sf premake/dll.lua .
-    - premake5 gmake --file=dll.lua --system=$PREMAKE_OS
+    - premake5 gmake --file=dll.lua --os=$PREMAKE_OS
     - cd build
     - make config=release_${BUILD_TYPE} -j$(nproc)
     - cd ..
