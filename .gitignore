@@ -7,3 +7,5 @@
 
 /dll.lua
 /*.sh
+/test-wasm
+/wasm
