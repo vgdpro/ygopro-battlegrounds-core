@@ -9,3 +9,4 @@
 /*.sh
 /test-wasm
 /wasm
+/dist

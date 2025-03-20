@@ -1,0 +1,59 @@
+stages:
+  - prepare
+  - build
+  - deploy
+
+variables:
+  GIT_DEPTH: "1"
+
+lua:
+  stage: prepare
+  tags:
+    - linux
+  script:
+    - wget -O - https://cdn02.moecube.com:444/ygopro-build-materials/lua-5.4.4.tar.gz | tar zfx -
+    - mv lua-5.4.4 lua
+    - cp premake/lua.lua lua/premake5.lua
+  artifacts:
+    paths:
+      - lua
+
+.build:
+  stage: build
+  tags:
+    - linux
+  image: git-registry.moenext.com/mycard/docker-ygopro-builder
+  variables:
+    PREMAKE_OS: linux
+    BUILD_TYPE: x64
+    DIST_PATH: build/bin/x64/Release
+  script:
+    - ln -sf premake/dll.lua .
+    - premake5 gmake --file=dll.lua --system=$PREMAKE_OS
+    - cd build
+    - make config=release_${BUILD_TYPE} -j$(nproc)
+    - cd ..
+    - mkdir -p dist/$BUILD_TYPE
+    - cp $DIST_PATH/libocgcore.* dist/$BUILD_TYPE/
+  artifacts:
+    paths:
+      - dist
+
+build_x64:
+  extends: .build
+
+build_x32:
+  extends: .build
+  variables:
+    BUILD_TYPE: x32
+    DIST_PATH: build/bin/x32/Release
+
+build_wasm:
+  extends: .build
+  variables:
+    PREMAKE_OS: emscripten
+    BUILD_TYPE: wasm
+    DIST_PATH: wasm
+  before_script:
+    - mkdir -p wasm
+  image: git-registry.moenext.com/mycard/docker-ygopro-builder:emscripten
