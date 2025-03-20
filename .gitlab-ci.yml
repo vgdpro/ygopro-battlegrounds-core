@@ -47,6 +47,8 @@ build_x32:
   variables:
     BUILD_TYPE: x32
     DIST_PATH: build/bin/x32/Release
+  before_script:
+    - apt update; apt -y install gcc-multilib g++-multilib
 
 build_wasm:
   extends: .build
@@ -54,6 +56,20 @@ build_wasm:
     PREMAKE_OS: emscripten
     BUILD_TYPE: wasm
     DIST_PATH: wasm
+    WASM: '1'
   before_script:
     - mkdir -p wasm
   image: git-registry.moenext.com/mycard/docker-ygopro-builder:emscripten
+
+upload_to_minio:
+  stage: deploy
+  dependencies:
+    - build_x32
+    - build_x64
+    - build_wasm
+  tags: 
+    - linux
+  script:
+    - aws s3 --endpoint=https://minio.moenext.com:9000 sync --delete dist/ s3://mycard/libocgcore-koishi
+  only:
+    - master
