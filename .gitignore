@@ -4,6 +4,7 @@
 /temp/
 /premake-5/
 /premake5.exe
+/premake5
 
 /dll.lua
 /*.sh
