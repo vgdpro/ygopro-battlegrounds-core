@@ -111,9 +111,11 @@ project "sqlite3"
 
     filter "system:windows"
         systemversion "latest"
+        defines { "SQLITE_API=__declspec(dllexport)" }
 
     filter "system:linux or system:macosx"
         pic "On"
+        defines { "SQLITE_API=__attribute__((visibility(\"default\")))" }
 
     filter "system:linux"
         linkoptions { "-static-libstdc++", "-static-libgcc" }
