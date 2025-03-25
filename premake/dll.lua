@@ -72,6 +72,7 @@ workspace "ocgcoredll"
     filter "system:linux"
         defines { "LUA_USE_LINUX" }
         buildoptions { "-fPIC" }
+        linkoptions { "-static-libstdc++", "-static-libgcc" }
 
     filter "system:emscripten"
         defines { "LUA_USE_LONGJMP", "LUA_USE_C89" }
