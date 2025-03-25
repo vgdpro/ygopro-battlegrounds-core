@@ -137,7 +137,6 @@ build_macos_m1:
   variables:
     BUILD_TYPE: arm64
     DIST_PATH: build/bin/arm64/Release
-    MAC_ARM: '1'
 
 build_macos:
   stage: combine

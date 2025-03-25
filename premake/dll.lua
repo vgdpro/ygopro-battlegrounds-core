@@ -1,6 +1,5 @@
 newoption { trigger = "lua-dir", description = "", value = "PATH", default = "./lua" }
 newoption { trigger = "wasm", description = "" }
-newoption { trigger = "mac-arm", description = "" }
 
 function GetParam(param)
     return _OPTIONS[param] or os.getenv(string.upper(string.gsub(param,"-","_")))
@@ -21,14 +20,8 @@ workspace "ocgcoredll"
     if WASM then
         toolset "emcc"
         platforms { "wasm" }
-    elseif os.istarget("macosx") then
-        if GetParam("mac-arm") then
-            platforms { "arm64" }
-        else
-            platforms { "x64" }
-        end
-    else 
-        platforms { "x32", "x64" }
+    else
+        platforms { "x32", "x64", "arm64" }
     end
     
     filter "platforms:x32"
@@ -36,6 +29,9 @@ workspace "ocgcoredll"
 
     filter "platforms:x64"
         architecture "x64"
+
+    filter "platforms:arm64"
+        architecture "ARM64"
 
     filter "configurations:Release"
         optimize "Speed"
