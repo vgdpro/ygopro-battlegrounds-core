@@ -15,9 +15,12 @@ lua:
     - wget -O - https://cdn02.moecube.com:444/ygopro-build-materials/lua-5.4.4.tar.gz | tar zfx -
     - mv lua-5.4.4 lua
     - cp premake/lua.lua lua/premake5.lua
+    - wget -O - https://cdn01.moecube.com/ygopro-build-materials/sqlite-autoconf-3360000.tar.gz | tar zfx -
+    - mv sqlite-autoconf-3360000 sqlite3
   artifacts:
     paths:
       - lua
+      - sqlite3
 
 mat_windows:
   stage: prepare
@@ -56,12 +59,13 @@ mat_macos:
     PREMAKE5_PATH: premake5
   script:
     - ln -sf premake/dll.lua .
-    - $PREMAKE5_PATH gmake --file=dll.lua --os=$PREMAKE_OS
+    - $PREMAKE5_PATH gmake --file=dll.lua --os=$PREMAKE_OS --sqlite3-dir=sqlite3
     - cd build
     - make config=release_${BUILD_TYPE} -j$(nproc)
     - cd ..
     - mkdir -p dist/$BUILD_TYPE
     - cp $DIST_PATH/libocgcore.* dist/$BUILD_TYPE/
+    - cp $DIST_PATH/libsqlite3.* dist/$BUILD_TYPE/
   artifacts:
     paths:
       - dist
@@ -97,7 +101,7 @@ build_wasm:
     - vs
   before_script:
     - copy premake\dll.lua dll.lua
-    - '.\premake5.exe vs2019 --file=dll.lua'
+    - '.\premake5.exe vs2019 --file=dll.lua --sqlite3-dir=sqlite3'
     - mkdir dist
   artifacts:
     paths:
@@ -109,6 +113,7 @@ build_windows_x32:
     - cmd /c '"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\msbuild.exe" build\ocgcoredll.sln /t:Build /p:Configuration=Release /p:Platform=Win32'
     - mkdir dist\x32
     - copy build\bin\x32\Release\ocgcore.dll dist\x32\ocgcore.dll
+    - copy build\bin\x32\Release\sqlite3.dll dist\x32\sqlite3.dll
 
 build_windows_x64:
   extends: .build_windows
@@ -116,6 +121,7 @@ build_windows_x64:
     - cmd /c '"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\msbuild.exe" build\ocgcoredll.sln /t:Build /p:Configuration=Release /p:Platform=x64'
     - mkdir dist\x64
     - copy build\bin\x64\Release\ocgcore.dll dist\x64\ocgcore.dll
+    - copy build\bin\x64\Release\sqlite3.dll dist\x64\sqlite3.dll
 
 .build_macos_arch:
   extends: .build_unix
@@ -148,6 +154,7 @@ build_macos:
   script:
     - mkdir -p dist/macos
     - lipo -create -output dist/macos/libocgcore.dylib dist/x64/libocgcore.dylib dist/arm64/libocgcore.dylib
+    - lipo -create -output dist/macos/libsqlite3.dylib dist/x64/libsqlite3.dylib dist/arm64/libsqlite3.dylib
     - rm -rf dist/x64 dist/arm64
   artifacts:
     paths:
