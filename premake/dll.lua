@@ -21,7 +21,7 @@ workspace "ocgcoredll"
         toolset "emcc"
         platforms { "wasm" }
     else
-        platforms { "x32", "x64", "arm64" }
+        platforms { "x64", "x32", "arm64" }
     end
     
     filter "platforms:x32"
