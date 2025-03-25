@@ -109,7 +109,6 @@ project "sqlite3"
         SQLITE3_DIR .. "/sqlite3.h"
     }
 
-    -- 系统相关
     filter "system:windows"
         systemversion "latest"
 
@@ -119,7 +118,6 @@ project "sqlite3"
     filter "system:linux"
         linkoptions { "-static-libstdc++", "-static-libgcc" }
 
-    -- 配置项
     filter "configurations:Debug"
         symbols "On"
         defines { "DEBUG" }
