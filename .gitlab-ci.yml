@@ -65,7 +65,7 @@ mat_macos:
     - cd ..
     - mkdir -p dist/$BUILD_TYPE
     - cp $DIST_PATH/libocgcore.* dist/$BUILD_TYPE/
-    - cp $DIST_PATH/libsqlite3.* dist/$BUILD_TYPE/
+    - cp $DIST_PATH/libsqlite3.* dist/$BUILD_TYPE/ || true
   artifacts:
     paths:
       - dist
