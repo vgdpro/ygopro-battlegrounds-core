@@ -115,7 +115,6 @@ project "sqlite3"
 
     filter "system:linux or system:macosx"
         pic "On"
-        defines { "SQLITE_API=__attribute__((visibility(\"default\")))" }
 
     filter "system:linux"
         linkoptions { "-static-libstdc++", "-static-libgcc" }
