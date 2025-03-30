@@ -35,6 +35,15 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	lua_pop(lua_state, 1);
 	luaL_requiref(lua_state, "math", luaopen_math, 1);
 	lua_pop(lua_state, 1);
+	auto nil_out = [&](const char* name) {
+		lua_pushnil(lua_state);
+		lua_setglobal(lua_state, name);
+	};
+	nil_out("collectgarbage");
+#ifndef ENABLE_UNSAFE_LIBRARIES
+	nil_out("dofile");
+	nil_out("loadfile");
+#endif // ENABLE_UNSAFE_LIBRARIES
 #endif
 	//open all libs
 	scriptlib::open_cardlib(lua_state);
