@@ -4,7 +4,6 @@ LuaMemTracker::LuaMemTracker(lua_Alloc alloc_func, void* ud, size_t mem_limit)
 	: real_alloc(alloc_func), real_ud(ud), limit(mem_limit) {
 #ifdef YGOPRO_LOG_LUA_MEMORY_SIZE
 	time_t now = time(nullptr);
-
 	char filename[64];
 	std::snprintf(filename, sizeof(filename), "memtrace-%ld.log", static_cast<long>(now));
 
@@ -31,15 +30,18 @@ void* LuaMemTracker::AllocThunk(void* ud, void* ptr, size_t osize, size_t nsize)
 
 void* LuaMemTracker::Alloc(void* ptr, size_t osize, size_t nsize) {
 	if (nsize == 0) {
-		total_allocated -= osize;
+		if (ptr && osize <= total_allocated) {
+			total_allocated -= osize;
+		}
 		return real_alloc(real_ud, ptr, osize, nsize);
 	} else {
-		if (limit && (total_allocated - osize + nsize > limit)) {
+		size_t projected = total_allocated - osize + nsize;
+		if (limit && projected > limit) {
 			return nullptr;  // over limit
 		}
 		void* newptr = real_alloc(real_ud, ptr, osize, nsize);
 		if (newptr) {
-			total_allocated = total_allocated - osize + nsize;
+			total_allocated = projected;
 #ifdef YGOPRO_LOG_LUA_MEMORY_SIZE
 			write_log();
 #endif
