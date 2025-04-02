@@ -103,7 +103,7 @@ public:
 #define COROUTINE_ERROR		3
 
 #ifndef YGOPRO_LUA_MEMORY_SIZE
-#define YGOPRO_LUA_MEMORY_SIZE 0
+#define YGOPRO_LUA_MEMORY_SIZE 67108864 // 64 MB
 #endif
 
 #endif /* INTERPRETER_H_ */
