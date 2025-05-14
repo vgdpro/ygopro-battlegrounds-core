@@ -31,7 +31,6 @@ workspace "ocgcoredll"
         defines "_DEBUG"
 
     filter "system:windows"
-        defines { "WIN32", "_WIN32" }
         systemversion "latest"
         startproject "ocgcore"
 
@@ -50,9 +49,6 @@ workspace "ocgcoredll"
         buildoptions { "/utf-8" }
         defines { "_CRT_SECURE_NO_WARNINGS" }
 
-    filter "not action:vs*"
-        buildoptions { }
-
     filter "system:bsd"
         defines { "LUA_USE_POSIX" }
 
@@ -61,7 +57,7 @@ workspace "ocgcoredll"
 
     filter "system:linux"
         defines { "LUA_USE_LINUX" }
-        buildoptions { "-fPIC" }
+        pic "On"
 
 filter {}
 
