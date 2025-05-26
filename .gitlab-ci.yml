@@ -131,6 +131,8 @@ build_windows_x64:
   variables:
     PREMAKE_OS: macosx
     PREMAKE5_PATH: ./premake5
+  before_script:
+    - rm -rf sqlite3/VERSION sqlite3/version
 
 build_macos_x64:
   extends: .build_macos_arch
