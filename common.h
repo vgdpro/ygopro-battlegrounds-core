@@ -10,15 +10,11 @@
 
 #include <stdint.h>
 #include <assert.h>
-typedef unsigned long long uint64;
-typedef unsigned int uint32;
-typedef unsigned short uint16;
-typedef unsigned char uint8;
 typedef unsigned char byte;
-typedef long long int64;
-typedef int int32;
-typedef short int16;
-typedef signed char int8;
+
+inline bool check_playerid(int32_t playerid) {
+	return playerid >= 0 && playerid <= 1;
+}
 
 #define MATCH_ALL(x,y) (((x)&(y))==(y))
 #define MATCH_ANY(x,y) ((x)&(y))
@@ -31,7 +27,7 @@ typedef signed char int8;
 #define TRUE 1
 #define FALSE 0
 #define SIZE_MESSAGE_BUFFER 0x2000
-#define SIZE_RETURN_VALUE 128
+#define SIZE_RETURN_VALUE 512
 
 #define PROCESSOR_BUFFER_LEN	0x0fffffff
 #define PROCESSOR_FLAG			0xf0000000
@@ -39,24 +35,23 @@ typedef signed char int8;
 #define PROCESSOR_WAITING		0x10000000
 #define PROCESSOR_END			0x20000000
 
-#ifndef NULL
-#define NULL 0
-#endif
-
-#define CURRENT_RULE	5
+#define MASTER_RULE3		3	//Master Rule 3 (2014)
+#define NEW_MASTER_RULE		4	//New Master Rule (2017)
+#define MASTER_RULE_2020	5	//Master Rule 2020
+#define CURRENT_RULE		5
 
 //Locations
-#define LOCATION_DECK		0x01		//
-#define LOCATION_HAND		0x02		//
-#define LOCATION_MZONE		0x04		//
-#define LOCATION_SZONE		0x08		//
-#define LOCATION_GRAVE		0x10		//
-#define LOCATION_REMOVED	0x20		//
-#define LOCATION_EXTRA		0x40		//
-#define LOCATION_OVERLAY	0x80		//
-#define LOCATION_ONFIELD	0x0c		//
-#define LOCATION_FZONE		0x100		//
-#define LOCATION_PZONE		0x200		//
+#define LOCATION_DECK		0x01U
+#define LOCATION_HAND		0x02U
+#define LOCATION_MZONE		0x04U
+#define LOCATION_SZONE		0x08U
+#define LOCATION_GRAVE		0x10U
+#define LOCATION_REMOVED	0x20U
+#define LOCATION_EXTRA		0x40U
+#define LOCATION_OVERLAY	0x80U
+#define LOCATION_ONFIELD	(LOCATION_MZONE | LOCATION_SZONE)
+#define LOCATION_FZONE		0x100U
+#define LOCATION_PZONE		0x200U
 //For redirect
 #define LOCATION_DECKBOT	0x10001		//Return to deck bottom
 #define LOCATION_DECKSHF	0x20001		//Return to deck and shuffle
@@ -108,7 +103,10 @@ typedef signed char int8;
 #define TYPE_SPSUMMON		0x2000000	//
 #define TYPE_LINK			0x4000000	//
 
+#define TYPES_EXTRA_DECK	(TYPE_FUSION | TYPE_SYNCHRO | TYPE_XYZ | TYPE_LINK)
+
 //Attributes
+#define ATTRIBUTES_COUNT	7
 #define ATTRIBUTE_ALL		0x7f		//
 #define ATTRIBUTE_EARTH		0x01		//
 #define ATTRIBUTE_WATER		0x02		//
@@ -191,7 +189,7 @@ typedef signed char int8;
 #define STATUS_NO_LEVEL				0x0020
 #define STATUS_BATTLE_RESULT		0x0040
 #define STATUS_SPSUMMON_STEP		0x0080
-#define STATUS_FORM_CHANGED			0x0100
+#define STATUS_CANNOT_CHANGE_FORM	0x0100
 #define STATUS_SUMMONING			0x0200
 #define STATUS_EFFECT_ENABLED		0x0400
 #define STATUS_SUMMON_TURN			0x0800
@@ -258,7 +256,7 @@ typedef signed char int8;
 //#define MSG_START				4
 #define MSG_WIN					5
 //#define MSG_UPDATE_DATA		6
-//#define MSG_UPDATE_CARD		7
+#define MSG_UPDATE_CARD		7
 //#define MSG_REQUEST_DECK		8
 #define MSG_SELECT_BATTLECMD	10
 #define MSG_SELECT_IDLECMD		11
@@ -422,6 +420,7 @@ typedef signed char int8;
 #define DUEL_TAG_MODE			0x20
 #define DUEL_SIMPLE_AI			0x40
 #define DUEL_RETURN_DECK_TOP	0x80
+#define DUEL_REVEAL_DECK_SEQ	0x100
 
 //Activity
 #define ACTIVITY_SUMMON			1
@@ -444,5 +443,12 @@ typedef signed char int8;
 #define CARDDATA_LSCALE			10
 #define CARDDATA_RSCALE			11
 #define CARDDATA_LINK_MARKER	12
+
+//get effects for Card.GetCardRegistered
+#define GETEFFECT_INITIAL	0x1
+#define GETEFFECT_GAIN		0x2
+#define GETEFFECT_COPY		0x4
+#define GETEFFECT_GRANT		0x8
+#define GETEFFECT_ALL		0xf
 
 #endif /* COMMON_H_ */

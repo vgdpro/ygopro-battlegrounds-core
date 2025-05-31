@@ -1,4 +1,13 @@
-.vscode/
-/premake5.exe
-/build
+/.vscode/
+/build/
 /lua
+/temp/
+/premake-5/
+/premake5.exe
+/premake5
+
+/dll.lua
+/*.sh
+/test-wasm
+/wasm
+/dist

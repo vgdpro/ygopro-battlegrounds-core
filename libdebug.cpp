@@ -13,8 +13,9 @@
 #include "effect.h"
 #include "ocgapi.h"
 
-int32 scriptlib::debug_message(lua_State *L) {
-#ifndef YGOPRO_SERVER_MODE
+int32_t scriptlib::debug_message(lua_State *L) {
+#if !defined(YGOPRO_SERVER_MODE) || defined(YGOPRO_ENABLE_DEBUG_FUNC)
+	check_param_count(L, 1);
 	duel* pduel = interpreter::get_duel_info(L);
 	lua_getglobal(L, "tostring");
 	lua_pushvalue(L, -2);
@@ -24,19 +25,19 @@ int32 scriptlib::debug_message(lua_State *L) {
 #endif
 	return 0;
 }
-int32 scriptlib::debug_add_card(lua_State *L) {
+int32_t scriptlib::debug_add_card(lua_State *L) {
 	check_param_count(L, 6);
 	duel* pduel = interpreter::get_duel_info(L);
-	int32 code = (int32)lua_tointeger(L, 1);
-	int32 owner = (int32)lua_tointeger(L, 2);
-	int32 playerid = (int32)lua_tointeger(L, 3);
-	int32 location = (int32)lua_tointeger(L, 4);
-	int32 sequence = (int32)lua_tointeger(L, 5);
-	int32 position = (int32)lua_tointeger(L, 6);
-	int32 proc = lua_toboolean(L, 7);
-	if(owner != 0 && owner != 1)
+	int32_t code = (int32_t)lua_tointeger(L, 1);
+	int32_t owner = (int32_t)lua_tointeger(L, 2);
+	int32_t playerid = (int32_t)lua_tointeger(L, 3);
+	int32_t location = (int32_t)lua_tointeger(L, 4);
+	int32_t sequence = (int32_t)lua_tointeger(L, 5);
+	int32_t position = (int32_t)lua_tointeger(L, 6);
+	int32_t proc = lua_toboolean(L, 7);
+	if (!check_playerid(owner))
 		return 0;
-	if(playerid != 0 && playerid != 1)
+	if (!check_playerid(playerid))
 		return 0;
 	if(!pduel->lua->preloaded) {
 		pduel->lua->preloaded = TRUE;
@@ -49,7 +50,7 @@ int32 scriptlib::debug_add_card(lua_State *L) {
 			position = POS_FACEDOWN_DEFENSE;
 		pcard->sendto_param.position = position;
 		if(location == LOCATION_PZONE) {
-			int32 seq = pduel->game_field->core.duel_rule >= 4 ? sequence * 4 : sequence + 6;
+			int32_t seq = pduel->game_field->get_pzone_sequence(sequence);
 			pduel->game_field->add_card(playerid, pcard, LOCATION_SZONE, seq, TRUE);
 		} else {
 			pduel->game_field->add_card(playerid, pcard, location, sequence);
@@ -64,9 +65,11 @@ int32 scriptlib::debug_add_card(lua_State *L) {
 		interpreter::card2value(L, pcard);
 		return 1;
 	} else if(location == LOCATION_MZONE) {
+		card* fcard = pduel->game_field->get_field_card(playerid, location, sequence);
+		if (!fcard || !(fcard->data.type & TYPE_XYZ))
+			return 0;
 		card* pcard = pduel->new_card(code);
 		pcard->owner = owner;
-		card* fcard = pduel->game_field->get_field_card(playerid, location, sequence);
 		fcard->xyz_add(pcard);
 		if(proc)
 			pcard->set_status(STATUS_PROC_COMPLETE, TRUE);
@@ -75,13 +78,13 @@ int32 scriptlib::debug_add_card(lua_State *L) {
 	}
 	return 0;
 }
-int32 scriptlib::debug_set_player_info(lua_State *L) {
+int32_t scriptlib::debug_set_player_info(lua_State *L) {
 	check_param_count(L, 4);
 	duel* pduel = interpreter::get_duel_info(L);
-	uint32 playerid = (uint32)lua_tointeger(L, 1);
-	uint32 lp = (uint32)lua_tointeger(L, 2);
-	uint32 startcount = (uint32)lua_tointeger(L, 3);
-	uint32 drawcount = (uint32)lua_tointeger(L, 4);
+	int32_t playerid = (int32_t)lua_tointeger(L, 1);
+	int32_t lp = (int32_t)lua_tointeger(L, 2);
+	int32_t startcount = (int32_t)lua_tointeger(L, 3);
+	int32_t drawcount = (int32_t)lua_tointeger(L, 4);
 	if(playerid != 0 && playerid != 1)
 		return 0;
 	pduel->game_field->player[playerid].lp = lp;
@@ -89,18 +92,18 @@ int32 scriptlib::debug_set_player_info(lua_State *L) {
 	pduel->game_field->player[playerid].draw_count = drawcount;
 	return 0;
 }
-int32 scriptlib::debug_pre_summon(lua_State *L) {
+int32_t scriptlib::debug_pre_summon(lua_State *L) {
 	check_param_count(L, 2);
 	check_param(L, PARAM_TYPE_CARD, 1);
 	card* pcard = *(card**) lua_touserdata(L, 1);
-	uint32 summon_type = (uint32)lua_tointeger(L, 2);
-	uint8 summon_location = 0;
+	uint32_t summon_type = (uint32_t)lua_tointeger(L, 2);
+	uint8_t summon_location = 0;
 	if(lua_gettop(L) > 2)
-		summon_location = (uint8)lua_tointeger(L, 3);
+		summon_location = (uint8_t)lua_tointeger(L, 3);
 	pcard->summon_info = summon_type | (summon_location << 16);
 	return 0;
 }
-int32 scriptlib::debug_pre_equip(lua_State *L) {
+int32_t scriptlib::debug_pre_equip(lua_State *L) {
 	check_param_count(L, 2);
 	check_param(L, PARAM_TYPE_CARD, 1);
 	check_param(L, PARAM_TYPE_CARD, 2);
@@ -118,7 +121,7 @@ int32 scriptlib::debug_pre_equip(lua_State *L) {
 	}
 	return 1;
 }
-int32 scriptlib::debug_pre_set_target(lua_State *L) {
+int32_t scriptlib::debug_pre_set_target(lua_State *L) {
 	check_param_count(L, 2);
 	check_param(L, PARAM_TYPE_CARD, 1);
 	check_param(L, PARAM_TYPE_CARD, 2);
@@ -127,30 +130,23 @@ int32 scriptlib::debug_pre_set_target(lua_State *L) {
 	t_card->add_card_target(target);
 	return 0;
 }
-int32 scriptlib::debug_pre_add_counter(lua_State *L) {
+int32_t scriptlib::debug_pre_add_counter(lua_State *L) {
 	check_param_count(L, 2);
 	check_param(L, PARAM_TYPE_CARD, 1);
 	card* pcard = *(card**) lua_touserdata(L, 1);
-	uint32 countertype = (uint32)lua_tointeger(L, 2);
-	uint32 count = (uint32)lua_tointeger(L, 3);
-	uint16 cttype = countertype;
-	auto pr = pcard->counters.emplace(cttype, card::counter_map::mapped_type());
+	uint32_t countertype = (uint32_t)lua_tointeger(L, 2);
+	uint16_t count = (uint16_t)lua_tointeger(L, 3);
+	uint16_t cttype = countertype;
+	auto pr = pcard->counters.emplace(cttype, 0);
 	auto cmit = pr.first;
-	if(pr.second) {
-		cmit->second[0] = 0;
-		cmit->second[1] = 0;
-	}
-	if(countertype & COUNTER_WITHOUT_PERMIT)
-		cmit->second[0] += count;
-	else
-		cmit->second[1] += count;
+	cmit->second += count;
 	return 0;
 }
-int32 scriptlib::debug_reload_field_begin(lua_State *L) {
+int32_t scriptlib::debug_reload_field_begin(lua_State *L) {
 	check_param_count(L, 1);
 	duel* pduel = interpreter::get_duel_info(L);
-	uint32 flag = (uint32)lua_tointeger(L, 1);
-	int32 rule = (int32)lua_tointeger(L, 2);
+	uint32_t flag = (uint32_t)lua_tointeger(L, 1);
+	int32_t rule = (int32_t)lua_tointeger(L, 2);
 	pduel->clear();
 	pduel->game_field->core.duel_options |= flag;
 	if (rule)
@@ -161,7 +157,7 @@ int32 scriptlib::debug_reload_field_begin(lua_State *L) {
 		pduel->game_field->core.duel_rule = CURRENT_RULE;
 	return 0;
 }
-int32 scriptlib::debug_reload_field_end(lua_State *L) {
+int32_t scriptlib::debug_reload_field_end(lua_State *L) {
 	duel* pduel = interpreter::get_duel_info(L);
 	pduel->game_field->core.shuffle_hand_check[0] = FALSE;
 	pduel->game_field->core.shuffle_hand_check[1] = FALSE;
@@ -170,7 +166,7 @@ int32 scriptlib::debug_reload_field_end(lua_State *L) {
 	pduel->game_field->reload_field_info();
 	return 0;
 }
-int32 scriptlib::debug_set_ai_name(lua_State *L) {
+int32_t scriptlib::debug_set_ai_name(lua_State *L) {
 #ifndef YGOPRO_SERVER_MODE
 	check_param_count(L, 1);
 	check_param(L, PARAM_TYPE_STRING, 1);
@@ -186,8 +182,8 @@ int32 scriptlib::debug_set_ai_name(lua_State *L) {
 #endif
 	return 0;
 }
-int32 scriptlib::debug_show_hint(lua_State *L) {
-#ifndef YGOPRO_SERVER_MODE
+int32_t scriptlib::debug_show_hint(lua_State *L) {
+#if !defined(YGOPRO_SERVER_MODE) || defined(YGOPRO_ENABLE_DEBUG_FUNC)
 	check_param_count(L, 1);
 	check_param(L, PARAM_TYPE_STRING, 1);
 	duel* pduel = interpreter::get_duel_info(L);
@@ -215,7 +211,7 @@ static const struct luaL_Reg debuglib[] = {
 	{ "ReloadFieldEnd", scriptlib::debug_reload_field_end },
 	{ "SetAIName", scriptlib::debug_set_ai_name },
 	{ "ShowHint", scriptlib::debug_show_hint },
-	{ NULL, NULL }
+	{ nullptr, nullptr }
 };
 void scriptlib::open_debuglib(lua_State *L) {
 	luaL_newlib(L, debuglib);
