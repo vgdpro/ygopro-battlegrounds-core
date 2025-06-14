@@ -31,7 +31,7 @@ jobs:
       id: premake
       uses: mercury233/action-cache-download-file@v1.0.0
       with:
-        url: https://github.com/premake/premake-core/releases/download/v5.0.0-beta5/premake-5.0.0-beta6-windows.zip
+        url: https://github.com/premake/premake-core/releases/download/v5.0.0-beta5/premake-5.0.0-beta7-windows.zip
 
     - name: Premake
       run: |
@@ -100,7 +100,7 @@ jobs:
       id: premake
       uses: mercury233/action-cache-download-file@v1.0.0
       with:
-        url: https://github.com/premake/premake-core/releases/download/v5.0.0-beta5/premake-5.0.0-beta6-linux.tar.gz
+        url: https://github.com/premake/premake-core/releases/download/v5.0.0-beta5/premake-5.0.0-beta7-linux.tar.gz
 
     - name: Premake
       run: |

@@ -13,8 +13,8 @@ lua:
     - linux
   script:
     # lua
-    - wget -O - https://cdn02.moecube.com:444/ygopro-build-materials/lua-5.4.7.tar.gz | tar zfx -
-    - mv lua-5.4.7 lua
+    - wget -O - https://mat-cacher.moenext.com/https://www.lua.org/ftp/lua-5.4.8.tar.gz | tar zfx -
+    - mv lua-5.4.8 lua
     - cp premake/lua.lua lua/premake5.lua
     - wget -O - https://cdn02.moecube.com:444/ygopro-build-materials/sqlite-autoconf-3490100.tar.gz | tar zfx -
     - mv sqlite-autoconf-3490100 sqlite3
@@ -30,8 +30,8 @@ mat_windows:
   script:
     - apt update; apt -y install wget tar patch p7zip-full
     # premake5.exe
-    - wget https://cdn02.moecube.com:444/ygopro-build-materials/premake-5.0.0-beta6-windows.zip
-    - 7z x -y premake-5.0.0-beta6-windows.zip
+    - wget https://cdn02.moecube.com:444/ygopro-build-materials/premake-5.0.0-beta7-windows.zip
+    - 7z x -y premake-5.0.0-beta7-windows.zip
   artifacts:
     paths:
       - premake5.exe
@@ -42,8 +42,8 @@ mat_macos:
     - linux
   script:
     - apt update; apt -y install wget tar
-    - wget -O - https://cdn02.moecube.com:444/ygopro-build-materials/premake-5.0.0-beta6-macosx.tar.gz | tar zfx -
-    - chmod +x premake5
+    - wget -O - https://mat-cacher.moenext.com/https://www.sqlite.org/2025/sqlite-autoconf-3500100.tar.gz | tar zfx -
+    - mv sqlite-autoconf-3500100 sqlite3
   artifacts:
     paths:
       - premake5
