@@ -7,7 +7,7 @@ stages:
 variables:
   GIT_DEPTH: "1"
 
-lua:
+mat_common:
   stage: prepare
   tags:
     - linux
@@ -16,8 +16,8 @@ lua:
     - wget -O - https://mat-cacher.moenext.com/https://www.lua.org/ftp/lua-5.4.8.tar.gz | tar zfx -
     - mv lua-5.4.8 lua
     - cp premake/lua.lua lua/premake5.lua
-    - wget -O - https://cdn02.moecube.com:444/ygopro-build-materials/sqlite-autoconf-3490100.tar.gz | tar zfx -
-    - mv sqlite-autoconf-3490100 sqlite3
+    - wget -O - https://mat-cacher.moenext.com/https://www.sqlite.org/2025/sqlite-autoconf-3500100.tar.gz | tar zfx -
+    - mv sqlite-autoconf-3500100 sqlite3
   artifacts:
     paths:
       - lua
@@ -28,9 +28,8 @@ mat_windows:
   tags:
     - linux
   script:
-    - apt update; apt -y install wget tar patch p7zip-full
     # premake5.exe
-    - wget https://cdn02.moecube.com:444/ygopro-build-materials/premake-5.0.0-beta7-windows.zip
+    - wget https://cdn02.moecube.com:444/premake5-built/premake-5.0.0-beta7-windows.zip
     - 7z x -y premake-5.0.0-beta7-windows.zip
   artifacts:
     paths:
@@ -41,9 +40,8 @@ mat_macos:
   tags:
     - linux
   script:
-    - apt update; apt -y install wget tar
-    - wget -O - https://mat-cacher.moenext.com/https://www.sqlite.org/2025/sqlite-autoconf-3500100.tar.gz | tar zfx -
-    - mv sqlite-autoconf-3500100 sqlite3
+    - wget -O - https://cdn02.moecube.com:444/premake5-built/premake-5.0.0-beta7-macosx.tar.gz | tar zfx -
+    - chmod +x premake5
   artifacts:
     paths:
       - premake5
@@ -53,6 +51,8 @@ mat_macos:
   tags:
     - linux
   image: git-registry.moenext.com/mycard/docker-ygopro-builder
+  dependencies:
+    - mat_common
   variables:
     PREMAKE_OS: linux
     BUILD_TYPE: x64
@@ -96,8 +96,8 @@ build_wasm:
 .build_windows:
   stage: build
   dependencies:
+    - mat_common
     - mat_windows
-    - lua
   tags:
     - vs
   before_script:
@@ -128,6 +128,9 @@ build_windows_x64:
   extends: .build_unix
   tags:
     - macos
+  dependencies:
+    - mat_common
+    - mat_macos
   variables:
     PREMAKE_OS: macosx
     PREMAKE5_PATH: ./premake5
