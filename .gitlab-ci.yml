@@ -50,7 +50,7 @@ mat_macos:
   stage: build
   tags:
     - linux
-  image: git-registry.moenext.com/mycard/docker-ygopro-builder
+  image: git-registry.moenext.com/mycard/docker-ygopro-builder:debian11
   dependencies:
     - mat_common
   variables:
@@ -91,7 +91,7 @@ build_wasm:
     WASM: '1'
   before_script:
     - mkdir -p wasm
-  image: git-registry.moenext.com/mycard/docker-ygopro-builder:emscripten
+  image: git-registry.moenext.com/mycard/docker-ygopro-builder:debian12
 
 .build_windows:
   stage: build
