@@ -49,7 +49,7 @@ mat_macos:
 .build_unix:
   stage: build
   tags:
-    - linux
+    - noavx2
   image: git-registry.moenext.com/mycard/docker-ygopro-builder:debian11
   dependencies:
     - mat_common
