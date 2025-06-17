@@ -64,4 +64,12 @@ OCGCORE_API void set_responseb(intptr_t pduel, byte* buf);
 OCGCORE_API int32_t preload_script(intptr_t pduel, const char* script_name);
 OCGCORE_API byte* default_script_reader(const char* script_name, int* len);
 
+// koishi specific
+OCGCORE_API int32_t get_registry_value(intptr_t pduel, const char* key, byte* out_buf);
+OCGCORE_API void set_registry_value(intptr_t pduel, const char* key, const char* value);
+OCGCORE_API int32_t get_registry_keys(intptr_t pduel, byte* out_buf);
+OCGCORE_API void clear_registry(intptr_t pduel);
+OCGCORE_API int32_t dump_registry(intptr_t pduel, byte* out_buf);
+OCGCORE_API void load_registry(intptr_t pduel, const byte* in_buf, int32_t in_len);
+
 #endif /* OCGAPI_H_ */

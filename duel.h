@@ -15,6 +15,7 @@
 #include <unordered_set>
 #include <cstring>
 #include <vector>
+#include <unordered_map>
 
 class card;
 class group;
@@ -37,7 +38,9 @@ public:
 	std::unordered_set<group*> sgroups;
 	std::unordered_set<effect*> effects;
 	std::unordered_set<effect*> uncopy;
-	
+
+	std::unordered_map<std::string, std::string> registry;
+
 	duel();
 	~duel();
 	void clear();

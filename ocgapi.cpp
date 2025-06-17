@@ -2,7 +2,7 @@
  * interface.cpp
  *
  *  Created on: 2010-5-2
- *      Author: Argon
+ *	  Author: Argon
  */
 #include <cstdio>
 #include <cstring>
@@ -369,4 +369,103 @@ OCGCORE_API void set_responseb(intptr_t pduel, byte* buf) {
 }
 OCGCORE_API int32_t preload_script(intptr_t pduel, const char* script_name) {
 	return ((duel*)pduel)->lua->load_script(script_name);
+}
+OCGCORE_API int32_t get_registry_value(intptr_t pduel, const char* key, byte* out_buf) {
+	if (!pduel || !key || !out_buf) return -1;
+
+	duel* d = (duel*)pduel;
+	auto it = d->registry.find(key);
+	if (it == d->registry.end())
+		return -1;
+
+	const std::string& val = it->second;
+	std::memcpy(out_buf, val.c_str(), val.size());
+	return static_cast<int32_t>(val.size());
+}
+OCGCORE_API void set_registry_value(intptr_t pduel, const char* key, const char* value) {
+	if (!pduel || !key) return;
+	duel* d = (duel*)pduel;
+	if (value) {
+		d->registry[key] = value;
+	} else {
+		d->registry.erase(key);
+	}
+}
+OCGCORE_API int32_t get_registry_keys(intptr_t pduel, byte* out_buf) {
+	if (!pduel || !out_buf) return -1;
+
+	duel* d = (duel*)pduel;
+	byte* ptr = out_buf;
+
+	for (const auto& pair : d->registry) {
+		const std::string& key = pair.first;
+		uint16_t len = static_cast<uint16_t>(std::min<size_t>(key.size(), 0xFFFF));
+
+		// 写入长度（2字节，小端序）
+		buffer_write(ptr, len);
+
+		std::memcpy(ptr, key.data(), len);
+		ptr += len;
+	}
+
+	return ptr - out_buf;
+}
+OCGCORE_API void clear_registry(intptr_t pduel) {
+	if (!pduel) return;
+	duel* d = (duel*)pduel;
+	d->registry.clear();
+}
+
+OCGCORE_API int32_t dump_registry(intptr_t pduel, byte* out_buf) {
+	if (!pduel || !out_buf) return -1;
+
+	duel* d = (duel*)pduel;
+	byte* ptr = out_buf;
+
+	for (const auto& pair : d->registry) {
+		const std::string& key = pair.first;
+		const std::string& value = pair.second;
+
+		uint16_t key_len = static_cast<uint16_t>(std::min<size_t>(key.size(), 0xFFFF));
+		uint16_t val_len = static_cast<uint16_t>(std::min<size_t>(value.size(), 0xFFFF));
+
+		// 写入 key_len 和 val_len（每次调用后 ptr 自动推进）
+		buffer_write(ptr, key_len);
+		buffer_write(ptr, val_len);
+
+		// 写入 key 内容
+		std::memcpy(ptr, key.data(), key_len);
+		ptr += key_len;
+
+		// 写入 value 内容
+		std::memcpy(ptr, value.data(), val_len);
+		ptr += val_len;
+	}
+
+	return ptr - out_buf;  // 返回写入的总字节数
+}
+OCGCORE_API void load_registry(intptr_t pduel, const byte* in_buf, int32_t in_len) {
+	if (!pduel || !in_buf || in_len <= 0) return;
+
+	duel* d = (duel*)pduel;
+
+	byte* ptr = const_cast<byte*>(in_buf);  // buffer_read 要求非 const
+	byte* end = ptr + in_len;
+
+	while (ptr + 4 <= end) {  // 至少要读取 key_len 和 val_len（2 + 2 字节）
+		uint16_t key_len = buffer_read<uint16_t>(ptr);
+		uint16_t val_len = buffer_read<uint16_t>(ptr);
+
+		if (ptr + key_len + val_len > end) {
+			break;  // 数据不完整，退出
+		}
+
+		std::string key(reinterpret_cast<const char*>(ptr), key_len);
+		ptr += key_len;
+
+		std::string value(reinterpret_cast<const char*>(ptr), val_len);
+		ptr += val_len;
+
+		d->registry[std::move(key)] = std::move(value);
+	}
 }
