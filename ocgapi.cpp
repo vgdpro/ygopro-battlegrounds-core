@@ -65,7 +65,16 @@ OCGCORE_API byte* default_script_reader(const char* script_name, int* slen) {
 OCGCORE_API intptr_t create_duel(uint_fast32_t seed) {
 	duel* pduel = new duel();
 	duel_set.insert(pduel);
-	pduel->random.reset(seed);
+	pduel->random.seed(seed);
+	pduel->rng_version = 1;
+	pduel->lua->preloaded = FALSE;
+	return (intptr_t)pduel;
+}
+OCGCORE_API intptr_t create_duel_v2(uint32_t seed_sequence[]) {
+	duel* pduel = new duel();
+	duel_set.insert(pduel);
+	pduel->random.seed(seed_sequence, SEED_COUNT);
+	pduel->rng_version = 2;
 	pduel->lua->preloaded = FALSE;
 	return (intptr_t)pduel;
 }
@@ -138,8 +147,8 @@ OCGCORE_API void set_player_info(intptr_t pduel, int32_t playerid, int32_t lp, i
 }
 OCGCORE_API void get_log_message(intptr_t pduel, char* buf) {
 	duel* pd = (duel*)pduel;
-	buf[0] = '\0';
-	std::strncat(buf, pd->strbuffer, sizeof pd->strbuffer - 1);
+	std::strncpy(buf, pd->strbuffer, sizeof pd->strbuffer - 1);
+	buf[sizeof pd->strbuffer - 1] = 0;
 }
 OCGCORE_API int32_t get_message(intptr_t pduel, byte* buf) {
 	int32_t len = ((duel*)pduel)->read_buffer(buf);
