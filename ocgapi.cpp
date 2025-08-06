@@ -24,6 +24,7 @@ static uint32_t default_message_handler(intptr_t pduel, uint32_t message_type) {
 }
 static script_reader sreader = default_script_reader;
 static card_reader creader = default_card_reader;
+static card_reader_random rcreader = default_card_reader_random;
 static message_handler mhandler = default_message_handler;
 static byte buffer[0x100000];
 static std::set<duel*> duel_set;
@@ -33,6 +34,9 @@ OCGCORE_API void set_script_reader(script_reader f) {
 }
 OCGCORE_API void set_card_reader(card_reader f) {
 	creader = f;
+}
+OCGCORE_API void set_card_reader_random(card_reader_random f) {
+	rcreader = f;
 }
 OCGCORE_API void set_message_handler(message_handler f) {
 	mhandler = f;
@@ -46,6 +50,9 @@ uint32_t read_card(uint32_t code, card_data* data) {
 		return 0;
 	}
 	return creader(code, data);
+}
+uint32_t read_card_random(card_data* data ,uint32_t type) {
+	return rcreader(data ,type);
 }
 uint32_t handle_message(void* pduel, uint32_t message_type) {
 	return mhandler((intptr_t)pduel, message_type);
@@ -61,6 +68,9 @@ OCGCORE_API byte* default_script_reader(const char* script_name, int* slen) {
 		return nullptr;
 	*slen = (int)len;
 	return buffer;
+}
+OCGCORE_API uint32_t default_card_reader_random(card_data* data, uint32_t type) {
+	return 0;
 }
 OCGCORE_API intptr_t create_duel(uint_fast32_t seed) {
 	duel* pduel = new duel();
@@ -79,6 +89,7 @@ OCGCORE_API intptr_t create_duel_v2(uint32_t seed_sequence[]) {
 OCGCORE_API void start_duel(intptr_t pduel, uint32_t options) {
 	duel* pd = (duel*)pduel;
 	uint16_t duel_rule = options >> 16;
+	options |= DUEL_ATTACK_FIRST_TURN;
 	uint16_t duel_options = options & 0xffff;
 	pd->game_field->core.duel_options |= duel_options;
 	if (duel_rule >= 1 && duel_rule <= CURRENT_RULE)

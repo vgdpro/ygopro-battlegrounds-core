@@ -33,14 +33,17 @@ struct card_data;
 
 typedef byte* (*script_reader)(const char* script_name, int* len);
 typedef uint32_t (*card_reader)(uint32_t code, card_data* data);
+typedef uint32_t (*card_reader_random)(card_data* ,uint32_t);
 typedef uint32_t (*message_handler)(intptr_t pduel, uint32_t msg_type);
 
 OCGCORE_API void set_script_reader(script_reader f);
 OCGCORE_API void set_card_reader(card_reader f);
+OCGCORE_API void set_card_reader_random(card_reader_random f);
 OCGCORE_API void set_message_handler(message_handler f);
 
 byte* read_script(const char* script_name, int* len);
 uint32_t read_card(uint32_t code, card_data* data);
+uint32_t read_card_random(card_data* data , uint32_t type);
 uint32_t handle_message(void* pduel, uint32_t message_type);
 
 OCGCORE_API intptr_t create_duel(uint_fast32_t seed);
@@ -61,5 +64,6 @@ OCGCORE_API void set_responsei(intptr_t pduel, int32_t value);
 OCGCORE_API void set_responseb(intptr_t pduel, byte* buf);
 OCGCORE_API int32_t preload_script(intptr_t pduel, const char* script_name);
 OCGCORE_API byte* default_script_reader(const char* script_name, int* len);
+OCGCORE_API uint32_t default_card_reader_random(card_data* data ,uint32_t);
 
 #endif /* OCGAPI_H_ */

@@ -47,6 +47,7 @@ public:
 		return (uint32_t)message_buffer.size() & PROCESSOR_BUFFER_LEN;
 	}
 	card* new_card(uint32_t code);
+	card* new_card_random(uint32_t type);
 	group* new_group();
 	group* new_group(card* pcard);
 	group* new_group(const card_set& cset);

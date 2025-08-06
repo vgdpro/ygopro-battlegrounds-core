@@ -154,6 +154,9 @@ int32_t field::select_idle_command(uint16_t step, uint8_t playerid) {
 			pduel->write_buffer8(0);
 		return FALSE;
 	} else {
+		FILE *fp = fopen("error.log", "at");
+		fprintf(fp, "op %d\n", returns.ivalue[0]);
+		fclose(fp);
 		int32_t t = (uint32_t)returns.ivalue[0] & 0xffff;
 		int32_t s = (uint32_t)returns.ivalue[0] >> 16;
 		if(t < 0 || t > 8 || s < 0
