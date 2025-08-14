@@ -553,6 +553,24 @@ int32_t scriptlib::duel_create_token(lua_State *L) {
 	interpreter::card2value(L, pcard);
 	return 1;
 }
+int32_t scriptlib::duel_create_random_token(lua_State *L) {
+	check_action_permission(L);
+	check_param_count(L, 2);
+	int32_t playerid = (int32_t)lua_tointeger(L, 1);
+	int32_t code = (int32_t)lua_tointeger(L, 2);
+	bool include = (bool)lua_toboolean(L, 3);
+	if(playerid != 0 && playerid != 1) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+	duel* pduel = interpreter::get_duel_info(L);
+	card* pcard = pduel->new_card_random(code,include);
+	pcard->owner = playerid;
+	pcard->current.location = 0;
+	pcard->current.controler = playerid;
+	interpreter::card2value(L, pcard);
+	return 1;
+}
 int32_t scriptlib::duel_special_summon(lua_State *L) {
 	check_action_permission(L);
 	check_param_count(L, 7);
@@ -4871,6 +4889,7 @@ static const struct luaL_Reg duellib[] = {
 	{ "MSet", scriptlib::duel_setm },
 	{ "SSet", scriptlib::duel_sets },
 	{ "CreateToken", scriptlib::duel_create_token },
+	{ "CreateTokenRandom", scriptlib::duel_create_random_token },
 	{ "SpecialSummon", scriptlib::duel_special_summon },
 	{ "SpecialSummonStep", scriptlib::duel_special_summon_step },
 	{ "SpecialSummonComplete", scriptlib::duel_special_summon_complete },

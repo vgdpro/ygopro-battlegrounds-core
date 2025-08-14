@@ -13,6 +13,8 @@
 #include "interpreter.h"
 #include "ocgapi.h"
 #include <iterator>
+#include <iostream>
+#include <random>
 
 void field::add_process(uint16_t type, uint16_t step, effect* peffect, group* target, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, void* ptr1, void* ptr2) {
 	processor_unit new_unit;
@@ -3769,6 +3771,7 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 		return FALSE;
 	}
 	case 1: {
+		reload_field_info();
 		core.new_fchain.clear();
 		core.new_ochain.clear();
 		core.quick_f_chain.clear();
@@ -3836,6 +3839,7 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 	}
 	case 6: {
 		//Main1
+		reload_field_info();
 		infos.phase = PHASE_MAIN1;
 		core.phase_action = FALSE;
 		raise_event(nullptr, EVENT_PHASE_START + PHASE_MAIN1, 0, 0, 0, turn_player, 0);

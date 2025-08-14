@@ -19,11 +19,15 @@
 static uint32_t default_card_reader(uint32_t code, card_data* data) {
 	return 0;
 }
+static uint32_t default_card_reader_random(card_data* data, uint32_t type, bool is_include) {
+	return 0;
+}
 static uint32_t default_message_handler(intptr_t pduel, uint32_t message_type) {
 	return 0;
 }
 static script_reader sreader = default_script_reader;
 static card_reader creader = default_card_reader;
+static card_reader_random rcreader = default_card_reader_random;
 static message_handler mhandler = default_message_handler;
 static byte buffer[0x100000];
 static std::set<duel*> duel_set;
@@ -33,6 +37,9 @@ OCGCORE_API void set_script_reader(script_reader f) {
 }
 OCGCORE_API void set_card_reader(card_reader f) {
 	creader = f;
+}
+OCGCORE_API void set_card_reader_random(card_reader_random f) {
+	rcreader = f;
 }
 OCGCORE_API void set_message_handler(message_handler f) {
 	mhandler = f;
@@ -46,6 +53,9 @@ uint32_t read_card(uint32_t code, card_data* data) {
 		return 0;
 	}
 	return creader(code, data);
+}
+uint32_t read_card_random(card_data* data ,uint32_t type,bool is_include) {
+	return rcreader(data ,type, is_include);
 }
 uint32_t handle_message(void* pduel, uint32_t message_type) {
 	return mhandler((intptr_t)pduel, message_type);
@@ -76,8 +86,415 @@ OCGCORE_API intptr_t create_duel_v2(uint32_t seed_sequence[]) {
 	pduel->rng_version = 2;
 	return (intptr_t)pduel;
 }
+OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel,uint32_t playerid,uint32_t location){
+	// duel* source = (duel*)source_pduel;
+	// duel* target = (duel*)spduel;
+	// if(location & LOCATION_SZONE){
+	// 	for(auto& pcard : source->game_field->player[playerid].list_szone){
+	// 		if(pcard){
+	// 			source->game_field->remove_card(pcard);
+	// 		}
+	// 	}
+	// 	for(int i=0; i < target->game_field->player[0].list_szone.size(); ++i) {
+	// 		if(target->game_field->player[0].list_szone[i]) {
+	// 			card* pcard = target->game_field->player[0].list_szone[i];
+	// 			new_card(source_pduel, pcard->get_code(),pcard->owner==0?playerid:(1-playerid),playerid,LOCATION_SZONE,pcard->current.sequence,pcard->current.position);
+	// 			card* new_card = source->game_field->player[playerid].list_szone[i];
+	// 		}
+	// 	}
+	// }
+	// if(location & LOCATION_MZONE){
+	// 	for(auto& pcard : source->game_field->player[playerid].list_mzone){
+	// 		if(pcard){
+	// 			source->game_field->remove_card(pcard);
+	// 		}
+	// 	}
+	// 	for(int i=0; i < target->game_field->player[0].list_mzone.size(); ++i) {
+	// 		if(target->game_field->player[0].list_mzone[i]) {
+	// 			card* pcard = target->game_field->player[0].list_mzone[i];
+	// 			new_card(source_pduel, pcard->get_code(),pcard->owner==0?playerid:(1-playerid),playerid,LOCATION_MZONE,pcard->current.sequence,pcard->current.position);
+	// 			card* new_card = source->game_field->player[playerid].list_mzone[i];
+	// 			for(auto& pc :pcard->xyz_materials){
+	// 				if(pc){
+	// 					card* mat = source->new_card(pc->get_code());
+	// 					new_card->xyz_add(mat);
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
+	// if(location & LOCATION_HAND){
+	// 	for(auto& pcard : source->game_field->player[playerid].list_hand){
+	// 		if(pcard){
+	// 			source->game_field->remove_card(pcard);
+	// 		}
+	// 	}
+	// 	for(int i=0; i < target->game_field->player[0].list_hand.size(); ++i) {
+	// 		if(target->game_field->player[0].list_hand[i]) {
+	// 			card* pcard = target->game_field->player[0].list_hand[i];
+	// 			new_card(source_pduel, pcard->get_code(),pcard->owner==0?playerid:(1-playerid),playerid,LOCATION_HAND,pcard->current.sequence,pcard->current.position);
+	// 			card* new_card = source->game_field->player[playerid].list_hand[i];
+	// 		}
+	// 	}
+	// }
+	// if(location & LOCATION_GRAVE){
+	// 	for(auto& pcard : source->game_field->player[playerid].list_grave){
+	// 		if(pcard){
+	// 			source->game_field->remove_card(pcard);
+	// 		}
+	// 	}
+	// 	for(int i=0; i < target->game_field->player[0].list_grave.size(); ++i) {
+	// 		if(target->game_field->player[0].list_grave[i]) {
+	// 			card* pcard = target->game_field->player[0].list_grave[i];
+	// 			new_card(source_pduel, pcard->get_code(),pcard->owner==0?playerid:(1-playerid),playerid,LOCATION_GRAVE,pcard->current.sequence,pcard->current.position);
+	// 			card* new_card = source->game_field->player[playerid].list_grave[i];
+	// 		}
+	// 	}
+	// }
+	// if(location & LOCATION_REMOVED){
+	// 	for(auto& pcard : source->game_field->player[playerid].list_remove){
+	// 		if(pcard){
+	// 			source->game_field->remove_card(pcard);
+	// 		}
+	// 	}
+	// 	for(int i=0; i < target->game_field->player[0].list_remove.size(); ++i) {
+	// 		if(target->game_field->player[0].list_remove[i]) {
+	// 			card* pcard = target->game_field->player[0].list_remove[i];
+	// 			new_card(source_pduel, pcard->get_code(),pcard->owner==0?playerid:(1-playerid),playerid,LOCATION_REMOVED,pcard->current.sequence,pcard->current.position);
+	// 			card* new_card = source->game_field->player[playerid].list_remove[i];
+	// 		}
+	// 	}
+	// }
+	// if(location & LOCATION_EXTRA){
+	// 	for(auto& pcard : source->game_field->player[playerid].list_extra){
+	// 		if(pcard){
+	// 			source->game_field->remove_card(pcard);
+	// 		}
+	// 	}
+	// 	for(int i=0; i < target->game_field->player[0].list_extra.size(); ++i) {
+	// 		if(target->game_field->player[0].list_extra[i]) {
+	// 			card* pcard = target->game_field->player[0].list_extra[i];
+	// 			new_card(source_pduel, pcard->get_code(),pcard->owner==0?playerid:(1-playerid),playerid,LOCATION_EXTRA,pcard->current.sequence,pcard->current.position);
+	// 			card* new_card = source->game_field->player[playerid].list_extra[i];
+	// 		}
+	// 	}
+	// }
+	// if(location & LOCATION_DECK){
+	// 	for(auto& pcard : source->game_field->player[playerid].list_main){
+	// 		if(pcard){
+	// 			source->game_field->remove_card(pcard);
+	// 		}
+	// 	}
+	// 	for(int i=0; i < target->game_field->player[0].list_main.size(); ++i) {
+	// 		if(target->game_field->player[0].list_main[i]) {
+	// 			card* pcard = target->game_field->player[0].list_main[i];
+	// 			new_card(source_pduel, pcard->get_code(),pcard->owner==0?playerid:(1-playerid),playerid,LOCATION_DECK,pcard->current.sequence,pcard->current.position);
+	// 			card* new_card = source->game_field->player[playerid].list_main[i];
+	// 		}
+	// 	}
+	// }
+	
+
+	// for(int i=0; i < target->game_field->player[0].list_szone.size(); ++i) {
+	// 	if(target->game_field->player[0].list_szone[i]) {
+	// 		card* pcard = target->game_field->player[0].list_szone[i];
+	// 		card* new_card = source->game_field->player[playerid].list_szone[i];
+	// 		card_data_copy(new_card, pcard, playerid);
+	// 	}
+	// }
+
+	// for(int i=0; i < target->game_field->player[0].list_mzone.size(); ++i) {
+	// 	if(target->game_field->player[0].list_mzone[i]) {
+	// 		card* pcard = target->game_field->player[0].list_mzone[i];
+	// 		card* new_card = source->game_field->player[playerid].list_mzone[i];
+	// 		card_data_copy(new_card, pcard, playerid);
+	// 		for(int i=0; i < new_card->xyz_materials.size(); ++i) {
+	// 			card_data_copy(new_card->xyz_materials[i], pcard->xyz_materials[i], playerid);
+	// 		}
+	// 	}
+	// }
+
+	// for(int i=0; i < target->game_field->player[0].list_hand.size(); ++i) {
+	// 	if(target->game_field->player[0].list_hand[i]) {
+	// 		card* pcard = target->game_field->player[0].list_hand[i];
+	// 		card* new_card = source->game_field->player[playerid].list_hand[i];
+	// 		card_data_copy(new_card, pcard, playerid);
+	// 	}
+	// }
+
+	// for(int i=0; i < target->game_field->player[0].list_grave.size(); ++i) {
+	// 	if(target->game_field->player[0].list_grave[i]) {
+	// 		card* pcard = target->game_field->player[0].list_grave[i];
+	// 		card* new_card = source->game_field->player[playerid].list_grave[i];
+	// 		card_data_copy(new_card, pcard, playerid);
+	// 	}
+	// }
+
+	// for(int i=0; i < target->game_field->player[0].list_remove.size(); ++i) {
+	// 	if(target->game_field->player[0].list_remove[i]) {
+	// 		card* pcard = target->game_field->player[0].list_remove[i];
+	// 		card* new_card = source->game_field->player[playerid].list_remove[i];
+	// 		card_data_copy(new_card, pcard, playerid);
+	// 	}
+	// }
+
+	// for(int i=0; i < target->game_field->player[0].list_extra.size(); ++i) {
+	// 	if(target->game_field->player[0].list_extra[i]) {
+	// 		card* pcard = target->game_field->player[0].list_extra[i];
+	// 		card* new_card = source->game_field->player[playerid].list_extra[i];
+	// 		card_data_copy(new_card, pcard, playerid);
+	// 	}
+	// }
+
+	// for(int i=0; i < target->game_field->player[0].list_main.size(); ++i) {
+	// 	if(target->game_field->player[0].list_main[i]) {
+	// 		card* pcard = target->game_field->player[0].list_main[i];
+	// 		card* new_card = source->game_field->player[playerid].list_main[i];
+	// 		card_data_copy(new_card, pcard, playerid);
+	// 	}
+	// }
+	
+}
+void card_data_copy(card* new_card, card* pcard, uint32_t playerid){
+	// new_card->ref_handle = pcard->ref_handle;
+	// // new_card->previous = pcard->previous;
+	// // new_card->previous.code = pcard->previous.code;
+	// // new_card->previous.code2 = pcard->previous.code2;
+	// // new_card->previous.setcode = pcard->previous.setcode;
+	// // new_card->previous.type = pcard->previous.type;
+	// // new_card->previous.level = pcard->previous.level;
+	// // new_card->previous.rank = pcard->previous.rank;
+	// // new_card->previous.link = pcard->previous.link;
+	// // new_card->previous.lscale = pcard->previous.lscale;
+	// // new_card->previous.rscale = pcard->previous.rscale;
+	// // new_card->previous.attribute = pcard->previous.attribute;
+	// // new_card->previous.race = pcard->previous.race;
+	// // new_card->previous.attack = pcard->previous.attack;
+	// // new_card->previous.defense = pcard->previous.defense;
+	// // new_card->previous.base_attack = pcard->previous.base_attack;
+	// // new_card->previous.base_defense = pcard->previous.base_defense;
+	// // new_card->previous.controler = pcard->previous.controler;
+	// // new_card->previous.location = pcard->previous.location;
+	// // new_card->previous.sequence = pcard->previous.sequence;
+	// // new_card->previous.position = pcard->previous.position;
+	// // new_card->previous.reason = pcard->previous.reason;
+	// // new_card->previous.reason_player = pcard->previous.reason_player;
+	// // if(pcard->previous.reason_card && pcard->previous.reason_card->current.controler == 0) {
+	// // 	new_card->previous.reason_card = find_card(new_card->pduel, pcard->previous.reason_card, playerid);
+	// // }
+	// // else{
+	// // 	new_card->previous.reason_card = nullptr;
+	// // }
+	// // if(pcard->previous.reason_effect && pcard->previous.reason_effect->owner->current.controler == 0) {
+	// // 	effect* new_effect=new_card->pduel->new_effect();
+	// // 	effect_data_copy(new_effect, pcard->previous.reason_effect, playerid);
+	// // }
+	// // else{
+	// // 	new_card->previous.reason_effect = nullptr;
+	// // }
+	// // new_card->temp = pcard->temp;
+	// // if(pcard->temp.reason_card) {
+	// // 	if(pcard->temp.reason_card->current.controler == 0){
+	// // 		new_card->temp.reason_card = find_card(new_card->pduel, pcard->temp.reason_card, playerid);
+	// // 	}
+	// // }
+	// // if(pcard->temp.reason_effect) {
+	// // 	if(pcard->temp.reason_effect->owner->current.controler == 0){
+	// // 		effect* new_effect=new_card->pduel->new_effect();
+	// // 		effect_data_copy(new_effect, pcard->temp.reason_effect, playerid);
+	// // 	}
+	// // 	else{
+	// // 		new_card->temp.reason_effect = nullptr;
+	// // 	}
+	// // }
+	// // new_card->current = pcard->current;
+	// // if(pcard->current.reason_card) {
+	// // 	if(pcard->current.reason_card->current.controler == 0){
+	// // 		new_card->current.reason_card = find_card(new_card->pduel, pcard->current.reason_card, playerid);
+	// // 	}
+	// // }
+	// // if(pcard->current.reason_effect) {
+	// // 	if(pcard->current.reason_effect->owner->current.controler == 0){
+	// // 		effect* new_effect=new_card->pduel->new_effect();
+	// // 		effect_data_copy(new_effect, pcard->current.reason_effect, playerid);
+	// // 	}
+	// // 	else{
+	// // 		new_card->current.reason_effect = nullptr;
+	// // 	}
+	// // }
+	// // new_card->spsummon = pcard->spsummon;
+	// // if(pcard->spsummon.reason_card) {
+	// // 	if(pcard->spsummon.reason_card->spsummon.controler == 0){
+	// // 		new_card->spsummon.reason_card = find_card(new_card->pduel, pcard->spsummon.reason_card, playerid);
+	// // 	}
+	// // }
+	// // if(pcard->spsummon.reason_effect) {
+	// // 	if(pcard->spsummon.reason_effect->owner->spsummon.controler == 0){
+	// // 		effect* new_effect=new_card->pduel->new_effect();
+	// // 		effect_data_copy(new_effect, pcard->spsummon.reason_effect, playerid);
+	// // 	}
+	// // 	else{
+	// // 		new_card->spsummon.reason_effect = nullptr;
+	// // 	}
+	// // }
+	// // // card_state previous;
+	// // card_state temp;
+	// // card_state current;
+	// // card_state spsummon;
+	// new_card->q_cache = pcard->q_cache;
+	// new_card->summon_player = pcard->summon_player;
+	// new_card->summon_info = pcard->summon_info;
+	// new_card->status = pcard->status;
+	// new_card->sendto_param = pcard->sendto_param;
+	// new_card->release_param = pcard->release_param;
+	// new_card->sum_param = pcard->sum_param;
+	// new_card->position_param = pcard->position_param;
+	// new_card->spsummon_param= pcard->spsummon_param;
+	// new_card->to_field_param = pcard->to_field_param;
+	// new_card->attack_announce_count = pcard->attack_announce_count;
+	// new_card->direct_attackable = pcard->direct_attackable;
+	// new_card->announce_count = pcard->announce_count;
+	// new_card->attacked_count = pcard->attacked_count;
+	// new_card->attack_all_target = pcard->attack_all_target;
+	// new_card->attack_controler = pcard->attack_controler;
+	// new_card->cardid= pcard->cardid;
+	// new_card->fieldid = pcard->fieldid;
+	// new_card->fieldid_r = pcard->fieldid_r;
+	// new_card->activate_count_id = pcard->activate_count_id;
+	// new_card->turnid = pcard->turnid;
+	// new_card->turn_counter = pcard->turn_counter;
+	// new_card->unique_pos[0] = pcard->unique_pos[0];
+	// new_card->unique_pos[1] = pcard->unique_pos[1];
+	// new_card->unique_fieldid = pcard->unique_fieldid;
+	// new_card->unique_code = pcard->unique_code;
+	// new_card->unique_location = pcard->unique_location;
+	// new_card->unique_function = pcard->unique_function;
+	// // unique_effect is not copied, it should be set by the effect
+	// // if(pcard->unique_effect) {
+	// // 	if(pcard->unique_effect->owner->current.controler == 0){
+	// // 		effect* new_effect=new_card->pduel->new_effect();
+	// // 		effect_data_copy(new_effect, pcard->unique_effect, playerid);
+	// // 	}
+	// // 	else{
+	// // 		new_card->unique_effect = nullptr;
+	// // 	}
+	// // }
+	// new_card->spsummon_code = pcard->spsummon_code;
+	// new_card->spsummon_counter[0] = pcard->spsummon_counter[0];
+	// new_card->spsummon_counter[1] = pcard->spsummon_counter[1];
+	// new_card->assume_type = pcard->assume_type;
+	// new_card->assume_value = pcard->assume_value;
+	// // new_card->equiping_target = find_card(new_card->pduel, pcard->equiping_target, playerid);
+	// // new_card->pre_equip_target = find_card(new_card->pduel, pcard->pre_equip_target, playerid);
+	// // new_card->overlay_target = find_card(new_card->pduel, pcard->overlay_target, playerid);
+	// // new_card->relations.clear();
+	// // for(const auto& rel : pcard->relations) {
+	// // 	card* old_related = rel.first;
+	// // 	uint32_t rel_val = rel.second;
+	// // 	card* new_related = find_card(new_card->pduel, old_related, playerid);
+	// // 	if(new_related)
+	// // 		new_card->relations[new_related] = rel_val;
+	// // }
+	// // card* equiping_target{};
+	// // card* pre_equip_target{};
+	// // card* overlay_target{};
+	// // relation_map relations;
+	// new_card->counters = pcard->counters;
+	// new_card->indestructable_effects = pcard->indestructable_effects;
+	// // attacker_map announced_cards;
+	// // attacker_map attacked_cards;
+	// // attacker_map battled_cards;
+	// // card_set equiping_cards;
+	// // card_set material_cards;
+	// // card_set effect_target_owner;
+	// // card_set effect_target_cards;
+	// // card_vector xyz_materials;
+	// new_card->xyz_materials_previous_count_onfield = pcard->xyz_materials_previous_count_onfield;
+	// // effect_container single_effect;
+	// // effect_container field_effect;
+	// // effect_container equip_effect;
+	// // effect_container target_effect;
+	// // effect_container xmaterial_effect;
+	// // effect_indexer indexer;
+	// // effect_relation relate_effect;
+	// // effect_set_v immune_effect;
+	// // effect_collection initial_effect;
+	// // effect_collection owning_effect;
+}
+void effect_data_copy(effect* new_effect, effect* peffect,uint32_t playerid){
+	new_effect->ref_handle = peffect->ref_handle;
+	new_effect->owner = find_card(new_effect->pduel, peffect->owner, playerid);
+	new_effect->handler = find_card(new_effect->pduel, peffect->handler, playerid);
+	new_effect->effect_owner = peffect->effect_owner;
+	new_effect->description = peffect->description;
+	new_effect->code = peffect->code;
+	new_effect->id = peffect->id;
+	new_effect->type = peffect->type;
+	new_effect->copy_id = peffect->copy_id;
+	new_effect->range = peffect->range;
+	new_effect->s_range = peffect->s_range;
+	new_effect->o_range = peffect->o_range;
+	new_effect->count_limit = peffect->count_limit;
+	new_effect->count_limit_max = peffect->count_limit_max;
+	new_effect->status = peffect->status;
+	new_effect->reset_count = peffect->reset_count;
+	new_effect->reset_flag = peffect->reset_flag;
+	new_effect->count_code = peffect->count_code;
+	new_effect->category = peffect->category;
+	new_effect->flag[0] = peffect->flag[0];
+	new_effect->flag[1] = peffect->flag[1];
+	new_effect->hint_timing[0] = peffect->hint_timing[0];
+	new_effect->hint_timing[1] = peffect->hint_timing[1];
+	new_effect->card_type = peffect->card_type;
+	new_effect->active_type = peffect->active_type;
+	new_effect->active_location = peffect->active_location;
+	new_effect->active_sequence = peffect->active_sequence;
+	new_effect->active_handler = find_card(new_effect->pduel, peffect->active_handler, playerid);
+	new_effect->last_handler = find_card(new_effect->pduel, peffect->last_handler, playerid);
+	new_effect->label = peffect->label;
+	new_effect->label_object = peffect->label_object;
+	new_effect->condition = peffect->condition;
+	new_effect->cost = peffect->cost;
+	new_effect->target = peffect->target;
+	new_effect->value = peffect->value;
+	new_effect->operation = peffect->operation;
+	new_effect->cost_checked = peffect->cost_checked;
+	new_effect->required_handorset_effects = peffect->required_handorset_effects;
+	new_effect->object_type = peffect->object_type;
+	find_card(new_effect->pduel, peffect->owner, playerid)->add_effect(new_effect);
+}
+card* find_card(duel*pduel, card* pcard, uint32_t playerid){
+	if(pcard->current.location == LOCATION_MZONE){
+		return pduel->game_field->player[playerid].list_mzone[pcard->current.sequence];
+	}
+	if(pcard->current.location == LOCATION_SZONE){
+		return pduel->game_field->player[playerid].list_szone[pcard->current.sequence];
+	}
+	if(pcard->current.location == LOCATION_HAND){
+		return pduel->game_field->player[playerid].list_hand[pcard->current.sequence];
+	}
+	if(pcard->current.location == LOCATION_GRAVE){
+		return pduel->game_field->player[playerid].list_grave[pcard->current.sequence];
+	}
+	if(pcard->current.location == LOCATION_REMOVED){
+		return pduel->game_field->player[playerid].list_remove[pcard->current.sequence];
+	}
+	if(pcard->current.location == LOCATION_EXTRA){
+		return pduel->game_field->player[playerid].list_extra[pcard->current.sequence];
+	}
+	if(pcard->current.location == LOCATION_DECK){
+		return pduel->game_field->player[playerid].list_main[pcard->current.sequence];
+	}
+	if(pcard->current.location == LOCATION_OVERLAY){
+		if(pcard->overlay_target){
+			return pduel->game_field->player[playerid].list_mzone[pcard->overlay_target->current.sequence]->xyz_materials[pcard->current.sequence];
+		}
+	}
+	return nullptr;
+}
 OCGCORE_API void start_duel(intptr_t pduel, uint32_t options) {
 	duel* pd = (duel*)pduel;
+	options |= DUEL_ATTACK_FIRST_TURN;
 	uint16_t duel_rule = options >> 16;
 	uint16_t duel_options = options & 0xffff;
 	pd->game_field->core.duel_options |= duel_options;

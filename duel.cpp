@@ -60,6 +60,13 @@ card* duel::new_card(uint32_t code) {
 	lua->register_card(pcard);
 	return pcard;
 }
+card* duel::new_card_random( uint32_t type ,bool is_include) {
+	card* pcard = new card(this);
+	cards.insert(pcard);
+	read_card_random(&(pcard->data) , type,is_include);
+	lua->register_card(pcard);
+	return pcard;
+}
 group* duel::register_group(group* pgroup) {
 	groups.insert(pgroup);
 	if(lua->call_depth)

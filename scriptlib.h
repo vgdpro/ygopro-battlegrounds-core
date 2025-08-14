@@ -430,6 +430,7 @@ public:
 	static int32_t duel_setm(lua_State *L);
 	static int32_t duel_sets(lua_State *L);
 	static int32_t duel_create_token(lua_State *L);
+	static int32_t duel_create_random_token(lua_State *L);
 	static int32_t duel_special_summon(lua_State *L);
 	static int32_t duel_special_summon_step(lua_State *L);
 	static int32_t duel_special_summon_complete(lua_State *L);
