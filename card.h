@@ -205,6 +205,7 @@ public:
 	effect_container target_effect;
 	effect_container xmaterial_effect;
 	effect_indexer indexer;
+	std::vector<effect*> effect_list;
 	effect_relation relate_effect;
 	effect_set_v immune_effect;
 	effect_collection initial_effect;

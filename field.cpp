@@ -1196,6 +1196,7 @@ void field::add_effect(effect* peffect, uint8_t owner_player) {
 		peffect->id = infos.field_id++;
 	}
 	peffect->card_type = peffect->owner->data.type;
+	effects.effect_list.push_back(peffect);
 	effects.indexer.emplace(peffect, it);
 	if(peffect->is_flag(EFFECT_FLAG_FIELD_ONLY)) {
 		if(peffect->is_disable_related())
@@ -1256,6 +1257,10 @@ void field::remove_effect(effect* peffect) {
 		else if (peffect->type & EFFECT_TYPE_CONTINUOUS)
 			effects.continuous_effect.erase(it);
 	}
+	effects.effect_list.erase(
+		std::remove(effects.effect_list.begin(), effects.effect_list.end(), peffect),
+		effects.effect_list.end()
+	);
 	effects.indexer.erase(peffect);
 	if(peffect->is_flag(EFFECT_FLAG_FIELD_ONLY)) {
 		if(peffect->is_disable_related())

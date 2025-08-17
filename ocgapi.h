@@ -10,6 +10,7 @@
 
 #include "common.h"
 #include "card.h"
+#include "buffer.h"
 
 #ifdef __cplusplus
 #define EXTERN_C extern "C"
@@ -31,6 +32,7 @@
 #define TEMP_CARD_ID	0
 
 struct card_data;
+struct lua_State;
 
 typedef byte* (*script_reader)(const char* script_name, int* len);
 typedef uint32_t (*card_reader)(uint32_t code, card_data* data);
@@ -42,6 +44,8 @@ OCGCORE_API void set_card_reader(card_reader f);
 OCGCORE_API void set_card_reader_random(card_reader_random f);
 OCGCORE_API void set_message_handler(message_handler f);
 
+static int rebind_lua_function_between_states(lua_State* srcL, int srcref, lua_State* dstL);
+
 byte* read_script(const char* script_name, int* len);
 uint32_t read_card(uint32_t code, card_data* data);
 uint32_t read_card_random(card_data* data , uint32_t type,bool is_include);
@@ -49,11 +53,13 @@ uint32_t handle_message(void* pduel, uint32_t message_type);
 void card_data_copy(card* new_card, card* from_card, uint32_t playerid);
 void effect_data_copy(effect* new_effect, effect* peffect, uint32_t playerid);
 card* find_card(duel*pduel, card* pcard, uint32_t playerid);
+void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, uint32_t playerid);
 
 OCGCORE_API intptr_t create_duel(uint_fast32_t seed);
 OCGCORE_API intptr_t create_duel_v2(uint32_t seed_sequence[]);
 OCGCORE_API void start_duel(intptr_t pduel, uint32_t options);
-OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel ,uint32_t playerid,uint32_t location);
+OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t spduel2,uint32_t location);
+OCGCORE_API void reload_field_info(intptr_t pduel);
 OCGCORE_API void end_duel(intptr_t pduel);
 OCGCORE_API void set_player_info(intptr_t pduel, int32_t playerid, int32_t lp, int32_t startcount, int32_t drawcount);
 OCGCORE_API void get_log_message(intptr_t pduel, char* buf);

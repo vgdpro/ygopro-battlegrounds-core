@@ -40,6 +40,10 @@ uint32_t field::process() {
 	if (core.units.size() == 0)
 		return PROCESSOR_END | pduel->buffer_size();
 	auto it = core.units.begin();
+	FILE *fp = fopen("error.log", "at");
+	fprintf(fp, "process_type %d\n", it->type);
+	fprintf(fp, "process_step %d\n", it->step);
+	fclose(fp);
 	switch (it->type) {
 	case PROCESSOR_ADJUST: {
 		if (adjust_step(it->step))
@@ -813,6 +817,10 @@ int32_t field::execute_operation(uint16_t step, effect * triggering_effect, uint
 	core.reason_player = triggering_player;
 	uint32_t count = (uint32_t)pduel->lua->params.size();
 	int32_t yield_value = 0;
+	FILE *fp = fopen("error.log", "at");
+	fprintf(fp, "矮趴趴18 %d\n", triggering_effect->owner->get_code());
+	fprintf(fp, "矮趴趴20 %d\n", triggering_effect->operation);
+	fclose(fp);
 	int32_t result = pduel->lua->call_coroutine(triggering_effect->operation, count, &yield_value, step);
 	returns.ivalue[0] = yield_value;
 	if (result == COROUTINE_FINISH || result == COROUTINE_ERROR || result == OPERATION_FAIL) {
@@ -3771,7 +3779,6 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 		return FALSE;
 	}
 	case 1: {
-		reload_field_info();
 		core.new_fchain.clear();
 		core.new_ochain.clear();
 		core.quick_f_chain.clear();
@@ -3839,7 +3846,6 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 	}
 	case 6: {
 		//Main1
-		reload_field_info();
 		infos.phase = PHASE_MAIN1;
 		core.phase_action = FALSE;
 		raise_event(nullptr, EVENT_PHASE_START + PHASE_MAIN1, 0, 0, 0, turn_player, 0);

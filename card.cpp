@@ -1875,6 +1875,7 @@ int32_t card::add_effect(effect* peffect) {
 	}
 	effect* reason_effect = pduel->game_field->core.reason_effect;
 	indexer.emplace(peffect, eit);
+	effect_list.push_back(peffect);
 	peffect->handler = this;
 	if (peffect->is_flag(EFFECT_FLAG_INITIAL))
 		initial_effect.insert(peffect);
@@ -1958,6 +1959,10 @@ effect_indexer::iterator card::remove_effect(effect* peffect) {
 		}
 	}
 	auto ret = indexer.erase(index);
+	effect_list.erase(
+		std::remove(effect_list.begin(), effect_list.end(), peffect),
+		effect_list.end()
+	);
 	if (peffect->is_flag(EFFECT_FLAG_INITIAL))
 		initial_effect.erase(peffect);
 	else if (peffect->is_flag(EFFECT_FLAG_COPY))

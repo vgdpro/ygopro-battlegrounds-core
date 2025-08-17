@@ -111,6 +111,7 @@ struct field_effect {
 	effect_container quick_f_effect;
 	effect_container continuous_effect;
 	effect_indexer indexer;
+	std::vector<effect*> effect_list;
 	oath_effects oath;
 	effect_collection pheff;
 	effect_collection cheff;
