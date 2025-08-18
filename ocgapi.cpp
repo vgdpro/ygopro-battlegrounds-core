@@ -95,8 +95,6 @@ OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t
 	duel* target1 = (duel*)spduel1;
 	duel* target2 = (duel*)spduel2;
 
-	source->game_field->infos.turn_id = target1->game_field->infos.turn_id;
-
 	auto clear_zone = [&](auto &vec) {
 		while (true) {
 			auto it = std::find_if(vec.begin(), vec.end(), [](card* c) { return c != nullptr; });
@@ -130,29 +128,28 @@ OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t
 			source->game_field->remove_effect(pe);
 	}
 
-	FILE *fp = fopen("error.log", "at");
-	fprintf(fp, "超级无敌 %d\n", source->game_field->effects.effect_list.size());
-	fclose(fp);
-
-	copy_field_data(source_pduel, spduel1, location, 0);
-	copy_field_data(source_pduel, spduel2, location, 1);
+	copy_field_data(source_pduel, spduel1, location, 0,0);
+	copy_field_data(source_pduel, spduel2, location, 1,0);
 }
-void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, uint32_t playerid){
+OCGCORE_API void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, uint32_t playerid,uint32_t target_playerid){
 	duel* source = (duel*)source_pduel;
 	duel* target = (duel*)spduel;
+
+	source->game_field->infos.turn_id = target->game_field->infos.turn_id;
+
 	if(location & LOCATION_SZONE){
-		for(int i=0; i < target->game_field->player[0].list_szone.size(); ++i) {
-			if(target->game_field->player[0].list_szone[i]) {
-				card* pcard = target->game_field->player[0].list_szone[i];
-				new_card(source_pduel, pcard->get_code(),pcard->owner==0?playerid:(1-playerid),playerid,LOCATION_SZONE,pcard->current.sequence,pcard->current.position);
+		for(int i=0; i < target->game_field->player[target_playerid].list_szone.size(); ++i) {
+			if(target->game_field->player[target_playerid].list_szone[i]) {
+				card* pcard = target->game_field->player[target_playerid].list_szone[i];
+				new_card(source_pduel, pcard->get_code(),pcard->owner==target_playerid?playerid:(1-playerid),playerid,LOCATION_SZONE,pcard->current.sequence,pcard->current.position);
 			}
 		}
 	}
 	if(location & LOCATION_MZONE){
-		for(int i=0; i < target->game_field->player[0].list_mzone.size(); ++i) {
-			if(target->game_field->player[0].list_mzone[i]) {
-				card* pcard = target->game_field->player[0].list_mzone[i];
-				new_card(source_pduel, pcard->get_code(),pcard->owner==0?playerid:(1-playerid),playerid,LOCATION_MZONE,pcard->current.sequence,pcard->current.position);
+		for(int i=0; i < target->game_field->player[target_playerid].list_mzone.size(); ++i) {
+			if(target->game_field->player[target_playerid].list_mzone[i]) {
+				card* pcard = target->game_field->player[target_playerid].list_mzone[i];
+				new_card(source_pduel, pcard->get_code(),pcard->owner==target_playerid?playerid:(1-playerid),playerid,LOCATION_MZONE,pcard->current.sequence,pcard->current.position);
 				card* new_card = source->game_field->player[playerid].list_mzone[i];
 				for(auto& pc :pcard->xyz_materials){
 					if(pc){
@@ -164,42 +161,42 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		}
 	}
 	if(location & LOCATION_HAND){
-		for(int i=0; i < target->game_field->player[0].list_hand.size(); ++i) {
-			if(target->game_field->player[0].list_hand[i]) {
-				card* pcard = target->game_field->player[0].list_hand[i];
-				new_card(source_pduel, pcard->get_code(),pcard->owner==0?playerid:(1-playerid),playerid,LOCATION_HAND,pcard->current.sequence,pcard->current.position);
+		for(int i=0; i < target->game_field->player[target_playerid].list_hand.size(); ++i) {
+			if(target->game_field->player[target_playerid].list_hand[i]) {
+				card* pcard = target->game_field->player[target_playerid].list_hand[i];
+				new_card(source_pduel, pcard->get_code(),pcard->owner==target_playerid?playerid:(1-playerid),playerid,LOCATION_HAND,pcard->current.sequence,pcard->current.position);
 			}
 		}
 	}
 	if(location & LOCATION_GRAVE){
-		for(int i=0; i < target->game_field->player[0].list_grave.size(); ++i) {
-			if(target->game_field->player[0].list_grave[i]) {
-				card* pcard = target->game_field->player[0].list_grave[i];
-				new_card(source_pduel, pcard->get_code(),pcard->owner==0?playerid:(1-playerid),playerid,LOCATION_GRAVE,pcard->current.sequence,pcard->current.position);
+		for(int i=0; i < target->game_field->player[target_playerid].list_grave.size(); ++i) {
+			if(target->game_field->player[target_playerid].list_grave[i]) {
+				card* pcard = target->game_field->player[target_playerid].list_grave[i];
+				new_card(source_pduel, pcard->get_code(),pcard->owner==target_playerid?playerid:(1-playerid),playerid,LOCATION_GRAVE,pcard->current.sequence,pcard->current.position);
 			}
 		}
 	}
 	if(location & LOCATION_REMOVED){
-		for(int i=0; i < target->game_field->player[0].list_remove.size(); ++i) {
-			if(target->game_field->player[0].list_remove[i]) {
-				card* pcard = target->game_field->player[0].list_remove[i];
-				new_card(source_pduel, pcard->get_code(),pcard->owner==0?playerid:(1-playerid),playerid,LOCATION_REMOVED,pcard->current.sequence,pcard->current.position);
+		for(int i=0; i < target->game_field->player[target_playerid].list_remove.size(); ++i) {
+			if(target->game_field->player[target_playerid].list_remove[i]) {
+				card* pcard = target->game_field->player[target_playerid].list_remove[i];
+				new_card(source_pduel, pcard->get_code(),pcard->owner==target_playerid?playerid:(1-playerid),playerid,LOCATION_REMOVED,pcard->current.sequence,pcard->current.position);
 			}
 		}
 	}
 	if(location & LOCATION_EXTRA){
-		for(int i=0; i < target->game_field->player[0].list_extra.size(); ++i) {
-			if(target->game_field->player[0].list_extra[i]) {
-				card* pcard = target->game_field->player[0].list_extra[i];
-				new_card(source_pduel, pcard->get_code(),pcard->owner==0?playerid:(1-playerid),playerid,LOCATION_EXTRA,pcard->current.sequence,pcard->current.position);
+		for(int i=0; i < target->game_field->player[target_playerid].list_extra.size(); ++i) {
+			if(target->game_field->player[target_playerid].list_extra[i]) {
+				card* pcard = target->game_field->player[target_playerid].list_extra[i];
+				new_card(source_pduel, pcard->get_code(),pcard->owner==target_playerid?playerid:(1-playerid),playerid,LOCATION_EXTRA,pcard->current.sequence,pcard->current.position);
 			}
 		}
 	}
 	if(location & LOCATION_DECK){
-		for(int i=0; i < target->game_field->player[0].list_main.size(); ++i) {
-			if(target->game_field->player[0].list_main[i]) {
-				card* pcard = target->game_field->player[0].list_main[i];
-				new_card(source_pduel, pcard->get_code(),pcard->owner==0?playerid:(1-playerid),playerid,LOCATION_DECK,pcard->current.sequence,pcard->current.position);
+		for(int i=0; i < target->game_field->player[target_playerid].list_main.size(); ++i) {
+			if(target->game_field->player[target_playerid].list_main[i]) {
+				card* pcard = target->game_field->player[target_playerid].list_main[i];
+				new_card(source_pduel, pcard->get_code(),pcard->owner==target_playerid?playerid:(1-playerid),playerid,LOCATION_DECK,pcard->current.sequence,pcard->current.position);
 			}
 		}
 	}
@@ -208,67 +205,67 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 
 	for(int i=0; i < source->game_field->player[playerid].list_szone.size(); ++i) {
 		if(source->game_field->player[playerid].list_szone[i]) {
-			card* pcard = target->game_field->player[0].list_szone[i];
+			card* pcard = target->game_field->player[target_playerid].list_szone[i];
 			card* new_card = source->game_field->player[playerid].list_szone[i];
-			card_data_copy(new_card, pcard, playerid);
+			card_data_copy(new_card, pcard, playerid, target_playerid);
 		}
 	}
 
-	for(int i=0; i < source->game_field->player[0].list_mzone.size(); ++i) {
+	for(int i=0; i < source->game_field->player[playerid].list_mzone.size(); ++i) {
 		if(source->game_field->player[playerid].list_mzone[i]) {
-			card* pcard = target->game_field->player[0].list_mzone[i];
+			card* pcard = target->game_field->player[target_playerid].list_mzone[i];
 			card* new_card = source->game_field->player[playerid].list_mzone[i];
-			card_data_copy(new_card, pcard, playerid);
+			card_data_copy(new_card, pcard, playerid, target_playerid);
 			for(int i=0; i < new_card->xyz_materials.size(); ++i) {
-				card_data_copy(new_card->xyz_materials[i], pcard->xyz_materials[i], playerid);
+				card_data_copy(new_card->xyz_materials[i], pcard->xyz_materials[i], playerid, target_playerid);
 			}
 		}
 	}
 
 	for(int i=0; i < source->game_field->player[playerid].list_hand.size(); ++i) {
 		if(source->game_field->player[playerid].list_hand[i]) {
-			card* pcard = target->game_field->player[0].list_hand[i];
+			card* pcard = target->game_field->player[target_playerid].list_hand[i];
 			card* new_card = source->game_field->player[playerid].list_hand[i];
-			card_data_copy(new_card, pcard, playerid);
+			card_data_copy(new_card, pcard, playerid, target_playerid);
 		}
 	}
 
 	for(int i=0; i < source->game_field->player[playerid].list_grave.size(); ++i) {
 		if(source->game_field->player[playerid].list_grave[i]) {
-			card* pcard = target->game_field->player[0].list_grave[i];
+			card* pcard = target->game_field->player[target_playerid].list_grave[i];
 			card* new_card = source->game_field->player[playerid].list_grave[i];
-			card_data_copy(new_card, pcard, playerid);
+			card_data_copy(new_card, pcard, playerid, target_playerid);
 		}
 	}
 
 	for(int i=0; i < source->game_field->player[playerid].list_remove.size(); ++i) {
 		if(source->game_field->player[playerid].list_remove[i]) {
-			card* pcard = target->game_field->player[0].list_remove[i];
+			card* pcard = target->game_field->player[target_playerid].list_remove[i];
 			card* new_card = source->game_field->player[playerid].list_remove[i];
-			card_data_copy(new_card, pcard, playerid);
+			card_data_copy(new_card, pcard, playerid, target_playerid);
 		}
 	}
 
 	for(int i=0; i < source->game_field->player[playerid].list_extra.size(); ++i) {
 		if(source->game_field->player[playerid].list_extra[i]) {
-			card* pcard = target->game_field->player[0].list_extra[i];
+			card* pcard = target->game_field->player[target_playerid].list_extra[i];
 			card* new_card = source->game_field->player[playerid].list_extra[i];
-			card_data_copy(new_card, pcard, playerid);
+			card_data_copy(new_card, pcard, playerid, target_playerid);
 		}
 	}
 
 	for(int i=0; i < source->game_field->player[playerid].list_main.size(); ++i) {
 		if(source->game_field->player[playerid].list_main[i]) {
-			card* pcard = target->game_field->player[0].list_main[i];
+			card* pcard = target->game_field->player[target_playerid].list_main[i];
 			card* new_card = source->game_field->player[playerid].list_main[i];
-			card_data_copy(new_card, pcard, playerid);
+			card_data_copy(new_card, pcard, playerid, target_playerid);
 		}
 	}
 	
 	source->game_field->core.delayed_quick.clear();
 	for(auto& it : target->game_field->core.delayed_quick) {
 		effect* peffect = it.first;
-		if(peffect && peffect->owner->current.controler == 0) {
+		if(peffect && peffect->owner->current.controler == target_playerid) {
 			auto temp = std::find(peffect->owner->effect_list.begin(), peffect->owner->effect_list.end(), peffect);
 			if(temp != peffect->owner->effect_list.end()) {
 				size_t index = std::distance(peffect->owner->effect_list.begin(), temp);
@@ -276,17 +273,17 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 					tevent pevent = it.second;
 					tevent new_event;
 
-					if(pevent.trigger_card && pevent.trigger_card->current.controler == 0) {
+					if(pevent.trigger_card && pevent.trigger_card->current.controler == target_playerid) {
 						new_event.trigger_card = find_card(source, pevent.trigger_card, playerid);
 					}
 					group* new_group = source->new_group();
 					for(auto& pc : pevent.event_cards->container) {
-						if(pc && pc->current.controler == 0) {
+						if(pc && pc->current.controler == target_playerid) {
 							new_group->container.insert(find_card(source, pc, playerid));
 						}
 					}
 					new_event.event_cards = new_group;
-					if(pevent.reason_effect && pevent.reason_effect->owner->current.controler == 0) {
+					if(pevent.reason_effect && pevent.reason_effect->owner->current.controler == target_playerid) {
 						auto it = std::find(pevent.reason_effect->owner->effect_list.begin(), pevent.reason_effect->owner->effect_list.end(), pevent.reason_effect);
 						if(it != pevent.reason_effect->owner->effect_list.end()) {
 							size_t index = std::distance(pevent.reason_effect->owner->effect_list.begin(), it);
@@ -298,8 +295,8 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 					new_event.event_code = pevent.event_code;
 					new_event.event_value = pevent.event_value;
 					new_event.reason=pevent.reason;
-					new_event.event_player = pevent.event_player ==0?playerid:(1-playerid);
-					new_event.reason_player = pevent.reason_player ==0?playerid:(1-playerid);
+					new_event.event_player = pevent.event_player ==target_playerid?playerid:(1-playerid);
+					new_event.reason_player = pevent.reason_player ==target_playerid?playerid:(1-playerid);
 
 					source->game_field->core.delayed_quick.emplace(find_card(source, peffect->owner, playerid)->effect_list[index],new_event);
 				} 
@@ -309,17 +306,17 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 
 	int temp = target->game_field->effects.effect_list.size();
 	for(int i=temp2;i<temp;++i) {
-		if(target->game_field->effects.effect_list[i]->owner->current.controler == 0 && find_card(source, target->game_field->effects.effect_list[i]->owner, playerid)) {
+		if(target->game_field->effects.effect_list[i]->owner->current.controler == target_playerid && find_card(source, target->game_field->effects.effect_list[i]->owner, playerid)) {
 			auto it = std::find(target->game_field->effects.effect_list[i]->owner->effect_list.begin(), target->game_field->effects.effect_list[i]->owner->effect_list.end(), target->game_field->effects.effect_list[i]);
-			if(it == target->game_field->effects.effect_list[i]->owner->effect_list.end() && target->game_field->effects.effect_list[i]->owner->current.controler == 0) {
+			if(it == target->game_field->effects.effect_list[i]->owner->effect_list.end() && target->game_field->effects.effect_list[i]->owner->current.controler == target_playerid) {
 				effect* new_effect = source->new_effect();
-				effect_data_copy(new_effect, target->game_field->effects.effect_list[i], playerid);
+				effect_data_copy(new_effect, target->game_field->effects.effect_list[i], playerid, target_playerid);
 				source->game_field->add_effect(new_effect,playerid);
 			}
 		}
 	}
 }
-void card_data_copy(card* new_card, card* pcard, uint32_t playerid){
+void card_data_copy(card* new_card, card* pcard, uint32_t playerid ,uint32_t target_playerid) {
 	// new_card->ref_handle = pcard->ref_handle;
 	// card_state previous;
 	// card_state temp;
@@ -389,7 +386,7 @@ void card_data_copy(card* new_card, card* pcard, uint32_t playerid){
 		card* old_ptr = it.second.first;
 		uint32_t count = it.second.second;
 		card* new_ptr = nullptr;
-		if(old_ptr && old_ptr->current.controler == 0)
+		if(old_ptr && old_ptr->current.controler == target_playerid)
 			new_ptr = find_card(new_card->pduel, old_ptr, playerid);
 		new_card->announced_cards[fieldid] = std::make_pair(new_ptr, count);
 	}
@@ -399,7 +396,7 @@ void card_data_copy(card* new_card, card* pcard, uint32_t playerid){
 		card* old_ptr = it.second.first;
 		uint32_t count = it.second.second;
 		card* new_ptr = nullptr;
-		if(old_ptr && old_ptr->current.controler == 0)
+		if(old_ptr && old_ptr->current.controler == target_playerid)
 			new_ptr = find_card(new_card->pduel, old_ptr, playerid);
 		new_card->attacked_cards[fieldid] = std::make_pair(new_ptr, count);
 	}
@@ -409,7 +406,7 @@ void card_data_copy(card* new_card, card* pcard, uint32_t playerid){
 		card* old_ptr = it.second.first;
 		uint32_t count = it.second.second;
 		card* new_ptr = nullptr;
-		if(old_ptr && old_ptr->current.controler == 0)
+		if(old_ptr && old_ptr->current.controler == target_playerid)
 			new_ptr = find_card(new_card->pduel, old_ptr, playerid);
 		new_card->battled_cards[fieldid] = std::make_pair(new_ptr, count);
 	}
@@ -419,7 +416,7 @@ void card_data_copy(card* new_card, card* pcard, uint32_t playerid){
 	// 拷贝 equiping_cards
 	new_card->equiping_cards.clear();
 	for(card* old_ptr : pcard->equiping_cards) {
-		if(old_ptr->current.controler != 0)
+		if(old_ptr->current.controler != target_playerid)
 			continue;
 		card* new_ptr = find_card(new_card->pduel, old_ptr, playerid);
 		if(new_ptr)
@@ -429,7 +426,7 @@ void card_data_copy(card* new_card, card* pcard, uint32_t playerid){
 	// 拷贝 material_cards
 	new_card->material_cards.clear();
 	for(card* old_ptr : pcard->material_cards) {
-		if(old_ptr->current.controler != 0)
+		if(old_ptr->current.controler != target_playerid)
 			continue;
 		card* new_ptr = find_card(new_card->pduel, old_ptr, playerid);
 		if(new_ptr)
@@ -439,7 +436,7 @@ void card_data_copy(card* new_card, card* pcard, uint32_t playerid){
 	// 拷贝 effect_target_owner
 	new_card->effect_target_owner.clear();
 	for(card* old_ptr : pcard->effect_target_owner) {
-		if(old_ptr->current.controler != 0)
+		if(old_ptr->current.controler != target_playerid)
 			continue;
 		card* new_ptr = find_card(new_card->pduel, old_ptr, playerid);
 		if(new_ptr)
@@ -449,7 +446,7 @@ void card_data_copy(card* new_card, card* pcard, uint32_t playerid){
 	// 拷贝 effect_target_cards
 	new_card->effect_target_cards.clear();
 	for(card* old_ptr : pcard->effect_target_cards) {
-		if(old_ptr->current.controler != 0)
+		if(old_ptr->current.controler != target_playerid)
 			continue;
 		card* new_ptr = find_card(new_card->pduel, old_ptr, playerid);
 		if(new_ptr)
@@ -464,14 +461,14 @@ void card_data_copy(card* new_card, card* pcard, uint32_t playerid){
 	int temp2 = new_card->effect_list.size();
 	for(int i=temp2;i<temp;++i) {
 		effect* new_effect = new_card->pduel->new_effect();
-		effect_data_copy(new_effect, pcard->effect_list[i], playerid);
+		effect_data_copy(new_effect, pcard->effect_list[i], playerid, target_playerid);
 		new_card->add_effect(new_effect);
 	}
 
 	new_card->filter_immune_effect();
 	new_card->relate_effect.clear();
 	for(const auto& rel : pcard->relate_effect) {
-		if(rel.first->owner->current.controler == 0){
+		if(rel.first->owner->current.controler == target_playerid){
 			auto it = std::find(rel.first->owner->effect_list.begin(), rel.first->owner->effect_list.end(), rel.first);
 			if(it != rel.first->owner->effect_list.end()) {
 				size_t index = std::distance(rel.first->owner->effect_list.begin(), it);
@@ -481,20 +478,20 @@ void card_data_copy(card* new_card, card* pcard, uint32_t playerid){
 	}
 
 	new_card->previous = pcard->previous;
-	new_card->previous.controler = pcard->previous.controler == 0 ? playerid : (1-playerid);
-	if(pcard->previous.reason_card && pcard->previous.reason_card->current.controler == 0) {
+	new_card->previous.controler = pcard->previous.controler == target_playerid ? playerid : (1-playerid);
+	if(pcard->previous.reason_card && pcard->previous.reason_card->current.controler == target_playerid) {
 		new_card->previous.reason_card = find_card(new_card->pduel, pcard->previous.reason_card, playerid);
 	} else{
 		new_card->previous.reason_card = nullptr;
 	}
-	if(pcard->previous.reason_effect && pcard->previous.reason_effect->owner->current.controler == 0) {
+	if(pcard->previous.reason_effect && pcard->previous.reason_effect->owner->current.controler == target_playerid) {
 		auto it = std::find(pcard->previous.reason_effect->owner->effect_list.begin(), pcard->previous.reason_effect->owner->effect_list.end(), pcard->previous.reason_effect);
 		if(it != pcard->previous.reason_effect->owner->effect_list.end()) {
 			size_t index = std::distance(pcard->previous.reason_effect->owner->effect_list.begin(), it);
 			if(index < find_card(new_card->pduel, pcard->previous.reason_effect->owner, playerid)->effect_list.size()){
 				new_card->previous.reason_effect = find_card(new_card->pduel, pcard->previous.reason_effect->owner, playerid)->effect_list[index];
 			} else{
-				card_data_copy(new_card->previous.reason_effect->owner, pcard->previous.reason_effect->owner, playerid);
+				card_data_copy(new_card->previous.reason_effect->owner, pcard->previous.reason_effect->owner, playerid,target_playerid);
 				new_card->previous.reason_effect = find_card(new_card->pduel, pcard->previous.reason_effect->owner, playerid)->effect_list[index];
 			}
 		}else{
@@ -505,20 +502,20 @@ void card_data_copy(card* new_card, card* pcard, uint32_t playerid){
 	}
 
 	new_card->temp = pcard->temp;
-	new_card->temp.controler = pcard->temp.controler == 0 ? playerid : (1-playerid);
-	if(pcard->temp.reason_card && pcard->temp.reason_card->current.controler == 0) {
+	new_card->temp.controler = pcard->temp.controler == target_playerid ? playerid : (1-playerid);
+	if(pcard->temp.reason_card && pcard->temp.reason_card->current.controler == target_playerid) {
 		new_card->temp.reason_card = find_card(new_card->pduel, pcard->temp.reason_card, playerid);
 	} else{
 		new_card->temp.reason_card  = nullptr;
 	}
-	if(pcard->temp.reason_effect && pcard->temp.reason_effect->owner->current.controler == 0) {
+	if(pcard->temp.reason_effect && pcard->temp.reason_effect->owner->current.controler == target_playerid) {
 		auto it = std::find(pcard->temp.reason_effect->owner->effect_list.begin(), pcard->temp.reason_effect->owner->effect_list.end(), pcard->temp.reason_effect);
 		if(it != pcard->temp.reason_effect->owner->effect_list.end()) {
 			size_t index = std::distance(pcard->temp.reason_effect->owner->effect_list.begin(), it);
 			if(index < find_card(new_card->pduel, pcard->temp.reason_effect->owner, playerid)->effect_list.size()){
 				new_card->temp.reason_effect = find_card(new_card->pduel, pcard->temp.reason_effect->owner, playerid)->effect_list[index];
 			} else{
-				card_data_copy(new_card->temp.reason_effect->owner, pcard->temp.reason_effect->owner, playerid);
+				card_data_copy(new_card->temp.reason_effect->owner, pcard->temp.reason_effect->owner, playerid,target_playerid);
 				new_card->temp.reason_effect = find_card(new_card->pduel, pcard->temp.reason_effect->owner, playerid)->effect_list[index];
 			}
 		}else{
@@ -529,20 +526,20 @@ void card_data_copy(card* new_card, card* pcard, uint32_t playerid){
 	}
 
 	new_card->current = pcard->current;
-	new_card->current.controler = pcard->current.controler == 0 ? playerid : (1-playerid);
-	if(pcard->current.reason_card && pcard->current.reason_card->current.controler == 0) {
+	new_card->current.controler = pcard->current.controler == target_playerid ? playerid : (1-playerid);
+	if(pcard->current.reason_card && pcard->current.reason_card->current.controler == target_playerid) {
 		new_card->current.reason_card = find_card(new_card->pduel, pcard->current.reason_card, playerid);
 	} else{
 		new_card->current.reason_card = nullptr;
 	}
-	if(pcard->current.reason_effect && pcard->current.reason_effect->owner->current.controler == 0) {
+	if(pcard->current.reason_effect && pcard->current.reason_effect->owner->current.controler == target_playerid) {
 		auto it = std::find(pcard->current.reason_effect->owner->effect_list.begin(), pcard->current.reason_effect->owner->effect_list.end(), pcard->current.reason_effect);
 		if(it != pcard->current.reason_effect->owner->effect_list.end()) {
 			size_t index = std::distance(pcard->current.reason_effect->owner->effect_list.begin(), it);
 			if(index < find_card(new_card->pduel, pcard->current.reason_effect->owner, playerid)->effect_list.size()){
 				new_card->current.reason_effect = find_card(new_card->pduel, pcard->current.reason_effect->owner, playerid)->effect_list[index];
 			} else{
-				card_data_copy(new_card->current.reason_effect->owner, pcard->current.reason_effect->owner, playerid);
+				card_data_copy(new_card->current.reason_effect->owner, pcard->current.reason_effect->owner, playerid,target_playerid);
 				new_card->current.reason_effect = find_card(new_card->pduel, pcard->current.reason_effect->owner, playerid)->effect_list[index];
 			}
 		}else{
@@ -553,20 +550,20 @@ void card_data_copy(card* new_card, card* pcard, uint32_t playerid){
 	}
 	
 	new_card->spsummon = pcard->spsummon;
-	new_card->spsummon.controler = pcard->spsummon.controler == 0 ? playerid : (1-playerid);
-	if(pcard->spsummon.reason_card && pcard->spsummon.reason_card->spsummon.controler == 0) {
+	new_card->spsummon.controler = pcard->spsummon.controler == target_playerid ? playerid : (1-playerid);
+	if(pcard->spsummon.reason_card && pcard->spsummon.reason_card->spsummon.controler == target_playerid) {
 		new_card->spsummon.reason_card = find_card(new_card->pduel, pcard->spsummon.reason_card, playerid);
 	} else{
 		new_card->spsummon.reason_card = nullptr;
 	}
-	if(pcard->spsummon.reason_effect && pcard->spsummon.reason_effect->owner->current.controler == 0) {
+	if(pcard->spsummon.reason_effect && pcard->spsummon.reason_effect->owner->current.controler == target_playerid) {
 		auto it = std::find(pcard->spsummon.reason_effect->owner->effect_list.begin(), pcard->spsummon.reason_effect->owner->effect_list.end(), pcard->spsummon.reason_effect);
 		if(it != pcard->spsummon.reason_effect->owner->effect_list.end()) {
 			size_t index = std::distance(pcard->spsummon.reason_effect->owner->effect_list.begin(), it);
 			if(index < find_card(new_card->pduel, pcard->spsummon.reason_effect->owner, playerid)->effect_list.size()){
 				new_card->spsummon.reason_effect = find_card(new_card->pduel, pcard->spsummon.reason_effect->owner, playerid)->effect_list[index];
 			} else{
-				card_data_copy(new_card->spsummon.reason_effect->owner, pcard->spsummon.reason_effect->owner, playerid);
+				card_data_copy(new_card->spsummon.reason_effect->owner, pcard->spsummon.reason_effect->owner, playerid,target_playerid);
 				new_card->spsummon.reason_effect = find_card(new_card->pduel, pcard->spsummon.reason_effect->owner, playerid)->effect_list[index];
 			}
 		}else{
@@ -588,11 +585,11 @@ void card_data_copy(card* new_card, card* pcard, uint32_t playerid){
 	// effect_collection initial_effect;
 	// effect_collection owning_effect;
 }
-void effect_data_copy(effect* new_effect, effect* peffect,uint32_t playerid){
-	if(peffect->owner && peffect->owner->current.controler ==0 ){
+void effect_data_copy(effect* new_effect, effect* peffect,uint32_t playerid,uint32_t target_playerid){
+	if(peffect->owner && peffect->owner->current.controler ==target_playerid ){
 		new_effect->owner = find_card(new_effect->pduel, peffect->owner, playerid);
 	}
-	if(peffect->handler && peffect->handler->current.controler ==0 ){
+	if(peffect->handler && peffect->handler->current.controler ==target_playerid ){
 		new_effect->handler = find_card(new_effect->pduel, peffect->handler, playerid);
 	}
 	new_effect->effect_owner = playerid;
@@ -619,10 +616,10 @@ void effect_data_copy(effect* new_effect, effect* peffect,uint32_t playerid){
 	new_effect->active_type = peffect->active_type;
 	new_effect->active_location = peffect->active_location;
 	new_effect->active_sequence = peffect->active_sequence;
-	if(peffect->active_handler && peffect->active_handler->current.controler ==0 ){
+	if(peffect->active_handler && peffect->active_handler->current.controler ==target_playerid ){
 		new_effect->active_handler = find_card(new_effect->pduel, peffect->active_handler, playerid);
 	}
-	if(peffect->last_handler && peffect->last_handler->current.controler ==0 ){
+	if(peffect->last_handler && peffect->last_handler->current.controler ==target_playerid ){
 		new_effect->last_handler = find_card(new_effect->pduel, peffect->last_handler, playerid);
 	}
 	new_effect->label = peffect->label;

@@ -50,11 +50,11 @@ byte* read_script(const char* script_name, int* len);
 uint32_t read_card(uint32_t code, card_data* data);
 uint32_t read_card_random(card_data* data , uint32_t type,bool is_include);
 uint32_t handle_message(void* pduel, uint32_t message_type);
-void card_data_copy(card* new_card, card* from_card, uint32_t playerid);
-void effect_data_copy(effect* new_effect, effect* peffect, uint32_t playerid);
+void card_data_copy(card* new_card, card* from_card, uint32_t playerid,uint32_t target_playerid);
+void effect_data_copy(effect* new_effect, effect* peffect, uint32_t playerid, uint32_t target_playerid);
 card* find_card(duel*pduel, card* pcard, uint32_t playerid);
-void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, uint32_t playerid);
 
+OCGCORE_API void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, uint32_t playerid,uint32_t target_playerid);
 OCGCORE_API intptr_t create_duel(uint_fast32_t seed);
 OCGCORE_API intptr_t create_duel_v2(uint32_t seed_sequence[]);
 OCGCORE_API void start_duel(intptr_t pduel, uint32_t options);
