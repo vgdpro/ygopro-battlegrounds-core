@@ -40,10 +40,6 @@ uint32_t field::process() {
 	if (core.units.size() == 0)
 		return PROCESSOR_END | pduel->buffer_size();
 	auto it = core.units.begin();
-	FILE *fp = fopen("error.log", "at");
-	fprintf(fp, "process_type %d\n", it->type);
-	fprintf(fp, "process_step %d\n", it->step);
-	fclose(fp);
 	switch (it->type) {
 	case PROCESSOR_ADJUST: {
 		if (adjust_step(it->step))
