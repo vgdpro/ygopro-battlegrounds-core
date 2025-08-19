@@ -140,8 +140,13 @@ OCGCORE_API void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_
 	if(location & LOCATION_SZONE){
 		for(int i=0; i < target->game_field->player[target_playerid].list_szone.size(); ++i) {
 			if(target->game_field->player[target_playerid].list_szone[i]) {
-				card* pcard = target->game_field->player[target_playerid].list_szone[i];
-				new_card(source_pduel, pcard->get_code(),pcard->owner==target_playerid?playerid:(1-playerid),playerid,LOCATION_SZONE,pcard->current.sequence,pcard->current.position);
+				if ((source->game_field->infos.phase == PHASE_MAIN2 && target->game_field->player[target_playerid].list_szone[i]->current.position & POS_FACEUP) ||
+					source->game_field->infos.phase != PHASE_MAIN2) {
+					card* pcard = target->game_field->player[target_playerid].list_szone[i];
+					new_card(source_pduel, pcard->get_code(),
+							pcard->owner == target_playerid ? playerid : (1 - playerid),
+							playerid, LOCATION_SZONE, pcard->current.sequence, pcard->current.position);
+				}
 			}
 		}
 	}
