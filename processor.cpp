@@ -2084,8 +2084,8 @@ int32_t field::process_idle_command(uint16_t step) {
 		chain newchain;
 		core.to_bp = TRUE;
 		core.to_ep = FALSE;
-		if((!(core.duel_options & DUEL_ATTACK_FIRST_TURN) && infos.turn_id == 1) || infos.phase == PHASE_MAIN2 || is_player_affected_by_effect(infos.turn_player, EFFECT_CANNOT_BP))
-			core.to_bp = FALSE;
+		// if((!(core.duel_options & DUEL_ATTACK_FIRST_TURN) && infos.turn_id == 1) || infos.phase == PHASE_MAIN2 || is_player_affected_by_effect(infos.turn_player, EFFECT_CANNOT_BP))
+		// 	core.to_bp = FALSE;
 		if(infos.phase == PHASE_MAIN1) {
 			for(auto& pcard : player[infos.turn_player].list_mzone) {
 				if(pcard && pcard->is_capable_attack() && pcard->is_affected_by_effect(EFFECT_MUST_ATTACK)) {
