@@ -48,6 +48,7 @@ void duel::clear() {
 	assumes.clear();
 	sgroups.clear();
 	uncopy.clear();
+	effects_map.clear();
 	game_field = new field(this);
 	game_field->temp_card = new_card(TEMP_CARD_ID);
 }
@@ -59,6 +60,17 @@ card* duel::new_card(uint32_t code) {
 	pcard->data.code = code;
 	lua->register_card(pcard);
 	return pcard;
+}
+std::vector<card*> duel::new_card_random( uint32_t type,uint32_t count ,bool is_include) {
+	std::vector<int> data;
+	read_card_random(data, count , type,is_include);
+	std::vector<card*> new_cards;
+	new_cards.reserve(count);
+    for (int i = 0; i < count; ++i) {
+        card* pcard = new_card(data[i]);
+		new_cards.push_back(pcard);
+    }
+	return new_cards;
 }
 group* duel::register_group(group* pgroup) {
 	groups.insert(pgroup);
@@ -82,6 +94,9 @@ group* duel::new_group(const card_set& cset) {
 effect* duel::new_effect() {
 	effect* peffect = new effect(this);
 	effects.insert(peffect);
+	effects_map[(int)next_effect_id] = peffect;
+	peffect->clone_id = next_effect_id;
+	++next_effect_id;
 	lua->register_effect(peffect);
 	return peffect;
 }
@@ -98,6 +113,18 @@ void duel::delete_group(group* pgroup) {
 void duel::delete_effect(effect* peffect) {
 	lua->unregister_effect(peffect);
 	effects.erase(peffect);
+	if(peffect->clone_id) {
+        effects_map.erase(peffect->clone_id);
+        peffect->clone_id = 0;
+    } else {
+        // safety: fallback remove by value
+        for(auto it = effects_map.begin(); it != effects_map.end(); ++it) {
+            if(it->second == peffect) {
+                effects_map.erase(it);
+                break;
+            }
+        }
+    }
 	delete peffect;
 }
 int32_t duel::read_buffer(byte* buf) {

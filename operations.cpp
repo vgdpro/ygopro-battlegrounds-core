@@ -339,6 +339,10 @@ int32_t field::draw(uint16_t step, effect* reason_effect, uint32_t reason, uint8
 	case 0: {
 		card_vector cv;
 		uint32_t public_count = 0;
+		if(playerid == 1 && core.duel_options & DUEL_ONLY_MAIN){
+			returns.ivalue[0] = 0;
+			return TRUE;
+		}
 		if(!(reason & REASON_RULE) && !is_player_can_draw(playerid)) {
 			returns.ivalue[0] = 0;
 			return TRUE;

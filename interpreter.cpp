@@ -79,7 +79,9 @@ void interpreter::register_card(card *pcard) {
 	if(is_load_script(pcard->data)) {
 		pcard->set_status(STATUS_INITIALIZING, TRUE);
 		add_param(pcard, PARAM_TYPE_CARD);
-		call_card_function(pcard, "initial_effect", 1, 0);
+		if(pduel->game_field->core.duel_options& DUEL_ONLY_MAIN){
+			call_card_function(pcard, "initial_effect", 1, 0);
+		}
 		pcard->set_status(STATUS_INITIALIZING, FALSE);
 	}
 	pcard->cardid = pduel->game_field->infos.card_id++;

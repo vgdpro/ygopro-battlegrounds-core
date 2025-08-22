@@ -87,8 +87,8 @@ int32_t effect::is_available(int32_t neglect_disabled) {
 		if(owner == handler && !(is_flag(EFFECT_FLAG_CANNOT_DISABLE) || neglect_disabled) && handler->get_status(STATUS_DISABLED))
 			return FALSE;
 		if(!is_flag(EFFECT_FLAG_SET_AVAILABLE)) {
-			if(!(handler->get_status(STATUS_EFFECT_ENABLED)))
-				return FALSE;
+			// if(!(handler->get_status(STATUS_EFFECT_ENABLED)))
+			// 	return FALSE;
 			if(!handler->is_position(POS_FACEUP))
 				return FALSE;
 		}
@@ -291,9 +291,9 @@ int32_t effect::is_activateable(uint8_t playerid, const tevent& e, int32_t negle
 					return FALSE;
 			}
 			// check activate in hand/in set turn
-			effect_set eset;
-			if(!get_required_handorset_effects(&eset, playerid, e, neglect_loc))
-				return FALSE;
+			// effect_set eset;
+			// if(!get_required_handorset_effects(&eset, playerid, e, neglect_loc))
+			// 	return FALSE;
 			if(handler->is_status(STATUS_FORBIDDEN))
 				return FALSE;
 			if(handler->is_affected_by_effect(EFFECT_CANNOT_TRIGGER))
@@ -305,8 +305,8 @@ int32_t effect::is_activateable(uint8_t playerid, const tevent& e, int32_t negle
 			if((type & EFFECT_TYPE_QUICK_O) && is_flag(EFFECT_FLAG_DELAY) && !in_range(phandler))
 				return FALSE;
 			if(!neglect_faceup && (phandler->current.location & (LOCATION_ONFIELD | LOCATION_REMOVED))) {
-				if(!phandler->is_position(POS_FACEUP) && !is_flag(EFFECT_FLAG_SET_AVAILABLE))
-					return FALSE;
+				// if(!phandler->is_position(POS_FACEUP) && !is_flag(EFFECT_FLAG_SET_AVAILABLE))
+				// 	return FALSE;
 				if(phandler->is_position(POS_FACEUP) && !phandler->is_status(STATUS_EFFECT_ENABLED))
 					return FALSE;
 			}
@@ -504,9 +504,9 @@ int32_t effect::is_target(card* pcard) {
 	if((type & EFFECT_TYPE_TARGET) && !(type & EFFECT_TYPE_FIELD)) {
 		return is_fit_target_function(pcard);
 	}
-	if(!is_flag(EFFECT_FLAG_SET_AVAILABLE) && (pcard->current.location & LOCATION_ONFIELD)
-			&& !pcard->is_position(POS_FACEUP))
-		return FALSE;
+	// if(!is_flag(EFFECT_FLAG_SET_AVAILABLE) && (pcard->current.location & LOCATION_ONFIELD)
+	// 		&& !pcard->is_position(POS_FACEUP))
+	// 	return FALSE;
 	if(!is_flag(EFFECT_FLAG_IGNORE_RANGE)) {
 		if(pcard->is_treated_as_not_on_field())
 			return FALSE;

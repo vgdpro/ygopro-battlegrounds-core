@@ -574,8 +574,13 @@ int32_t field::is_location_useable(uint8_t playerid, uint32_t general_location, 
 		return FALSE;
 	uint32_t flag = player[playerid].disabled_location | player[playerid].used_location;
 	if (general_location == LOCATION_MZONE) {
-		if (sequence >= (int32_t)player[playerid].list_mzone.size())
-			return FALSE;
+		if(pduel->game_field->core.duel_options & DUEL_ONLY_MAIN){
+			if (sequence >= (int32_t)player[playerid].list_mzone.size()-1)
+				return FALSE;
+		}else{
+			if (sequence >= (int32_t)player[playerid].list_mzone.size())
+				return FALSE;
+		}
 		if(flag & (0x1U << sequence))
 			return FALSE;
 		if(sequence >= 5) {

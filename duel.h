@@ -14,6 +14,7 @@
 #include <set>
 #include <unordered_set>
 #include <vector>
+#include <map>
 
 class card;
 class group;
@@ -27,6 +28,7 @@ class duel {
 public:
 	char strbuffer[256]{};
 	int32_t rng_version{ 2 };
+	uint32_t next_effect_id{1};
 	interpreter* lua;
 	field* game_field;
 	mtrandom random;
@@ -37,6 +39,7 @@ public:
 	std::unordered_set<group*> groups;
 	std::unordered_set<group*> sgroups;
 	std::unordered_set<effect*> effects;
+	std::map<int, effect*> effects_map;
 	std::unordered_set<effect*> uncopy;
 	
 	duel();
@@ -47,6 +50,7 @@ public:
 		return (uint32_t)message_buffer.size() & PROCESSOR_BUFFER_LEN;
 	}
 	card* new_card(uint32_t code);
+	std::vector<card*> new_card_random( uint32_t type,uint32_t count ,bool is_include);
 	group* new_group();
 	group* new_group(card* pcard);
 	group* new_group(const card_set& cset);
