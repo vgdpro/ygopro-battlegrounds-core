@@ -86,21 +86,21 @@ OCGCORE_API intptr_t create_duel_v2(uint32_t seed_sequence[]) {
 	pduel->rng_version = 2;
 	return (intptr_t)pduel;
 }
-OCGCORE_API intptr_t create_duel_v3(intptr_t ppduel) {
-	duel* pduel = new duel();
-	duel* source = (duel*)ppduel;
-	pduel->lua = source->lua;
-	duel_set.insert(pduel);
-	pduel->rng_version = source->rng_version;
-	pduel->rng_version = 2;
-	return (intptr_t)pduel;
-}
-OCGCORE_API void change_lua_duel(intptr_t pduel) {
-	duel* target = (duel*)pduel;
-	target->lua->pduel = target;
-	std::memcpy(lua_getextraspace(target->lua->lua_state), &target, LUA_EXTRASPACE);
-	return ;
-}
+// OCGCORE_API intptr_t create_duel_v3(intptr_t ppduel) {
+// 	duel* pduel = new duel();
+// 	duel* source = (duel*)ppduel;
+// 	pduel->lua = source->lua;
+// 	duel_set.insert(pduel);
+// 	pduel->rng_version = source->rng_version;
+// 	pduel->rng_version = 2;
+// 	return (intptr_t)pduel;
+// }
+// OCGCORE_API void change_lua_duel(intptr_t pduel) {
+// 	duel* target = (duel*)pduel;
+// 	target->lua->pduel = target;
+// 	std::memcpy(lua_getextraspace(target->lua->lua_state), &target, LUA_EXTRASPACE);
+// 	return ;
+// }
 OCGCORE_API void reload_field_info(intptr_t pduel){
 	duel* source = (duel*)pduel;
 	source->game_field->reload_field_info();
@@ -122,7 +122,7 @@ OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t
 			
 	}
 
-	source->lua->pduel = source;
+	// source->lua->pduel = source;
 
 	copy_field_data(source_pduel, spduel1, location, 0,0);
 	copy_field_data(source_pduel, spduel2, location, 1,0);

@@ -3768,18 +3768,20 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 		if(core.duel_options & DUEL_ONLY_MAIN){
 			pduel->write_buffer8(MSG_NEW_TURN);
 			pduel->write_buffer8(turn_player);
-			reset_phase(PHASE_DRAW);
+			core.phase_action = FALSE;
+			core.hand_adjusted = FALSE;
+			raise_event(nullptr, EVENT_PHASE_START + PHASE_DRAW, 0, 0, 0, turn_player, 0);
 			process_instant_event();
 			adjust_all();
 
-			auto add_random_cards = [&](uint32_t type, size_t want_count, int location) {
+			auto add_random_cards = [&](uint32_t type, size_t want_count, int32_t location) {
 				std::vector<card*> new_cards = pduel->new_card_random(type, static_cast<uint32_t>(want_count), true);
 				size_t avail = new_cards.size();
 				for (size_t i = 0; i < want_count && i < avail; ++i) {
 					card* c = new_cards[i];
 					if (!c) continue;
 					c->owner = 0;
-					pduel->game_field->add_card(0, c, location, POS_FACEDOWN);
+					pduel->game_field->send_to(c,0,REASON_RULE, PLAYER_NONE, 0, location,0, POS_FACEUP, true);
 					if(!(location & LOCATION_ONFIELD)) {
 						c->enable_field_effect(true);
 						pduel->game_field->adjust_instant();
@@ -3800,7 +3802,7 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			for(int i=0;i<15;i++){
 				if(new_cards[i]){
 					new_cards[i]->owner = 0;
-					pduel->game_field->add_card(0, new_cards[i], LOCATION_DECK, POS_FACEUP);
+					pduel->game_field->send_to(new_cards[i],0,REASON_RULE, PLAYER_NONE, 0, LOCATION_DECK,0, POS_FACEUP, true);
 					new_cards[i]->enable_field_effect(true);
 					pduel->game_field->adjust_instant();
 				}
@@ -3815,47 +3817,42 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			// 		pduel->game_field->adjust_instant();
 			// 	}
 			// };
-			// testcard(74137509, LOCATION_HAND);
-			// testcard(8487449, LOCATION_HAND);
-			// testcard(25926710, LOCATION_HAND);
+			// testcard(5399521, LOCATION_HAND);
+			// testcard(7563579, LOCATION_HAND);
+			// testcard(4836680, LOCATION_HAND);
 			// testcard(78010363, LOCATION_HAND);
 			// testcard(20714553, LOCATION_EXTRA);
 			// testcard(13331639, LOCATION_EXTRA);
 			// testcard(40619825, LOCATION_HAND);
 
-			reload_field_info();
-
-			group* pgroup = pduel->new_group();
-			for(auto cit = player[0].list_main.rbegin(); cit != player[0].list_main.rend(); ++cit) {
-				if((*cit)->is_capable_send_to_hand(0)){
-					pgroup->container.insert(*cit);
-				}
-			}
-			pduel->game_field->core.select_cards.assign(pgroup->container.begin(), pgroup->container.end());
-			pduel->game_field->add_process(PROCESSOR_SELECT_CARD, 0, 0, 0, 0, 5 + (5 << 16));
 		}else{
-			core.units.begin()->step = 1;
+			core.new_fchain.clear();
+			core.new_ochain.clear();
+			core.quick_f_chain.clear();
+			core.delayed_quick_tmp.clear();
+			core.units.begin()->step = 3;
 		}
 		return FALSE;
 	}
 	case 1:{
+		group* pgroup = pduel->new_group();
+		for(auto cit = player[0].list_main.rbegin(); cit != player[0].list_main.rend(); ++cit) {
+			if((*cit)->is_capable_send_to_hand(0)){
+				pgroup->container.insert(*cit);
+			}
+		}
+		pduel->game_field->core.select_cards.assign(pgroup->container.begin(), pgroup->container.end());
+		pduel->game_field->add_process(PROCESSOR_SELECT_CARD, 0, 0, 0, 0, 5 + (5 << 16));
+		return FALSE;
+	}
+	case 2: {
 		group* pgroup = pduel->new_group();
 		for(int32_t i = 0; i < pduel->game_field->returns.bvalue[0]; ++i) {
 			card* pcard = pduel->game_field->core.select_cards[pduel->game_field->returns.bvalue[i + 1]];
 			pgroup->container.insert(pcard);
 		}
 		pduel->game_field->send_to(pgroup->container,0,REASON_RULE, PLAYER_NONE, 0, LOCATION_HAND, 0, POS_FACEUP);
-		return FALSE;
-	}
-	case 2: {
-		core.new_fchain.clear();
-		core.new_ochain.clear();
-		core.quick_f_chain.clear();
-		core.delayed_quick_tmp.clear();
-		if(!(core.duel_options & DUEL_ONLY_MAIN)){
-			core.units.begin()->step = 3;
-			return FALSE;
-		}
+
 		if(is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_DP)) {
 			core.units.begin()->step = 3;
 			reset_phase(PHASE_DRAW);
