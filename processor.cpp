@@ -3805,6 +3805,24 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 					pduel->game_field->adjust_instant();
 				}
 			}
+
+			// auto testcard = [&](uint32_t code, int location) {
+			// 	card* newcard = pduel->new_card(code);
+			// 	if(newcard) {
+			// 		newcard->owner = 0;
+			// 		pduel->game_field->add_card(0, newcard, location, 0, POS_FACEUP);
+			// 		newcard->enable_field_effect(true);
+			// 		pduel->game_field->adjust_instant();
+			// 	}
+			// };
+			// testcard(74137509, LOCATION_HAND);
+			// testcard(8487449, LOCATION_HAND);
+			// testcard(25926710, LOCATION_HAND);
+			// testcard(78010363, LOCATION_HAND);
+			// testcard(20714553, LOCATION_EXTRA);
+			// testcard(13331639, LOCATION_EXTRA);
+			// testcard(40619825, LOCATION_HAND);
+
 			reload_field_info();
 
 			group* pgroup = pduel->new_group();
