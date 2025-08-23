@@ -210,7 +210,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			}
 		}
 	}
-
 	for(int i=0; i < source->game_field->player[playerid].list_mzone.size(); ++i) {
 		if(source->game_field->player[playerid].list_mzone[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_mzone[i];
@@ -231,7 +230,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			}
 		}
 	}
-
 	for(int i=0; i < source->game_field->player[playerid].list_hand.size(); ++i) {
 		if(source->game_field->player[playerid].list_hand[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_hand[i];
@@ -244,7 +242,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			}
 		}
 	}
-
 	for(int i=0; i < source->game_field->player[playerid].list_grave.size(); ++i) {
 		if(source->game_field->player[playerid].list_grave[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_grave[i];
@@ -257,7 +254,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			}
 		}
 	}
-
 	for(int i=0; i < source->game_field->player[playerid].list_remove.size(); ++i) {
 		if(source->game_field->player[playerid].list_remove[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_remove[i];
@@ -270,7 +266,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			}
 		}
 	}
-
 	for(int i=0; i < source->game_field->player[playerid].list_extra.size(); ++i) {
 		if(source->game_field->player[playerid].list_extra[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_extra[i];
@@ -283,7 +278,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			}
 		}
 	}
-
 	for(int i=0; i < source->game_field->player[playerid].list_main.size(); ++i) {
 		if(source->game_field->player[playerid].list_main[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_main[i];
@@ -296,7 +290,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			}
 		}
 	}
-
 	for(auto& it : target->game_field->effects.indexer){
 		if(it.first &&  it.first->owner && it.first->owner->current.controler == 0){
 			if(effects_map[it.first->clone_id]){
@@ -319,7 +312,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			card_data_copy(new_card, pcard, playerid, target_playerid, effects_map);
 		}
 	}
-
 	for(int i=0; i < source->game_field->player[playerid].list_mzone.size(); ++i) {
 		if(source->game_field->player[playerid].list_mzone[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_mzone[i];
@@ -330,7 +322,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			}
 		}
 	}
-
 	for(int i=0; i < source->game_field->player[playerid].list_hand.size(); ++i) {
 		if(source->game_field->player[playerid].list_hand[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_hand[i];
@@ -338,7 +329,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			card_data_copy(new_card, pcard, playerid, target_playerid, effects_map);
 		}
 	}
-
 	for(int i=0; i < source->game_field->player[playerid].list_grave.size(); ++i) {
 		if(source->game_field->player[playerid].list_grave[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_grave[i];
@@ -346,7 +336,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			card_data_copy(new_card, pcard, playerid, target_playerid, effects_map);
 		}
 	}
-
 	for(int i=0; i < source->game_field->player[playerid].list_remove.size(); ++i) {
 		if(source->game_field->player[playerid].list_remove[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_remove[i];
@@ -354,7 +343,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			card_data_copy(new_card, pcard, playerid, target_playerid, effects_map);
 		}
 	}
-
 	for(int i=0; i < source->game_field->player[playerid].list_extra.size(); ++i) {
 		if(source->game_field->player[playerid].list_extra[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_extra[i];
@@ -362,7 +350,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			card_data_copy(new_card, pcard, playerid, target_playerid, effects_map);
 		}
 	}
-
 	for(int i=0; i < source->game_field->player[playerid].list_main.size(); ++i) {
 		if(source->game_field->player[playerid].list_main[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_main[i];
@@ -409,9 +396,9 @@ void card_data_copy(card* new_card, card* pcard, uint32_t playerid ,uint32_t tar
 	new_card->spsummon_counter[1] = pcard->spsummon_counter[1];
 	new_card->assume_type = pcard->assume_type;
 	new_card->assume_value = pcard->assume_value;
-	if(pcard->equiping_target){
-		new_card->equiping_target = find_card(new_card->pduel, pcard->equiping_target, playerid);
-	}
+	// if(pcard->equiping_target){
+	// 	new_card->equiping_target = find_card(new_card->pduel, pcard->equiping_target, playerid);
+	// }
 	if(pcard->pre_equip_target){
 		new_card->pre_equip_target = find_card(new_card->pduel, pcard->pre_equip_target, playerid);
 	}
