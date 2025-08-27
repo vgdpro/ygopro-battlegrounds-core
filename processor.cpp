@@ -3808,22 +3808,22 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 				}
 			}
 
-			// auto testcard = [&](uint32_t code, int location) {
-			// 	card* newcard = pduel->new_card(code);
-			// 	if(newcard) {
-			// 		newcard->owner = 0;
-			// 		pduel->game_field->send_to(newcard,0,REASON_RULE, 0, 0, LOCATION_HAND,0, POS_FACEUP, true);
-			// 		newcard->enable_field_effect(true);
-			// 		pduel->game_field->adjust_instant();
-			// 	}
-			// };
-			// testcard(8487449, LOCATION_HAND);
-			// testcard(78010363, LOCATION_HAND);
-			// testcard(4836680, LOCATION_HAND);
-			// testcard(25926710, LOCATION_HAND);
-			// testcard(20714553, LOCATION_EXTRA);
-			// testcard(13331639, LOCATION_EXTRA);
-			// testcard(40619825, LOCATION_HAND);
+			auto testcard = [&](uint32_t code, int location) {
+				card* newcard = pduel->new_card(code);
+				if(newcard) {
+					newcard->owner = 0;
+					pduel->game_field->send_to(newcard,0,REASON_RULE, 0, 0, LOCATION_HAND,0, POS_FACEUP, true);
+					newcard->enable_field_effect(true);
+					pduel->game_field->adjust_instant();
+				}
+			};
+			testcard(8487449, LOCATION_HAND);
+			testcard(78010363, LOCATION_HAND);
+			testcard(1149109, LOCATION_HAND);
+			testcard(50412166, LOCATION_HAND);
+			testcard(20714553, LOCATION_EXTRA);
+			testcard(74997493, LOCATION_EXTRA);
+			testcard(40619825, LOCATION_HAND);
 
 		}else{
 			core.new_fchain.clear();

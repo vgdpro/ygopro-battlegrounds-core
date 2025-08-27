@@ -57,7 +57,7 @@ static int rebind_lua_function_between_states(lua_State* srcL, int srcref, lua_S
 
 OCGCORE_API intptr_t create_duel(uint_fast32_t seed);
 OCGCORE_API intptr_t create_duel_v2(uint32_t seed_sequence[]);
-// OCGCORE_API intptr_t create_duel_v3(intptr_t ppduel);
+// OCGCORE_API intptr_t create_duel_v3();
 // OCGCORE_API void change_lua_duel(intptr_t pduel);
 OCGCORE_API void start_duel(intptr_t pduel, uint32_t options);
 OCGCORE_API void end_duel(intptr_t pduel);

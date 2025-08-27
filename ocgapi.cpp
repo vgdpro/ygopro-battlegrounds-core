@@ -86,12 +86,11 @@ OCGCORE_API intptr_t create_duel_v2(uint32_t seed_sequence[]) {
 	pduel->rng_version = 2;
 	return (intptr_t)pduel;
 }
-// OCGCORE_API intptr_t create_duel_v3(intptr_t ppduel) {
+// OCGCORE_API intptr_t create_duel_v3() {
 // 	duel* pduel = new duel();
-// 	duel* source = (duel*)ppduel;
-// 	pduel->lua = source->lua;
+// 	pduel->lua = public_lua;
 // 	duel_set.insert(pduel);
-// 	pduel->rng_version = source->rng_version;
+// 	pduel->random.seed(public_seed_sequence, SEED_COUNT);
 // 	pduel->rng_version = 2;
 // 	return (intptr_t)pduel;
 // }
@@ -109,20 +108,7 @@ OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t
 	duel* source = (duel*)source_pduel;
 	duel* target1 = (duel*)spduel1;
 	duel* target2 = (duel*)spduel2;
-
-	for (card* c : source->cards) {
-		if (c)
-			source->game_field->remove_card(c);
-	}
-
-	for (effect* c : source->effects) {
-		if (c){
-			source->game_field->remove_effect(c);
-		}
-			
-	}
-
-	// source->lua->pduel = source;
+	// change_lua_duel(source_pduel);
 
 	copy_field_data(source_pduel, spduel1, location, 0,0);
 	copy_field_data(source_pduel, spduel2, location, 1,0);
