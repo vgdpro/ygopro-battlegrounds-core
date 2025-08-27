@@ -3818,11 +3818,16 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			// 	}
 			// };
 			// testcard(8487449, LOCATION_HAND);
+			// testcard(9064354, LOCATION_HAND);
 			// testcard(78010363, LOCATION_HAND);
-			// testcard(1149109, LOCATION_HAND);
-			// testcard(30194529, LOCATION_HAND);
-			// testcard(20714553, LOCATION_EXTRA);
+			// testcard(25926710, LOCATION_HAND);
+			// testcard(69811710, LOCATION_HAND);
+			// testcard(1845204, LOCATION_HAND);
+			// testcard(62256492, LOCATION_HAND);
+			// testcard(61245672, LOCATION_EXTRA);
 			// testcard(74997493, LOCATION_EXTRA);
+			// testcard(53413628, LOCATION_EXTRA);
+			// testcard(98978921, LOCATION_EXTRA);
 			// testcard(40619825, LOCATION_HAND);
 
 		}else{

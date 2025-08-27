@@ -90,7 +90,7 @@ OCGCORE_API intptr_t create_duel_v2(uint32_t seed_sequence[]) {
 // 	duel* pduel = new duel();
 // 	pduel->lua = public_lua;
 // 	duel_set.insert(pduel);
-// 	pduel->random.seed(public_seed_sequence, SEED_COUNT);
+// 	// pduel->random.seed(public_seed_sequence, SEED_COUNT);
 // 	pduel->rng_version = 2;
 // 	return (intptr_t)pduel;
 // }
@@ -109,6 +109,12 @@ OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t
 	duel* target1 = (duel*)spduel1;
 	duel* target2 = (duel*)spduel2;
 	// change_lua_duel(source_pduel);
+
+	source->game_field->infos.turn_id = target1->game_field->infos.turn_id;
+	source->game_field->infos.turn_id_by_player[0] = target1->game_field->infos.turn_id_by_player[0];
+	source->game_field->infos.turn_id_by_player[1] = target2->game_field->infos.turn_id_by_player[1];
+	source->game_field->player[0].lp = target1->game_field->player[0].lp;
+	source->game_field->player[1].lp = target2->game_field->player[0].lp;
 
 	copy_field_data(source_pduel, spduel1, location, 0,0);
 	copy_field_data(source_pduel, spduel2, location, 1,0);
@@ -343,6 +349,79 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			card_data_copy(new_card, pcard, playerid, target_playerid, effects_map);
 		}
 	}
+
+	for(auto& it : effects_map){
+		if(target->effects_map[it.first]->label_object && target->effects_map[it.first]->pduel && target->effects_map[it.first]->pduel->lua && it.second->pduel && it.second->pduel->lua) {
+			lua_State* srcL = target->effects_map[it.first]->pduel->lua->lua_state;
+			lua_State* dstL = it.second->pduel->lua->lua_state;
+			int oldref = target->effects_map[it.first]->label_object;
+			// push object from source registry
+			lua_rawgeti(srcL, LUA_REGISTRYINDEX, oldref); // 1
+			int t = lua_type(srcL, -1);
+			int newref = 0;
+			if(t == LUA_TFUNCTION) {
+				newref = rebind_lua_function_between_states(srcL, oldref, dstL);
+			} else if(t == LUA_TUSERDATA) {
+				// try detect Card or Effect metatable by comparing with globals
+				if(lua_getmetatable(srcL, -1)) { // 1 metatable
+					// compare to Card
+					lua_getglobal(srcL, "Card"); // 1
+					if(lua_rawequal(srcL, -1, -2)) {
+						lua_pop(srcL, 2); // pop Card and metatable
+						// map card pointer via interpreter
+						void* pobj = target->effects_map[it.first]->pduel->lua->get_ref_object(oldref);
+						if(pobj) {
+							card* oldc = static_cast<card*>(pobj);
+							card* newc = find_card(it.second->pduel, oldc, playerid);
+							if(newc) newref = newc->ref_handle;
+						}
+					} else {
+						lua_pop(srcL, 1); // pop Card
+						// compare to Effect
+						lua_getglobal(srcL, "Effect"); // 1
+						if(lua_rawequal(srcL, -1, -2)) {
+							lua_pop(srcL, 2); // pop Effect and metatable
+							void* pobj = target->effects_map[it.first]->pduel->lua->get_ref_object(oldref);
+							if(pobj) {
+								effect* oldeff = static_cast<effect*>(pobj);
+								if(oldeff) {
+									auto it = effects_map.find(oldeff->clone_id);
+									if(it != effects_map.end()) {
+										effect* mapped = it->second;
+										if(mapped) newref = mapped->ref_handle;
+									}
+								}
+							}
+						} else {
+							lua_pop(srcL, 2); // pop Effect and metatable
+							// If it's Group or other userdata, we currently don't create mapped Group objects here.
+							// Leave newref == 0 (nil) to avoid unsafe pointer casts.
+							lua_getglobal(dstL, "Group"); // +1
+							if(lua_istable(dstL, -1)) {
+								lua_getfield(dstL, -1, "CreateGroup"); // 1
+								if(lua_isfunction(dstL, -1)) {
+									// call CreateGroup()
+									if(lua_pcall(dstL, 0, 1, 0) == 0) {
+										// result is on stack
+										newref = luaL_ref(dstL, LUA_REGISTRYINDEX); // pops result
+									} else {
+										// call failed; pop error
+										lua_pop(dstL, lua_gettop(dstL));
+									}
+								} else {
+									lua_pop(dstL, 1); // pop non-function
+								}
+								lua_pop(dstL, 1); // pop Group table
+							}
+						}
+					}
+				}
+			}
+			lua_pop(srcL, 1); // pop object
+			it.second->label_object = newref;
+		}
+	}
+		
 }
 void card_data_copy(card* new_card, card* pcard, uint32_t playerid ,uint32_t target_playerid ,std::map<int, effect*> effects_map) {
 	new_card->q_cache = pcard->q_cache;
@@ -388,9 +467,9 @@ void card_data_copy(card* new_card, card* pcard, uint32_t playerid ,uint32_t tar
 	if(pcard->pre_equip_target){
 		new_card->pre_equip_target = find_card(new_card->pduel, pcard->pre_equip_target, playerid);
 	}
-	if(pcard->overlay_target){
-		new_card->overlay_target = find_card(new_card->pduel, pcard->overlay_target, playerid);
-	}
+	// if(pcard->overlay_target){
+	// 	new_card->overlay_target = find_card(new_card->pduel, pcard->overlay_target, playerid);
+	// }
 	new_card->relations.clear();
 	for(const auto& rel : pcard->relations) {
 		card* old_related = rel.first;
@@ -561,7 +640,7 @@ void effect_data_copy(effect* new_effect, effect* peffect,uint32_t playerid,uint
 	// new_effect->id = peffect->id;
 	new_effect->type = peffect->type;
 	// new_effect->copy_id = peffect->copy_id;
-	// new_effect->range = peffect->range;
+	new_effect->range = peffect->range;
 	new_effect->s_range = peffect->s_range;
 	new_effect->o_range = peffect->o_range;
 	new_effect->count_limit = peffect->count_limit;
@@ -586,7 +665,7 @@ void effect_data_copy(effect* new_effect, effect* peffect,uint32_t playerid,uint
 		new_effect->last_handler = find_card(new_effect->pduel, peffect->last_handler, playerid);
 	}
 	new_effect->label = peffect->label;
-	new_effect->label_object = peffect->label_object;
+    new_effect->label_object = 0;
 
 	lua_State* srcL = nullptr;
     lua_State* dstL = nullptr;
@@ -676,6 +755,39 @@ card* find_card(duel* pduel, card* pcard, uint32_t playerid) {
 }
 static int rebind_lua_function_between_states(lua_State* srcL, int srcref, lua_State* dstL) {
     if(!srcL || !dstL || !srcref) return 0;
+
+    // Try name-based rebinding first: lookup registry.__func_name_map in srcL
+    lua_getfield(srcL, LUA_REGISTRYINDEX, "__func_name_map"); // +1
+    if(lua_istable(srcL, -1)) {
+        lua_pushinteger(srcL, srcref); // +1
+        lua_gettable(srcL, -2); // +1 value or nil
+        if(lua_isstring(srcL, -1)) {
+            const char* fullname = lua_tostring(srcL, -1);
+            std::string fn(fullname);
+            size_t dot = fn.find('.');
+            if(dot != std::string::npos) {
+                std::string tab = fn.substr(0, dot);
+                std::string field = fn.substr(dot + 1);
+                // try to fetch dstL[tab][field]
+                lua_getglobal(dstL, tab.c_str()); // +1
+                if(lua_istable(dstL, -1)) {
+                    lua_getfield(dstL, -1, field.c_str()); // +1
+                    if(lua_isfunction(dstL, -1)) {
+                        int newref = luaL_ref(dstL, LUA_REGISTRYINDEX); // pops function
+                        lua_pop(dstL, 1); // pop table
+                        lua_pop(srcL, 2); // pop value and map
+                        return newref;
+                    }
+                    lua_pop(dstL, 1); // pop field
+                }
+                lua_pop(dstL, 1); // pop global
+            }
+        }
+        lua_pop(srcL, 1); // pop value
+    }
+    lua_pop(srcL, 1); // pop map or nil
+
+    // fallback: original dump/load method
     // 获取函数
     lua_rawgeti(srcL, LUA_REGISTRYINDEX, srcref); // +1
     if(!lua_isfunction(srcL, -1)) { lua_pop(srcL, 1); return 0; }

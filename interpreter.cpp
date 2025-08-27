@@ -21,6 +21,8 @@ interpreter::interpreter(duel* pd): coroutines(256) {
 	std::memcpy(lua_getextraspace(lua_state), &pd, LUA_EXTRASPACE); //set_duel_info
 	no_action = 0;
 	call_depth = 0;
+	lua_newtable(lua_state);
+    lua_setfield(lua_state, LUA_REGISTRYINDEX, "__func_name_map");
 	//Initial
 #ifdef YGOPRO_NO_LUA_SAFE
 	luaL_openlibs(lua_state);
@@ -135,6 +137,48 @@ void interpreter::unregister_group(group *pgroup) {
 		return;
 	luaL_unref(lua_state, LUA_REGISTRYINDEX, pgroup->ref_handle);
 	pgroup->ref_handle = 0;
+}
+int32_t interpreter::get_function_handle(lua_State* L, int32_t index) {
+    luaL_checkstack(L, 1, nullptr);
+    lua_pushvalue(L, index);
+    int32_t ref = luaL_ref(L, LUA_REGISTRYINDEX);
+    // try to register a human-readable name for this function (global_table.field)
+    // push the function back to search globals
+    lua_rawgeti(L, LUA_REGISTRYINDEX, ref); // +1
+    int func_idx = lua_gettop(L);
+	lua_pushglobaltable(L); // push _G table
+	lua_pushnil(L); // first key for globals
+	while(lua_next(L, -2) != 0) { // -1 = value, -2 = key
+		if(lua_istable(L, -1) && lua_type(L, -2) == LUA_TSTRING) {
+			const char* gname = lua_tostring(L, -2);
+			// iterate inner table
+			lua_pushnil(L);
+			while(lua_next(L, -2) != 0) { // iterate table at -2
+				if(lua_rawequal(L, -1, func_idx)) {
+					// found function inside global table
+					if(lua_type(L, -2) == LUA_TSTRING) {
+						const char* fname = lua_tostring(L, -2);
+						// store mapping in registry.__func_name_map[ref] = "gname.fname"
+						lua_getfield(L, LUA_REGISTRYINDEX, "__func_name_map"); // +1
+						lua_pushinteger(L, ref); // key
+						std::string fullname = std::string(gname) + "." + std::string(fname);
+						lua_pushstring(L, fullname.c_str());
+						lua_settable(L, -3);
+						lua_pop(L, 1); // pop map
+						// pop value of inner table and break
+						lua_pop(L, 1);
+						goto done_search;
+					}
+				}
+				lua_pop(L, 1); // pop value, keep key for next
+			}
+		}
+		lua_pop(L, 1); // pop value
+	}
+	lua_pop(L, 1); // pop _G table
+done_search:
+    lua_pop(L, 1); // pop function
+    return ref;
 }
 int32_t interpreter::load_script(const char* script_name) {
 	int len = 0;
@@ -677,12 +721,6 @@ void interpreter::function2value(lua_State* L, int32_t func_ref) {
 		lua_pushnil(L);
 	else
 		lua_rawgeti(L, LUA_REGISTRYINDEX, func_ref);
-}
-int32_t interpreter::get_function_handle(lua_State* L, int32_t index) {
-	luaL_checkstack(L, 1, nullptr);
-	lua_pushvalue(L, index);
-	int32_t ref = luaL_ref(L, LUA_REGISTRYINDEX);
-	return ref;
 }
 duel* interpreter::get_duel_info(lua_State* L) {
 	duel* pduel;
