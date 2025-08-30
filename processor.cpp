@@ -2461,28 +2461,51 @@ int32_t field::process_battle_command(uint16_t step) {
 		core.attackable_cards.clear();
 		card_vector first_attack;
 		card_vector must_attack;
-		if(!is_player_affected_by_effect(infos.turn_player, EFFECT_CANNOT_ATTACK_ANNOUNCE)) {
-			for(auto& pcard : player[infos.turn_player].list_mzone) {
-				if(!pcard)
-					continue;
-				if(!pcard->is_capable_attack_announce(infos.turn_player))
-					continue;
-				uint8_t chain_attack = FALSE;
-				if(core.chain_attack && core.chain_attacker_id == pcard->fieldid)
-					chain_attack = TRUE;
-				card_vector cv;
-				get_attack_target(pcard, &cv, chain_attack);
-				if(cv.size() == 0 && pcard->direct_attackable == 0)
-					continue;
-				core.attackable_cards.push_back(pcard);
-				if(pcard->is_affected_by_effect(EFFECT_FIRST_ATTACK))
-					first_attack.push_back(pcard);
-				if(pcard->is_affected_by_effect(EFFECT_MUST_ATTACK))
-					must_attack.push_back(pcard);
-			}
-			if(first_attack.size())
-				core.attackable_cards = first_attack;
+		if(!core.attack_finish[1-core.attackable_player]){
+			core.attackable_player = 1 - core.attackable_player;
 		}
+		for(auto& pcard : player[core.attackable_player].list_mzone) {
+			if(!pcard)
+				continue;
+			// if(!pcard->is_capable_attack_announce(infos.turn_player))
+			// 	continue;
+			uint8_t chain_attack = FALSE;
+			if(core.chain_attack && core.chain_attacker_id == pcard->fieldid)
+				chain_attack = TRUE;
+			card_vector cv;
+			get_attack_target(pcard, &cv, chain_attack);
+			if(cv.size() == 0 && pcard->direct_attackable == 0)
+				continue;
+			core.attackable_cards.push_back(pcard);
+			if(pcard->is_affected_by_effect(EFFECT_FIRST_ATTACK))
+				first_attack.push_back(pcard);
+			if(pcard->is_affected_by_effect(EFFECT_MUST_ATTACK))
+				must_attack.push_back(pcard);
+		}
+		if(first_attack.size())
+			core.attackable_cards = first_attack;
+		// if(!is_player_affected_by_effect(infos.turn_player, EFFECT_CANNOT_ATTACK_ANNOUNCE)) {
+		// 	for(auto& pcard : player[infos.turn_player].list_mzone) {
+		// 		if(!pcard)
+		// 			continue;
+		// 		if(!pcard->is_capable_attack_announce(infos.turn_player))
+		// 			continue;
+		// 		uint8_t chain_attack = FALSE;
+		// 		if(core.chain_attack && core.chain_attacker_id == pcard->fieldid)
+		// 			chain_attack = TRUE;
+		// 		card_vector cv;
+		// 		get_attack_target(pcard, &cv, chain_attack);
+		// 		if(cv.size() == 0 && pcard->direct_attackable == 0)
+		// 			continue;
+		// 		core.attackable_cards.push_back(pcard);
+		// 		if(pcard->is_affected_by_effect(EFFECT_FIRST_ATTACK))
+		// 			first_attack.push_back(pcard);
+		// 		if(pcard->is_affected_by_effect(EFFECT_MUST_ATTACK))
+		// 			must_attack.push_back(pcard);
+		// 	}
+		// 	if(first_attack.size())
+		// 		core.attackable_cards = first_attack;
+		// }
 		core.to_m2 = FALSE;
 		core.to_ep = TRUE;
 		if(must_attack.size() || is_player_affected_by_effect(infos.turn_player, EFFECT_CANNOT_M2))
@@ -2490,12 +2513,21 @@ int32_t field::process_battle_command(uint16_t step) {
 		if(must_attack.size())
 			core.to_ep = FALSE;
 		core.attack_cancelable = TRUE;
-		add_process(PROCESSOR_SELECT_BATTLECMD, 0, 0, 0, infos.turn_player, 0);
+		// add_process(PROCESSOR_SELECT_BATTLECMD, 0, 0, 0, infos.turn_player, 0);
 		return FALSE;
 	}
 	case 1: {
 		int32_t ctype = returns.ivalue[0] & 0xffff;
 		int32_t sel = returns.ivalue[0] >> 16;
+		if(core.attackable_cards.size() ==0){
+			core.attack_finish[core.attackable_player] = TRUE;
+		}
+		if(!core.attack_finish[1] || !core.attack_finish[0]){
+			ctype =1;
+		}
+		else{
+			ctype = 2;
+		}
 		if(ctype == 0) {
 			chain newchain = core.select_chains[sel];
 			effect* peffect = newchain.triggering_effect;
@@ -2530,7 +2562,7 @@ int32_t field::process_battle_command(uint16_t step) {
 		} else if(ctype == 1) {
 			core.units.begin()->step = 2;
 			core.units.begin()->arg3 = FALSE;
-			core.attacker = core.attackable_cards[sel];
+			core.attacker = core.attackable_cards[0];
 			core.attacker->set_status(STATUS_ATTACK_CANCELED, FALSE);
 			core.attacker->attack_controler = core.attacker->current.controler;
 			core.pre_field[0] = core.attacker->fieldid_r;
@@ -2591,20 +2623,20 @@ int32_t field::process_battle_command(uint16_t step) {
 		core.select_cards.clear();
 		auto atype = get_attack_target(core.attacker, &core.select_cards, core.chain_attack);
 		// direct attack
-		if(core.attacker->direct_attackable) {
-			if(core.select_cards.size() == 0) {
-				returns.ivalue[0] = -2;
-				core.units.begin()->step = 5;
-				return FALSE;
-			}
-			if(is_player_affected_by_effect(infos.turn_player, EFFECT_PATRICIAN_OF_DARKNESS)) {
-				add_process(PROCESSOR_SELECT_EFFECTYN, 0, 0, (group*)core.attacker, 1 - infos.turn_player, 31);
-			}
-			else {
-				add_process(PROCESSOR_SELECT_YESNO, 0, 0, 0, infos.turn_player, 31);
-			}
-			return FALSE;
-		}
+		// if(core.attacker->direct_attackable) {
+		// 	if(core.select_cards.size() == 0) {
+		// 		returns.ivalue[0] = -2;
+		// 		core.units.begin()->step = 5;
+		// 		return FALSE;
+		// 	}
+		// 	if(is_player_affected_by_effect(infos.turn_player, EFFECT_PATRICIAN_OF_DARKNESS)) {
+		// 		add_process(PROCESSOR_SELECT_EFFECTYN, 0, 0, (group*)core.attacker, 1 - infos.turn_player, 31);
+		// 	}
+		// 	else {
+		// 		add_process(PROCESSOR_SELECT_YESNO, 0, 0, 0, infos.turn_player, 31);
+		// 	}
+		// 	return FALSE;
+		// }
 		// no target and not direct attackable
 		if(core.select_cards.size() == 0) {
 			core.units.begin()->arg3 = TRUE;
@@ -2612,7 +2644,7 @@ int32_t field::process_battle_command(uint16_t step) {
 			return FALSE;
 		}
 		// must attack monster
-		if(atype == 3 || is_player_affected_by_effect(infos.turn_player, EFFECT_PATRICIAN_OF_DARKNESS)) {
+		if(atype == 3 || is_player_affected_by_effect(core.attackable_player, EFFECT_PATRICIAN_OF_DARKNESS)) {
 			if(core.select_cards.size() == 1)
 				returns.bvalue[1] = 0;
 			else {
@@ -2621,16 +2653,24 @@ int32_t field::process_battle_command(uint16_t step) {
 				pduel->write_buffer32(core.attacker->get_info_location());
 				pduel->write_buffer8(MSG_HINT);
 				pduel->write_buffer8(HINT_SELECTMSG);
-				pduel->write_buffer8(1 - infos.turn_player);
+				pduel->write_buffer8(1 - core.attackable_player);
 				pduel->write_buffer32(549);
-				add_process(PROCESSOR_SELECT_CARD, 0, 0, 0, 1 - infos.turn_player, 0x10001);
+				add_process(PROCESSOR_SELECT_CARD, 0, 0, 0, core.attackable_player, 0x10001);
 			}
 		} else {
-			pduel->write_buffer8(MSG_HINT);
-			pduel->write_buffer8(HINT_SELECTMSG);
-			pduel->write_buffer8(infos.turn_player);
-			pduel->write_buffer32(549);
-			add_process(PROCESSOR_SELECT_CARD, 0, 0, 0, infos.turn_player + (core.attack_cancelable ? 0x20000 : 0), 0x10001);
+			// pduel->write_buffer8(MSG_HINT);
+			// pduel->write_buffer8(HINT_SELECTMSG);
+			// pduel->write_buffer8(infos.turn_player);
+			// pduel->write_buffer32(549);
+			// add_process(PROCESSOR_SELECT_CARD, 0, 0, 0, infos.turn_player + (core.attack_cancelable ? 0x20000 : 0), 0x10001);
+			std::random_device rd;
+			std::mt19937 gen(rd());
+				
+				// 设置随机数范围
+			std::uniform_int_distribution<> dis(0, core.select_cards.size()-1);
+			returns.ivalue[0] = -3;
+			returns.bvalue[1] = dis(gen);
+
 		}
 		core.units.begin()->step = 5;
 		return FALSE;

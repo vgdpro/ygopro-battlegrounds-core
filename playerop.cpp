@@ -13,6 +13,9 @@
 
 #include <algorithm>
 #include <stack>
+#include <ctime>
+#include <cstdlib>
+#include <random>
 
 bool field::check_response(size_t vector_size, int32_t min_len, int32_t max_len) const {
 	const int32_t len = returns.bvalue[0];
@@ -218,7 +221,13 @@ int32_t field::select_option(uint16_t step, uint8_t playerid) {
 		if(core.select_options.size() == 0)
 			return TRUE;
 		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
-			returns.ivalue[0] = 0;
+			// AI: 随机选择一个可选项索引
+			if(!core.select_options.empty()) {
+				static bool _rand_seeded = false;
+				if(!_rand_seeded) { std::srand((unsigned)std::time(nullptr)); _rand_seeded = true; }
+				returns.ivalue[0] = (int32_t)(std::rand() % core.select_options.size());
+			} else
+				returns.ivalue[0] = -1;
 			return TRUE;
 		}
 		pduel->write_buffer8(MSG_SELECT_OPTION);
@@ -528,6 +537,46 @@ int32_t field::select_tribute(uint16_t step, uint8_t playerid, uint8_t cancelabl
 		if(min > max)
 			min = max;
 		core.units.begin()->arg2 = ((uint32_t)min) + (((uint32_t)max) << 16);
+		// Simple AI: 随机选择满足最小释放点数(min)且选择数量<=max 的卡
+		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+			size_t m = core.select_cards.size();
+			std::vector<int> idxs(m);
+			for(size_t i = 0; i < m; ++i) idxs[i] = (int)i;
+			static bool _rand_seeded = false;
+			if(!_rand_seeded) { std::srand((unsigned)std::time(nullptr)); _rand_seeded = true; }
+			// 首先尝试随机贪心：shuffle 然后取直到 release_param 总和 >= min 或达到 max 个
+			std::shuffle(idxs.begin(), idxs.end(), std::default_random_engine(std::rand()));
+			int sum = 0;
+			std::vector<int> sel;
+			for(size_t i = 0; i < idxs.size() && (int)sel.size() < max; ++i) {
+				sel.push_back(idxs[i]);
+				sum += core.select_cards[idxs[i]]->release_param;
+				if(sum >= min) break;
+			}
+			// 若随机策略失败（仍未达到 min），尝试按 release_param 降序选择最大的几个
+			if(sum < min) {
+				std::sort(idxs.begin(), idxs.end(), [&](int a, int b){
+					return core.select_cards[a]->release_param > core.select_cards[b]->release_param;
+				});
+				sum = 0;
+				sel.clear();
+				for(size_t i = 0; i < idxs.size() && (int)sel.size() < max; ++i) {
+					sel.push_back(idxs[i]);
+					sum += core.select_cards[idxs[i]]->release_param;
+					if(sum >= min) break;
+				}
+			}
+			// 若仍未满足 min，无法自动选择 -> fallback 重试（让人类/系统处理）
+			if(sum < min) {
+				// 不填写 returns 表示无法自动决定
+			} else {
+				// 填写返回值
+				returns.bvalue[0] = (uint8_t)sel.size();
+				for(size_t i = 0; i < sel.size(); ++i)
+					returns.bvalue[1 + i] = (uint8_t)sel[i];
+				return TRUE;
+			}
+		}
 		pduel->write_buffer8(MSG_SELECT_TRIBUTE);
 		pduel->write_buffer8(playerid);
 		pduel->write_buffer8(cancelable);
@@ -598,6 +647,61 @@ int32_t field::select_counter(uint16_t step, uint8_t playerid, uint16_t countert
 			fp = 1 - fp;
 			avail = o;
 		}
+		        // Simple AI: 随机分配要移除的计数到各卡上，直到总和等于 count
+        if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+            int n = (int)core.select_cards.size();
+            std::vector<int> avail_cnt(n);
+            int idx = 0;
+            for(auto& pcard : core.select_cards) {
+                avail_cnt[idx++] = (int)pcard->get_counter(countertype);
+            }
+            static bool _rand_seeded_ctr = false;
+            if(!_rand_seeded_ctr) { std::srand((unsigned)std::time(nullptr)); _rand_seeded_ctr = true; }
+            std::vector<int> assign(n, 0);
+            bool ok = false;
+            // Try random assignments
+            for(int attempt = 0; attempt < 600 && !ok; ++attempt) {
+                int remain = count;
+                // shuffle order
+                std::vector<int> order(n);
+                for(int i=0;i<n;++i) order[i]=i;
+				std::shuffle(order.begin(), order.end(), std::default_random_engine(std::rand()));
+                std::fill(assign.begin(), assign.end(), 0);
+                for(int i=0;i<n && remain>0;++i) {
+                    int id = order[i];
+                    int cap = std::min(avail_cnt[id], remain);
+                    if(i == n-1) {
+                        // last one take all remaining (must be <= cap because total >= count)
+                        assign[id] = remain;
+                        remain = 0;
+                    } else {
+                        if(cap > 0) {
+                            assign[id] = std::rand() % (cap + 1);
+                            remain -= assign[id];
+                        }
+                    }
+                }
+                if(remain == 0) ok = true;
+            }
+            // fallback deterministic greedy if random failed
+            if(!ok) {
+                int remain = count;
+                for(int i = 0; i < n; ++i) {
+                    int take = std::min(avail_cnt[i], remain);
+                    assign[i] = take;
+                    remain -= take;
+                    if(remain == 0) break;
+                }
+                if(remain == 0) ok = true;
+            }
+            if(ok) {
+                // fill returns.svalue[] with assigned counts
+                for(int i = 0; i < n; ++i)
+                    returns.svalue[i] = (int16_t)assign[i];
+                return TRUE;
+            }
+            // 若仍不能分配则回退到交互流程
+        }
 		if(count > total) {
 			pduel->write_buffer8(MSG_RETRY);
 			return FALSE;
@@ -655,6 +759,88 @@ int32_t field::select_with_sum_limit(int16_t step, uint8_t playerid, int32_t acc
 			core.select_cards.resize(UINT8_MAX);
 		if (core.must_select_cards.size() > UINT8_MAX)
 			core.must_select_cards.resize(UINT8_MAX);
+		        // Simple AI: 随机尝试寻找合法选项（包含 must_select_cards）
+        if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+            int32_t mcount = (int32_t)core.must_select_cards.size();
+            int32_t m = (int32_t)core.select_cards.size();
+            std::vector<uint32_t> base_oparams;
+            base_oparams.reserve(mcount);
+            for(int32_t i = 0; i < mcount; ++i)
+                base_oparams.push_back(core.must_select_cards[i]->sum_param);
+            // prepare optional indices
+            std::vector<int> opt_idxs(m);
+            for(int i = 0; i < m; ++i) opt_idxs[i] = i;
+            static bool _rand_seeded = false;
+            if(!_rand_seeded) { std::srand((unsigned)std::time(nullptr)); _rand_seeded = true; }
+            bool found = false;
+            std::vector<int> chosen;
+            // Try randomized sampling attempts
+            for(int attempt = 0; attempt < 600 && !found; ++attempt) {
+				std::shuffle(opt_idxs.begin(), opt_idxs.end(), std::default_random_engine(std::rand()));
+                int max_choose = std::min(m, std::max(0, max - 0)); // max may be big; adjust below using mcount later
+                // random choose a k between 0 and (max + mcount) - mcount  => 0..(max - mcount)
+                int kmax = 0;
+                if(max > mcount) kmax = std::min(m, max - mcount);
+                else kmax = 0;
+                int k = 0;
+                if(kmax > 0) k = std::rand() % (kmax + 1);
+                // build oparam array: base + chosen k first opt_idxs
+                std::vector<uint32_t> oparam = base_oparams;
+                for(int i = 0; i < k; ++i) oparam.push_back(core.select_cards[opt_idxs[i]]->sum_param);
+                int tot_count = (int)oparam.size();
+                // validate using same check as runtime (for max case use select_sum_check1)
+                if(max) {
+                    if(select_sum_check1(oparam.data(), tot_count, 0, acc, 0xffff)) {
+                        found = true;
+                        chosen.assign(opt_idxs.begin(), opt_idxs.begin() + k);
+                        // returns.bvalue[0] should be total count including must_select
+                        returns.bvalue[0] = (uint8_t)tot_count;
+                    }
+                } else {
+                    // no max case: check mx >= acc && sum - mn < acc
+                    int32_t sum = 0, mx = 0, mn = 0x7fffffff;
+                    for(size_t ii = 0; ii < oparam.size(); ++ii) {
+                        int32_t o1, o2;
+                        field::get_sum_params(oparam[ii], o1, o2);
+                        int32_t ms = (o2 && o2 < o1) ? o2 : o1;
+                        sum += ms;
+                        mx += std::max(o1, o2);
+                        if(ms < mn) mn = ms;
+                    }
+                    if(!(mx < acc || sum - mn >= acc)) {
+                        found = true;
+                        chosen.assign(opt_idxs.begin(), opt_idxs.begin() + k);
+                        returns.bvalue[0] = (uint8_t)tot_count;
+                    }
+                }
+            }
+            // 如果找到，填充返回的索引
+            if(found) {
+                for(size_t i = 0; i < chosen.size(); ++i)
+                    returns.bvalue[1 + i] = (uint8_t)chosen[i];
+                return TRUE;
+            }
+            // 若随机未找到，尝试贪心策略：按 sum_param 降序选择直到满足（仅在 max 情况）
+            if(max) {
+                std::vector<int> idxs2(m);
+                for(int i=0;i<m;++i) idxs2[i]=i;
+                std::sort(idxs2.begin(), idxs2.end(), [&](int a, int b){
+                    return core.select_cards[a]->sum_param > core.select_cards[b]->sum_param;
+                });
+                std::vector<uint32_t> oparam = base_oparams;
+                std::vector<int> sel;
+                for(int i = 0; i < m && (int)sel.size() < (max - mcount); ++i) {
+                    sel.push_back(idxs2[i]);
+                    oparam.push_back(core.select_cards[idxs2[i]]->sum_param);
+                    if(select_sum_check1(oparam.data(), (int)oparam.size(), 0, acc, 0xffff)) {
+                        returns.bvalue[0] = (uint8_t)oparam.size();
+                        for(size_t j=0;j<sel.size();++j) returns.bvalue[1 + j] = (uint8_t)sel[j];
+                        return TRUE;
+                    }
+                }
+            }
+            // 无法自动决定，则回退到正常交互
+        }
 		pduel->write_buffer8(MSG_SELECT_SUM);
 		if(max)
 			pduel->write_buffer8(0);
@@ -797,6 +983,26 @@ int32_t field::announce_race(int16_t step, uint8_t playerid, int32_t count, int3
 			count = scount;
 			core.units.begin()->arg1 = (count << 16) + playerid;
 		}
+		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+            std::vector<int32_t> races;
+            for(uint32_t ft = 0x1; ft < (0x1U << RACES_COUNT); ft <<= 1) {
+                if(ft & available) races.push_back(ft);
+            }
+            static bool _rand_seeded = false;
+            if(!_rand_seeded) { std::srand((unsigned)std::time(nullptr)); _rand_seeded = true; }
+            int32_t rc = 0;
+            if((int)races.size() <= count) {
+                for(auto v : races) rc |= v;
+            } else {
+                for(int i = 0; i < count; ++i) {
+                    int idx = std::rand() % races.size();
+                    rc |= races[idx];
+                    races.erase(races.begin() + idx);
+                }
+            }
+            returns.ivalue[0] = rc;
+            return TRUE;
+        }
 		pduel->write_buffer8(MSG_ANNOUNCE_RACE);
 		pduel->write_buffer8(playerid);
 		pduel->write_buffer8(count);
@@ -837,6 +1043,27 @@ int32_t field::announce_attribute(int16_t step, uint8_t playerid, int32_t count,
 			count = scount;
 			core.units.begin()->arg1 = (count << 16) + playerid;
 		}
+		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+            std::vector<int32_t> attrs;
+            for(int32_t ft = 0x1; ft != 0x80; ft <<= 1) {
+                if(ft & available) attrs.push_back(ft);
+            }
+            static bool _rand_seeded = false;
+            if(!_rand_seeded) { std::srand((unsigned)std::time(nullptr)); _rand_seeded = true; }
+            int32_t rc = 0;
+            if((int)attrs.size() <= count) {
+                for(auto v : attrs) rc |= v;
+            } else {
+                // 随机选取 count 个不同索引
+                for(int i = 0; i < count; ++i) {
+                    int idx = std::rand() % attrs.size();
+                    rc |= attrs[idx];
+                    attrs.erase(attrs.begin() + idx);
+                }
+            }
+            returns.ivalue[0] = rc;
+            return TRUE;
+        }
 		pduel->write_buffer8(MSG_ANNOUNCE_ATTRIB);
 		pduel->write_buffer8(playerid);
 		pduel->write_buffer8(count);
@@ -999,6 +1226,22 @@ static int32_t is_declarable(card_data const& cd, const std::vector<uint32_t>& o
 }
 int32_t field::announce_card(int16_t step, uint8_t playerid) {
 	if(step == 0) {
+		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+            for(size_t i = 0; i < core.select_options.size(); ++i) {
+                int32_t code = (int32_t)core.select_options[i];
+                card_data data;
+                ::read_card(code, &data);
+                if(data.code && is_declarable(data, core.select_options)) {
+                    returns.ivalue[0] = code;
+                    return TRUE;
+                }
+            }
+            // fallback: pick first option
+            if(!core.select_options.empty()) {
+                returns.ivalue[0] = (int32_t)core.select_options[0];
+                return TRUE;
+            }
+        }
 		pduel->write_buffer8(MSG_ANNOUNCE_CARD);
 		pduel->write_buffer8(playerid);
 		pduel->write_buffer8((uint8_t)core.select_options.size());
@@ -1028,6 +1271,16 @@ int32_t field::announce_card(int16_t step, uint8_t playerid) {
 }
 int32_t field::announce_number(int16_t step, uint8_t playerid) {
 	if(step == 0) {
+		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+			// AI: 随机选择一个可选项索引
+			if(!core.select_options.empty()) {
+				static bool _rand_seeded = false;
+				if(!_rand_seeded) { std::srand((unsigned)std::time(nullptr)); _rand_seeded = true; }
+				returns.ivalue[0] = (int32_t)(std::rand() % core.select_options.size());
+			} else
+				returns.ivalue[0] = -1;
+			return TRUE;
+		}
 		if (core.select_options.size() > UINT8_MAX)
 			core.select_options.resize(UINT8_MAX);
 		pduel->write_buffer8(MSG_ANNOUNCE_NUMBER);

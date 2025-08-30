@@ -127,7 +127,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		for(int i=0; i < target->game_field->player[target_playerid].list_szone.size(); ++i) {
 			if(target->game_field->player[target_playerid].list_szone[i]) {
 				card* pcard = target->game_field->player[target_playerid].list_szone[i];
-				new_card(source_pduel, pcard->get_original_code(),playerid,playerid, LOCATION_SZONE, pcard->current.sequence, pcard->current.position);
+				new_card(source_pduel, pcard->data.code,playerid,playerid, LOCATION_SZONE, pcard->current.sequence, pcard->current.position);
 			}
 		}
 	}
@@ -135,11 +135,11 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		for(int i=0; i < target->game_field->player[target_playerid].list_mzone.size(); ++i) {
 			if(target->game_field->player[target_playerid].list_mzone[i]) {
 				card* pcard = target->game_field->player[target_playerid].list_mzone[i];
-				new_card(source_pduel, pcard->get_original_code(),playerid,playerid,LOCATION_MZONE,pcard->current.sequence,pcard->current.position);
+				new_card(source_pduel, pcard->data.code,playerid,playerid,LOCATION_MZONE,pcard->current.sequence,pcard->current.position);
 				card* new_card = source->game_field->player[playerid].list_mzone[i];
 				for(auto& pc :pcard->xyz_materials){
 					if(pc){
-						card* mat = source->new_card(pc->get_original_code());
+						card* mat = source->new_card(pcard->data.code);
 						new_card->owner = playerid;
 						new_card->xyz_add(mat);
 					}
@@ -151,7 +151,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		for(int i=0; i < target->game_field->player[target_playerid].list_hand.size(); ++i) {
 			if(target->game_field->player[target_playerid].list_hand[i]) {
 				card* pcard = target->game_field->player[target_playerid].list_hand[i];
-				new_card(source_pduel, pcard->get_original_code(),playerid,playerid,LOCATION_HAND,pcard->current.sequence,pcard->current.position);
+				new_card(source_pduel, pcard->data.code,playerid,playerid,LOCATION_HAND,pcard->current.sequence,pcard->current.position);
 			}
 		}
 	}
@@ -159,7 +159,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		for(int i=0; i < target->game_field->player[target_playerid].list_grave.size(); ++i) {
 			if(target->game_field->player[target_playerid].list_grave[i]) {
 				card* pcard = target->game_field->player[target_playerid].list_grave[i];
-				new_card(source_pduel, pcard->get_original_code(),playerid,playerid,LOCATION_GRAVE,pcard->current.sequence,pcard->current.position);
+				new_card(source_pduel, pcard->data.code,playerid,playerid,LOCATION_GRAVE,pcard->current.sequence,pcard->current.position);
 			}
 		}
 	}
@@ -167,7 +167,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		for(int i=0; i < target->game_field->player[target_playerid].list_remove.size(); ++i) {
 			if(target->game_field->player[target_playerid].list_remove[i]) {
 				card* pcard = target->game_field->player[target_playerid].list_remove[i];
-				new_card(source_pduel, pcard->get_original_code(),playerid,playerid,LOCATION_REMOVED,pcard->current.sequence,pcard->current.position);
+				new_card(source_pduel, pcard->data.code,playerid,playerid,LOCATION_REMOVED,pcard->current.sequence,pcard->current.position);
 			}
 		}
 	}
@@ -175,7 +175,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		for(int i=0; i < target->game_field->player[target_playerid].list_extra.size(); ++i) {
 			if(target->game_field->player[target_playerid].list_extra[i]) {
 				card* pcard = target->game_field->player[target_playerid].list_extra[i];
-				new_card(source_pduel, pcard->get_original_code(),playerid,playerid,LOCATION_EXTRA,pcard->current.sequence,pcard->current.position);
+				new_card(source_pduel, pcard->data.code,playerid,playerid,LOCATION_EXTRA,pcard->current.sequence,pcard->current.position);
 			}
 		}
 	}
@@ -183,7 +183,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		for(int i=0; i < target->game_field->player[target_playerid].list_main.size(); ++i) {
 			if(target->game_field->player[target_playerid].list_main[i]) {
 				card* pcard = target->game_field->player[target_playerid].list_main[i];
-				new_card(source_pduel, pcard->get_original_code(),playerid,playerid,LOCATION_DECK,pcard->current.sequence,pcard->current.position);
+				new_card(source_pduel, pcard->data.code,playerid,playerid,LOCATION_DECK,pcard->current.sequence,pcard->current.position);
 			}
 		}
 	}
@@ -351,74 +351,28 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 	}
 
 	for(auto& it : effects_map){
-		if(target->effects_map[it.first]->label_object && target->effects_map[it.first]->pduel && target->effects_map[it.first]->pduel->lua && it.second->pduel && it.second->pduel->lua) {
-			lua_State* srcL = target->effects_map[it.first]->pduel->lua->lua_state;
-			lua_State* dstL = it.second->pduel->lua->lua_state;
-			int oldref = target->effects_map[it.first]->label_object;
-			// push object from source registry
-			lua_rawgeti(srcL, LUA_REGISTRYINDEX, oldref); // 1
-			int t = lua_type(srcL, -1);
-			int newref = 0;
-			if(t == LUA_TFUNCTION) {
-				newref = rebind_lua_function_between_states(srcL, oldref, dstL);
-			} else if(t == LUA_TUSERDATA) {
-				// try detect Card or Effect metatable by comparing with globals
-				if(lua_getmetatable(srcL, -1)) { // 1 metatable
-					// compare to Card
-					lua_getglobal(srcL, "Card"); // 1
-					if(lua_rawequal(srcL, -1, -2)) {
-						lua_pop(srcL, 2); // pop Card and metatable
-						// map card pointer via interpreter
-						void* pobj = target->effects_map[it.first]->pduel->lua->get_ref_object(oldref);
-						if(pobj) {
-							card* oldc = static_cast<card*>(pobj);
-							card* newc = find_card(it.second->pduel, oldc, playerid);
-							if(newc) newref = newc->ref_handle;
-						}
-					} else {
-						lua_pop(srcL, 1); // pop Card
-						// compare to Effect
-						lua_getglobal(srcL, "Effect"); // 1
-						if(lua_rawequal(srcL, -1, -2)) {
-							lua_pop(srcL, 2); // pop Effect and metatable
-							void* pobj = target->effects_map[it.first]->pduel->lua->get_ref_object(oldref);
-							if(pobj) {
-								effect* oldeff = static_cast<effect*>(pobj);
-								if(oldeff) {
-									auto it = effects_map.find(oldeff->clone_id);
-									if(it != effects_map.end()) {
-										effect* mapped = it->second;
-										if(mapped) newref = mapped->ref_handle;
-									}
-								}
-							}
-						} else {
-							lua_pop(srcL, 2); // pop Effect and metatable
-							// If it's Group or other userdata, we currently don't create mapped Group objects here.
-							// Leave newref == 0 (nil) to avoid unsafe pointer casts.
-							lua_getglobal(dstL, "Group"); // +1
-							if(lua_istable(dstL, -1)) {
-								lua_getfield(dstL, -1, "CreateGroup"); // 1
-								if(lua_isfunction(dstL, -1)) {
-									// call CreateGroup()
-									if(lua_pcall(dstL, 0, 1, 0) == 0) {
-										// result is on stack
-										newref = luaL_ref(dstL, LUA_REGISTRYINDEX); // pops result
-									} else {
-										// call failed; pop error
-										lua_pop(dstL, lua_gettop(dstL));
-									}
-								} else {
-									lua_pop(dstL, 1); // pop non-function
-								}
-								lua_pop(dstL, 1); // pop Group table
-							}
-						}
-					}
+		if(target->effects_map[it.first]->object_type == PARAM_TYPE_CARD){
+			card* pcard = (card*)target->effects_map[it.first]->get_label_object();
+			if(pcard && pcard->current.controler == 0)
+				it.second->label_object = (find_card(source, pcard, playerid))->ref_handle;
+		}
+		if(target->effects_map[it.first]->object_type == PARAM_TYPE_EFFECT){
+			effect* new_effect = (effect*)(target->effects_map[it.first]->get_label_object());
+			if(new_effect && new_effect->owner && new_effect->owner->current.controler == 0 && effects_map.find(new_effect->clone_id) != effects_map.end()){
+				it.second->label_object = effects_map[new_effect->clone_id]->ref_handle;
+			}
+		}
+		if(target->effects_map[it.first]->object_type == PARAM_TYPE_GROUP){
+			group* return_value = source->new_group();
+			group* pgroup = (group*)target->effects_map[it.first]->get_label_object();
+			for(auto& pc : pgroup->container){
+				if(pc && pc->current.controler == 0){
+					card* new_card = find_card(source, pc, playerid);
+					if(new_card)
+						return_value->container.insert(new_card);
 				}
 			}
-			lua_pop(srcL, 1); // pop object
-			it.second->label_object = newref;
+			it.second->label_object = return_value->ref_handle;
 		}
 	}
 		
@@ -461,9 +415,9 @@ void card_data_copy(card* new_card, card* pcard, uint32_t playerid ,uint32_t tar
 	new_card->spsummon_counter[1] = pcard->spsummon_counter[1];
 	new_card->assume_type = pcard->assume_type;
 	new_card->assume_value = pcard->assume_value;
-	// if(pcard->equiping_target){
-	// 	new_card->equiping_target = find_card(new_card->pduel, pcard->equiping_target, playerid);
-	// }
+	if(pcard->equiping_target){
+		new_card->equiping_target = find_card(new_card->pduel, pcard->equiping_target, playerid);
+	}
 	if(pcard->pre_equip_target){
 		new_card->pre_equip_target = find_card(new_card->pduel, pcard->pre_equip_target, playerid);
 	}

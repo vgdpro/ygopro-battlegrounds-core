@@ -2444,15 +2444,16 @@ int32_t field::get_attack_target(card* pcard, card_vector* v, uint8_t chain_atta
 					continue;
 				if(pcard->announced_cards.findcard(atarget) >= (uint32_t)peffect->get_value(atarget))
 					continue;
-				if(atype >= 2 && atarget->is_affected_by_effect(EFFECT_IGNORE_BATTLE_TARGET, pcard))
-					continue;
+				// if(atype >= 2 && atarget->is_affected_by_effect(EFFECT_IGNORE_BATTLE_TARGET, pcard))
+				// 	continue;
 				if(select_target && (atype == 2 || atype == 4)) {
-					if(atarget->is_affected_by_effect(EFFECT_CANNOT_BE_BATTLE_TARGET, pcard))
-						continue;
-					if(pcard->is_affected_by_effect(EFFECT_CANNOT_SELECT_BATTLE_TARGET, atarget))
-						continue;
+					// if(atarget->is_affected_by_effect(EFFECT_CANNOT_BE_BATTLE_TARGET, pcard))
+					// 	continue;
+					// if(pcard->is_affected_by_effect(EFFECT_CANNOT_SELECT_BATTLE_TARGET, atarget))
+					// 	continue;
 				}
-				v->push_back(atarget);
+				if(atarget->get_attack() <= pcard->get_attack())
+					v->push_back(atarget);
 			}
 		}
 		return atype;
@@ -2462,18 +2463,19 @@ int32_t field::get_attack_target(card* pcard, card_vector* v, uint8_t chain_atta
 	for(auto& atarget : *pv) {
 		if(!atarget)
 			continue;
-		if(atype >= 2 && atarget->is_affected_by_effect(EFFECT_IGNORE_BATTLE_TARGET, pcard))
-			continue;
+		// if(atype >= 2 && atarget->is_affected_by_effect(EFFECT_IGNORE_BATTLE_TARGET, pcard))
+		// 	continue;
 		++mcount;
 		if(chain_attack && core.chain_attack_target && atarget != core.chain_attack_target)
 			continue;
 		if(select_target && (atype == 2 || atype == 4)) {
-			if(atarget->is_affected_by_effect(EFFECT_CANNOT_BE_BATTLE_TARGET, pcard))
-				continue;
-			if(pcard->is_affected_by_effect(EFFECT_CANNOT_SELECT_BATTLE_TARGET, atarget))
-				continue;
+			// if(atarget->is_affected_by_effect(EFFECT_CANNOT_BE_BATTLE_TARGET, pcard))
+			// 	continue;
+			// if(pcard->is_affected_by_effect(EFFECT_CANNOT_SELECT_BATTLE_TARGET, atarget))
+			// 	continue;
 		}
-		v->push_back(atarget);
+		if(atarget->get_attack() <= pcard->get_attack())
+			v->push_back(atarget);
 	}
 	if(atype <= 3)
 		return atype;

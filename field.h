@@ -343,6 +343,8 @@ struct processor {
 	uint8_t attack_state_count[2]{};
 	uint8_t battle_phase_count[2]{};
 	uint8_t battled_count[2]{};
+	uint8_t attackable_player {1};
+	bool attack_finish[2]{FALSE};
 	uint8_t phase_action{ FALSE };
 	uint32_t hint_timing[2]{};
 	uint8_t current_player{ PLAYER_NONE };
