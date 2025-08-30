@@ -2461,9 +2461,7 @@ int32_t field::process_battle_command(uint16_t step) {
 		core.attackable_cards.clear();
 		card_vector first_attack;
 		card_vector must_attack;
-		if(!core.attack_finish[1-core.attackable_player]){
-			core.attackable_player = 1 - core.attackable_player;
-		}
+		core.attackable_player = 1 - core.attackable_player;
 		for(auto& pcard : player[core.attackable_player].list_mzone) {
 			if(!pcard)
 				continue;
@@ -2523,7 +2521,12 @@ int32_t field::process_battle_command(uint16_t step) {
 			core.attack_finish[core.attackable_player] = TRUE;
 		}
 		if(!core.attack_finish[1] || !core.attack_finish[0]){
-			ctype =1;
+			if(core.attack_finish[core.attackable_player] == TRUE){
+				core.units.begin()->step = -1;
+				return false;
+			}else{
+				ctype =1;
+			}
 		}
 		else{
 			ctype = 2;

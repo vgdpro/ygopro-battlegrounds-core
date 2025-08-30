@@ -458,7 +458,7 @@ int32_t field::damage(uint16_t step, effect* reason_effect, uint32_t reason, uin
 	case 0: {
 		effect_set eset;
 		returns.ivalue[0] = amount;
-		if(amount <= 0)
+		if(amount <= 0 || (core.duel_options & DUEL_ONLY_MAIN && playerid == 1))
 			return TRUE;
 		if(!(reason & REASON_RDAMAGE)) {
 			filter_player_effect(playerid, EFFECT_REVERSE_DAMAGE, &eset);
