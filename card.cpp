@@ -1055,8 +1055,8 @@ uint32_t card::get_ritual_level(card* pcard) {
 	return get_mat_level(pcard, EFFECT_RITUAL_LEVEL, EFFECT_RITUAL_LEVEL_EX);
 }
 uint32_t card::check_xyz_level(card* pcard, uint32_t lv) {
-	// if(status & STATUS_NO_LEVEL)
-	// 	return 0;
+	if(status & STATUS_NO_LEVEL)
+		return 0;
 	int32_t min_count = 0;
 	effect_set mset;
 	filter_effect(EFFECT_XYZ_MIN_COUNT, &mset);
@@ -1069,34 +1069,33 @@ uint32_t card::check_xyz_level(card* pcard, uint32_t lv) {
 	}
 	if (min_count > 0xf)
 		min_count = 0xf;
-	return (lv & MAX_XYZ_LEVEL) | ((uint32_t)min_count << 12);
-	// effect_set eset;
-	// filter_effect(EFFECT_XYZ_LEVEL, &eset);
-	// if(!eset.size()) {
-	// 	uint32_t card_lv = get_level();
-	// 	if (card_lv == lv)
-	// 		return (card_lv & MAX_XYZ_LEVEL) | ((uint32_t)min_count << 12);
-	// 	return 0;
-	// }
-	// for (auto& peffect: eset) {
-	// 	pduel->lua->add_param(this, PARAM_TYPE_CARD);
-	// 	pduel->lua->add_param(pcard, PARAM_TYPE_CARD);
-	// 	uint32_t lev = peffect->get_value(2);
-	// 	uint16_t lv1 = lev & MAX_XYZ_LEVEL;
-	// 	uint16_t count1 = (lev & 0xf000) >> 12;
-	// 	if (count1 < min_count)
-	// 		count1 = min_count;
-	// 	if (lv1 == lv)
-	// 		return lv1 | ((uint32_t)count1 << 12);
-	// 	lev >>= 16;
-	// 	uint16_t lv2 = lev & MAX_XYZ_LEVEL;
-	// 	uint16_t count2 = (lev & 0xf000) >> 12;
-	// 	if (count2 < min_count)
-	// 		count2 = min_count;
-	// 	if (lv2 == lv)
-	// 		return lv2 | ((uint32_t)count2 << 12);
-	// }
-	// return 0;
+	effect_set eset;
+	filter_effect(EFFECT_XYZ_LEVEL, &eset);
+	if(!eset.size()) {
+		uint32_t card_lv = get_level();
+		if (card_lv == lv)
+			return (card_lv & MAX_XYZ_LEVEL) | ((uint32_t)min_count << 12);
+		return 0;
+	}
+	for (auto& peffect: eset) {
+		pduel->lua->add_param(this, PARAM_TYPE_CARD);
+		pduel->lua->add_param(pcard, PARAM_TYPE_CARD);
+		uint32_t lev = peffect->get_value(2);
+		uint16_t lv1 = lev & MAX_XYZ_LEVEL;
+		uint16_t count1 = (lev & 0xf000) >> 12;
+		if (count1 < min_count)
+			count1 = min_count;
+		if (lv1 == lv)
+			return lv1 | ((uint32_t)count1 << 12);
+		lev >>= 16;
+		uint16_t lv2 = lev & MAX_XYZ_LEVEL;
+		uint16_t count2 = (lev & 0xf000) >> 12;
+		if (count2 < min_count)
+			count2 = min_count;
+		if (lv2 == lv)
+			return lv2 | ((uint32_t)count2 << 12);
+	}
+	return 0;
 }
 uint32_t card::get_attribute() {
 	return 0xffffffff;

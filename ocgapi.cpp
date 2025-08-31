@@ -787,6 +787,12 @@ OCGCORE_API void end_duel(intptr_t pduel) {
 		delete pd;
 	}
 }
+OCGCORE_API void set_player_lp(intptr_t pduel, intptr_t player, int32_t playerid){
+	duel* pd = (duel*)pduel;
+	duel* pd2 = (duel*)player;
+	pd2->game_field->player[0].lp = pd->game_field->player[playerid].lp;
+	pd2->game_field->player[1].lp = pd->game_field->player[1-playerid].lp;
+}
 OCGCORE_API void set_player_info(intptr_t pduel, int32_t playerid, int32_t lp, int32_t startcount, int32_t drawcount) {
 	if (!check_playerid(playerid))
 		return;
