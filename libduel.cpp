@@ -2409,44 +2409,44 @@ int32_t scriptlib::duel_get_current_phase(lua_State *L) {
 	return 1;
 }
 int32_t scriptlib::duel_skip_phase(lua_State *L) {
-	check_param_count(L, 4);
-	int32_t playerid = (int32_t)lua_tointeger(L, 1);
-	if(playerid != 0 && playerid != 1)
-		return 0;
-	uint32_t phase = (uint32_t)lua_tointeger(L, 2);
-	uint32_t reset = (uint32_t)lua_tointeger(L, 3);
-	int32_t count = (int32_t)lua_tointeger(L, 4);
-	int32_t value = (int32_t)lua_tointeger(L, 5);
-	if(count <= 0)
-		count = 1;
-	duel* pduel = interpreter::get_duel_info(L);
-	int32_t code = 0;
-	if(phase == PHASE_DRAW)
-		code = EFFECT_SKIP_DP;
-	else if(phase == PHASE_STANDBY)
-		code = EFFECT_SKIP_SP;
-	else if(phase == PHASE_MAIN1)
-		code = EFFECT_SKIP_M1;
-	else if(phase == PHASE_BATTLE)
-		code = EFFECT_SKIP_BP;
-	else if(phase == PHASE_MAIN2)
-		code = EFFECT_SKIP_M2;
-	else if(phase == PHASE_END)
-		code = EFFECT_SKIP_EP;
-	else
-		return 0;
-	effect* peffect = pduel->new_effect();
-	peffect->owner = pduel->game_field->temp_card;
-	peffect->effect_owner = playerid;
-	peffect->type = EFFECT_TYPE_FIELD;
-	peffect->code = code;
-	peffect->reset_flag = (reset & 0x3ff) | RESET_PHASE | RESET_SELF_TURN;
-	peffect->flag[0] = EFFECT_FLAG_CANNOT_DISABLE | EFFECT_FLAG_PLAYER_TARGET;
-	peffect->s_range = 1;
-	peffect->o_range = 0;
-	peffect->reset_count = count;
-	peffect->value = value;
-	pduel->game_field->add_effect(peffect, playerid);
+	// check_param_count(L, 4);
+	// int32_t playerid = (int32_t)lua_tointeger(L, 1);
+	// if(playerid != 0 && playerid != 1)
+	// 	return 0;
+	// uint32_t phase = (uint32_t)lua_tointeger(L, 2);
+	// uint32_t reset = (uint32_t)lua_tointeger(L, 3);
+	// int32_t count = (int32_t)lua_tointeger(L, 4);
+	// int32_t value = (int32_t)lua_tointeger(L, 5);
+	// if(count <= 0)
+	// 	count = 1;
+	// duel* pduel = interpreter::get_duel_info(L);
+	// int32_t code = 0;
+	// if(phase == PHASE_DRAW)
+	// 	code = EFFECT_SKIP_DP;
+	// else if(phase == PHASE_STANDBY)
+	// 	code = EFFECT_SKIP_SP;
+	// else if(phase == PHASE_MAIN1)
+	// 	code = EFFECT_SKIP_M1;
+	// else if(phase == PHASE_BATTLE)
+	// 	code = EFFECT_SKIP_BP;
+	// else if(phase == PHASE_MAIN2)
+	// 	code = EFFECT_SKIP_M2;
+	// else if(phase == PHASE_END)
+	// 	code = EFFECT_SKIP_EP;
+	// else
+	// 	return 0;
+	// effect* peffect = pduel->new_effect();
+	// peffect->owner = pduel->game_field->temp_card;
+	// peffect->effect_owner = playerid;
+	// peffect->type = EFFECT_TYPE_FIELD;
+	// peffect->code = code;
+	// peffect->reset_flag = (reset & 0x3ff) | RESET_PHASE | RESET_SELF_TURN;
+	// peffect->flag[0] = EFFECT_FLAG_CANNOT_DISABLE | EFFECT_FLAG_PLAYER_TARGET;
+	// peffect->s_range = 1;
+	// peffect->o_range = 0;
+	// peffect->reset_count = count;
+	// peffect->value = value;
+	// pduel->game_field->add_effect(peffect, playerid);
 	return 0;
 }
 int32_t scriptlib::duel_is_damage_calculated(lua_State *L) {

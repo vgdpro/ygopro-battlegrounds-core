@@ -31,6 +31,8 @@ static card_reader_random rcreader = default_card_reader_random;
 static message_handler mhandler = default_message_handler;
 static byte buffer[0x100000];
 static std::set<duel*> duel_set;
+static interpreter* public_lua;
+static uint32_t public_seed_sequence[SEED_COUNT]{};
 
 OCGCORE_API void set_script_reader(script_reader f) {
 	sreader = f;
@@ -82,24 +84,26 @@ OCGCORE_API intptr_t create_duel(uint_fast32_t seed) {
 OCGCORE_API intptr_t create_duel_v2(uint32_t seed_sequence[]) {
 	duel* pduel = new duel();
 	duel_set.insert(pduel);
+	public_lua = pduel->lua;
 	pduel->random.seed(seed_sequence, SEED_COUNT);
+	std::memcpy(public_seed_sequence, seed_sequence, sizeof(uint32_t) * SEED_COUNT);
 	pduel->rng_version = 2;
 	return (intptr_t)pduel;
 }
-// OCGCORE_API intptr_t create_duel_v3() {
-// 	duel* pduel = new duel();
-// 	pduel->lua = public_lua;
-// 	duel_set.insert(pduel);
-// 	// pduel->random.seed(public_seed_sequence, SEED_COUNT);
-// 	pduel->rng_version = 2;
-// 	return (intptr_t)pduel;
-// }
-// OCGCORE_API void change_lua_duel(intptr_t pduel) {
-// 	duel* target = (duel*)pduel;
-// 	target->lua->pduel = target;
-// 	std::memcpy(lua_getextraspace(target->lua->lua_state), &target, LUA_EXTRASPACE);
-// 	return ;
-// }
+OCGCORE_API intptr_t create_duel_v3() {
+	duel* pduel = new duel();
+	pduel->lua = public_lua;
+	duel_set.insert(pduel);
+	pduel->random.seed(public_seed_sequence, SEED_COUNT);
+	pduel->rng_version = 2;
+	return (intptr_t)pduel;
+}
+OCGCORE_API void change_lua_duel(intptr_t pduel) {
+	duel* target = (duel*)pduel;
+	target->lua->pduel = target;
+	std::memcpy(lua_getextraspace(target->lua->lua_state), &target, LUA_EXTRASPACE);
+	return ;
+}
 OCGCORE_API void reload_field_info(intptr_t pduel){
 	duel* source = (duel*)pduel;
 	source->game_field->reload_field_info();
@@ -108,7 +112,24 @@ OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t
 	duel* source = (duel*)source_pduel;
 	duel* target1 = (duel*)spduel1;
 	duel* target2 = (duel*)spduel2;
-	// change_lua_duel(source_pduel);
+	change_lua_duel(source_pduel);
+	player_info infos[2];
+	uint32_t options = source->game_field->core.duel_options;
+	source->game_field = new field(source);
+	source->game_field->player[0].start_count = 0;
+	source->game_field->player[1].start_count = 0;
+	source->game_field->player[0].draw_count = 0;
+	source->game_field->player[1].draw_count = 0;
+	start_duel(source_pduel, options);
+	for(auto& pcard : source->cards)
+		delete pcard;
+	for(auto& pgroup : source->groups)
+		delete pgroup;
+	source->cards.clear();
+	source->groups.clear();
+	// for(auto& it : source->effects){
+	// 	source->delete_effect(it);
+	// }
 
 	source->game_field->infos.turn_id = target1->game_field->infos.turn_id;
 	source->game_field->infos.turn_id_by_player[0] = target1->game_field->infos.turn_id_by_player[0];
@@ -621,44 +642,50 @@ void effect_data_copy(effect* new_effect, effect* peffect,uint32_t playerid,uint
 	new_effect->label = peffect->label;
     new_effect->label_object = 0;
 
-	lua_State* srcL = nullptr;
-    lua_State* dstL = nullptr;
-    if(peffect->pduel && peffect->pduel->lua) srcL = peffect->pduel->lua->lua_state;
-    if(new_effect->pduel && new_effect->pduel->lua) dstL = new_effect->pduel->lua->lua_state;
-
-
-    if(!peffect->is_flag(EFFECT_FLAG_FUNC_VALUE)) {
-        new_effect->value = peffect->value;
-    } else {
-        if(srcL && dstL && srcL == dstL) {
-            new_effect->value = peffect->value; 
-        } else if(srcL && dstL) {
-            int newref = rebind_lua_function_between_states(srcL, peffect->value, dstL);
-            if(newref) new_effect->value = newref;
-            else {
-                new_effect->value = 0; 
-            }
-        } else {
-            new_effect->value = 0;
-        }
-    }
-
-    if(srcL && dstL && srcL == dstL) {
-        new_effect->condition = peffect->condition;
+	new_effect->condition = peffect->condition;
         new_effect->cost = peffect->cost;
         new_effect->target = peffect->target;
         new_effect->operation = peffect->operation;
-    } else if(srcL && dstL) {
-        new_effect->condition = rebind_lua_function_between_states(srcL, peffect->condition, dstL);
-        new_effect->cost      = rebind_lua_function_between_states(srcL, peffect->cost, dstL);
-        new_effect->target    = rebind_lua_function_between_states(srcL, peffect->target, dstL);
-        new_effect->operation = rebind_lua_function_between_states(srcL, peffect->operation, dstL);
-    } else {
-        new_effect->condition = 0;
-        new_effect->cost = 0;
-        new_effect->target = 0;
-        new_effect->operation = 0;
-    }
+		new_effect->value = peffect->value;
+
+	// lua_State* srcL = nullptr;
+    // lua_State* dstL = nullptr;
+    // if(peffect->pduel && peffect->pduel->lua) srcL = peffect->pduel->lua->lua_state;
+    // if(new_effect->pduel && new_effect->pduel->lua) dstL = new_effect->pduel->lua->lua_state;
+
+
+    // if(!peffect->is_flag(EFFECT_FLAG_FUNC_VALUE)) {
+    //     new_effect->value = peffect->value;
+    // } else {
+    //     if(srcL && dstL && srcL == dstL) {
+    //         new_effect->value = peffect->value; 
+    //     } else if(srcL && dstL) {
+    //         int newref = rebind_lua_function_between_states(srcL, peffect->value, dstL);
+    //         if(newref) new_effect->value = newref;
+    //         else {
+    //             new_effect->value = 0; 
+    //         }
+    //     } else {
+    //         new_effect->value = 0;
+    //     }
+    // }
+
+    // if(srcL && dstL && srcL == dstL) {
+    //     new_effect->condition = peffect->condition;
+    //     new_effect->cost = peffect->cost;
+    //     new_effect->target = peffect->target;
+    //     new_effect->operation = peffect->operation;
+    // } else if(srcL && dstL) {
+    //     new_effect->condition = rebind_lua_function_between_states(srcL, peffect->condition, dstL);
+    //     new_effect->cost      = rebind_lua_function_between_states(srcL, peffect->cost, dstL);
+    //     new_effect->target    = rebind_lua_function_between_states(srcL, peffect->target, dstL);
+    //     new_effect->operation = rebind_lua_function_between_states(srcL, peffect->operation, dstL);
+    // } else {
+    //     new_effect->condition = 0;
+    //     new_effect->cost = 0;
+    //     new_effect->target = 0;
+    //     new_effect->operation = 0;
+    // }
 
     new_effect->cost_checked = peffect->cost_checked;
 	// new_effect->required_handorset_effects = peffect->required_handorset_effects;
@@ -706,71 +733,6 @@ card* find_card(duel* pduel, card* pcard, uint32_t playerid) {
         break;
     }
     return nullptr;
-}
-static int rebind_lua_function_between_states(lua_State* srcL, int srcref, lua_State* dstL) {
-    if(!srcL || !dstL || !srcref) return 0;
-
-    // Try name-based rebinding first: lookup registry.__func_name_map in srcL
-    lua_getfield(srcL, LUA_REGISTRYINDEX, "__func_name_map"); // +1
-    if(lua_istable(srcL, -1)) {
-        lua_pushinteger(srcL, srcref); // +1
-        lua_gettable(srcL, -2); // +1 value or nil
-        if(lua_isstring(srcL, -1)) {
-            const char* fullname = lua_tostring(srcL, -1);
-            std::string fn(fullname);
-            size_t dot = fn.find('.');
-            if(dot != std::string::npos) {
-                std::string tab = fn.substr(0, dot);
-                std::string field = fn.substr(dot + 1);
-                // try to fetch dstL[tab][field]
-                lua_getglobal(dstL, tab.c_str()); // +1
-                if(lua_istable(dstL, -1)) {
-                    lua_getfield(dstL, -1, field.c_str()); // +1
-                    if(lua_isfunction(dstL, -1)) {
-                        int newref = luaL_ref(dstL, LUA_REGISTRYINDEX); // pops function
-                        lua_pop(dstL, 1); // pop table
-                        lua_pop(srcL, 2); // pop value and map
-                        return newref;
-                    }
-                    lua_pop(dstL, 1); // pop field
-                }
-                lua_pop(dstL, 1); // pop global
-            }
-        }
-        lua_pop(srcL, 1); // pop value
-    }
-    lua_pop(srcL, 1); // pop map or nil
-
-    // fallback: original dump/load method
-    // 获取函数
-    lua_rawgeti(srcL, LUA_REGISTRYINDEX, srcref); // +1
-    if(!lua_isfunction(srcL, -1)) { lua_pop(srcL, 1); return 0; }
-    // 如果是 C 函数则无法 dump
-    if(lua_tocfunction(srcL, -1) != nullptr) { lua_pop(srcL, 1); return 0; }
-    // call string.dump(func)
-    lua_getglobal(srcL, "string");               // +1
-    lua_getfield(srcL, -1, "dump");              // +1
-    lua_remove(srcL, -2);                        // remove string table, now top is dump
-    lua_pushvalue(srcL, -2);                     // push function as arg
-    if(lua_pcall(srcL, 1, 1, 0)) {               // call dump(func)
-        // dump failed
-        lua_pop(srcL, 1); // pop the function
-        return 0;
-    }
-    size_t len = 0;
-    const char* dumped = lua_tolstring(srcL, -1, &len);
-    if(!dumped || len == 0) { lua_pop(srcL, 2); return 0; }
-    std::string buf(dumped, len);
-    // pop dumped string and original function
-    lua_pop(srcL, 2);
-    // load into target state
-    if(luaL_loadbuffer(dstL, buf.data(), buf.size(), "rebound") != 0) {
-        // load failed; leave target stack clean
-        lua_pop(dstL, lua_gettop(dstL));
-        return 0;
-    }
-    int newref = luaL_ref(dstL, LUA_REGISTRYINDEX);
-    return newref;
 }
 OCGCORE_API void start_duel(intptr_t pduel, uint32_t options) {
 	duel* pd = (duel*)pduel;

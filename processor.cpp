@@ -3289,6 +3289,29 @@ int32_t field::process_battle_command(uint16_t step) {
 		return FALSE;
 	}
 	case 40: {
+		//计算战斗伤害
+		int level[2];
+		for(int i = 0; i < 2; ++i) {
+			level[i] = 0;
+			for(auto& pcard : player[i].list_mzone) {
+				if(pcard && pcard->is_position(POS_FACEUP)){
+					if(pcard->get_type() & TYPE_XYZ){
+						level[i] += pcard->get_rank();
+					}else if(pcard->get_type() & TYPE_LINK){
+						level[i] += pcard->get_link();
+					}else{
+						level[i] += pcard->get_level();
+					}
+				}
+			}
+		}
+		if(level[0] > level[1]){
+			damage(0, REASON_BATTLE, 1, 0, 0, (level[0]-level[1])*200);
+		}
+		else if(level[0] < level[1]){
+			damage(0, REASON_BATTLE, 0, 0, 1, (level[1]-level[0])*200);
+		}
+
 		for(auto& ch_lim : core.chain_limit)
 			luaL_unref(pduel->lua->lua_state, LUA_REGISTRYINDEX, ch_lim.function);
 		core.chain_limit.clear();
@@ -3570,13 +3593,13 @@ void field::calculate_battle_damage(effect** pdamchange, card** preason_card, ui
 						if(dam_value >= 0 && core.battle_damage[p] > 0)
 							core.battle_damage[p] = dam_value;
 					}
-					if(core.attacker->is_affected_by_effect(EFFECT_NO_BATTLE_DAMAGE)
-						|| core.attack_target->is_affected_by_effect(EFFECT_AVOID_BATTLE_DAMAGE, core.attacker)
-						|| is_player_affected_by_effect(pd, EFFECT_AVOID_BATTLE_DAMAGE))
+					// if(core.attacker->is_affected_by_effect(EFFECT_NO_BATTLE_DAMAGE)
+					// 	|| core.attack_target->is_affected_by_effect(EFFECT_AVOID_BATTLE_DAMAGE, core.attacker)
+					// 	|| is_player_affected_by_effect(pd, EFFECT_AVOID_BATTLE_DAMAGE))
 						core.battle_damage[pd] = 0;
-					if(core.attack_target->is_affected_by_effect(EFFECT_NO_BATTLE_DAMAGE)
-						|| core.attacker->is_affected_by_effect(EFFECT_AVOID_BATTLE_DAMAGE, core.attack_target)
-						|| is_player_affected_by_effect(1 - pd, EFFECT_AVOID_BATTLE_DAMAGE))
+					// if(core.attack_target->is_affected_by_effect(EFFECT_NO_BATTLE_DAMAGE)
+					// 	|| core.attacker->is_affected_by_effect(EFFECT_AVOID_BATTLE_DAMAGE, core.attack_target)
+					// 	|| is_player_affected_by_effect(1 - pd, EFFECT_AVOID_BATTLE_DAMAGE))
 						core.battle_damage[1 - pd] = 0;
 					reason_card = core.attacker;
 				}
@@ -3696,13 +3719,13 @@ void field::calculate_battle_damage(effect** pdamchange, card** preason_card, ui
 			if(dam_value >= 0 && core.battle_damage[p] > 0)
 				core.battle_damage[p] = dam_value;
 		}
-		if(reason_card->is_affected_by_effect(EFFECT_NO_BATTLE_DAMAGE)
-			|| dam_card && dam_card->is_affected_by_effect(EFFECT_AVOID_BATTLE_DAMAGE, reason_card)
-			|| is_player_affected_by_effect(damaged_player, EFFECT_AVOID_BATTLE_DAMAGE))
+		// if(reason_card->is_affected_by_effect(EFFECT_NO_BATTLE_DAMAGE)
+		// 	|| dam_card && dam_card->is_affected_by_effect(EFFECT_AVOID_BATTLE_DAMAGE, reason_card)
+		// 	|| is_player_affected_by_effect(damaged_player, EFFECT_AVOID_BATTLE_DAMAGE))
 			core.battle_damage[damaged_player] = 0;
-		if(dam_card && dam_card->is_affected_by_effect(EFFECT_NO_BATTLE_DAMAGE)
-			|| reason_card->is_affected_by_effect(EFFECT_AVOID_BATTLE_DAMAGE, dam_card)
-			|| is_player_affected_by_effect(1 - damaged_player, EFFECT_AVOID_BATTLE_DAMAGE))
+		// if(dam_card && dam_card->is_affected_by_effect(EFFECT_NO_BATTLE_DAMAGE)
+		// 	|| reason_card->is_affected_by_effect(EFFECT_AVOID_BATTLE_DAMAGE, dam_card)
+		// 	|| is_player_affected_by_effect(1 - damaged_player, EFFECT_AVOID_BATTLE_DAMAGE))
 			core.battle_damage[1 - damaged_player] = 0;
 	}
 	if(!core.battle_damage[damaged_player] && !core.battle_damage[1 - damaged_player])
@@ -3824,7 +3847,7 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 					card* c = new_cards[i];
 					if (!c) continue;
 					c->owner = 0;
-					pduel->game_field->send_to(c,0,REASON_RULE, 0, 0, location,0, POS_FACEUP, true);
+					pduel->game_field->send_to(c,0,REASON_RULE, 0, 0, location,0, POS_FACEDOWN, true);
 					if(!(location & LOCATION_ONFIELD)) {
 						c->enable_field_effect(true);
 						pduel->game_field->adjust_instant();
@@ -3845,7 +3868,7 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			for(int i=0;i<15;i++){
 				if(new_cards[i]){
 					new_cards[i]->owner = 0;
-					pduel->game_field->send_to(new_cards[i],0,REASON_RULE, 0, 0, LOCATION_DECK,0, POS_FACEUP, true);
+					pduel->game_field->send_to(new_cards[i],0,REASON_RULE, 0, 0, LOCATION_DECK,0, POS_FACEDOWN, true);
 					new_cards[i]->enable_field_effect(true);
 					pduel->game_field->adjust_instant();
 				}
