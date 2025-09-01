@@ -116,17 +116,18 @@ OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t
 	player_info infos[2];
 	uint32_t options = source->game_field->core.duel_options;
 	source->game_field = new field(source);
+	source->message_buffer.clear();
 	source->game_field->player[0].start_count = 0;
 	source->game_field->player[1].start_count = 0;
 	source->game_field->player[0].draw_count = 0;
 	source->game_field->player[1].draw_count = 0;
-	start_duel(source_pduel, options);
 	for(auto& pcard : source->cards)
 		delete pcard;
 	for(auto& pgroup : source->groups)
 		delete pgroup;
 	source->cards.clear();
 	source->groups.clear();
+	start_duel(source_pduel, options);
 	// for(auto& it : source->effects){
 	// 	source->delete_effect(it);
 	// }
@@ -234,10 +235,10 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 				effects_map[it.first->clone_id] = new_effect;
 			}
 			for(int i=0; i < new_card->xyz_materials.size(); ++i) {
-				for(auto& it : pcard->indexer){
-					effect* new_effect = new_card->pduel->new_effect();
+				for(auto& it : pcard->xyz_materials[i]->indexer){
+					effect* new_effect = new_card->xyz_materials[i]->pduel->new_effect();
 					effect_data_copy(new_effect, it.first, playerid, target_playerid);
-					new_card->add_effect(new_effect);
+					new_card->xyz_materials[i]->add_effect(new_effect);
 					effects_map[it.first->clone_id] = new_effect;
 				}
 			}
@@ -370,22 +371,64 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			card_data_copy(new_card, pcard, playerid, target_playerid, effects_map);
 		}
 	}
-
 	for(auto& it : effects_map){
 		if(target->effects_map[it.first]->object_type == PARAM_TYPE_CARD){
-			card* pcard = (card*)target->effects_map[it.first]->get_label_object();
+
+			change_lua_duel(spduel);
+			if(target->effects_map[it.first]->label_object == 0)
+				continue;
+			luaL_checkstack(target->lua->current_state, 1, nullptr);
+			lua_rawgeti(target->lua->current_state, LUA_REGISTRYINDEX, target->effects_map[it.first]->label_object);
+			if(!lua_isuserdata(target->lua->current_state, -1)){
+				lua_pop(target->lua->current_state, 1);
+				continue;
+			}
+			void* p = *(void**)lua_touserdata(target->lua->current_state, -1);
+			lua_pop(target->lua->current_state, 1);
+			card* pcard = reinterpret_cast<card*>(p);
+			change_lua_duel(source_pduel);
+
 			if(pcard && pcard->current.controler == 0)
 				it.second->label_object = (find_card(source, pcard, playerid))->ref_handle;
 		}
 		if(target->effects_map[it.first]->object_type == PARAM_TYPE_EFFECT){
-			effect* new_effect = (effect*)(target->effects_map[it.first]->get_label_object());
+
+			change_lua_duel(spduel);
+			if(target->effects_map[it.first]->label_object == 0)
+				continue;
+			luaL_checkstack(target->lua->current_state, 1, nullptr);
+			lua_rawgeti(target->lua->current_state, LUA_REGISTRYINDEX, target->effects_map[it.first]->label_object);
+			if(!lua_isuserdata(target->lua->current_state, -1)){
+				lua_pop(target->lua->current_state, 1);
+				continue;
+			}
+			void* p = *(void**)lua_touserdata(target->lua->current_state, -1);
+			lua_pop(target->lua->current_state, 1);
+			effect* new_effect = reinterpret_cast<effect*>(p);
+			change_lua_duel(source_pduel);
+
 			if(new_effect && new_effect->owner && new_effect->owner->current.controler == 0 && effects_map.find(new_effect->clone_id) != effects_map.end()){
 				it.second->label_object = effects_map[new_effect->clone_id]->ref_handle;
 			}
 		}
 		if(target->effects_map[it.first]->object_type == PARAM_TYPE_GROUP){
 			group* return_value = source->new_group();
-			group* pgroup = (group*)target->effects_map[it.first]->get_label_object();
+
+			change_lua_duel(spduel);
+			if(target->effects_map[it.first]->label_object == 0)
+				continue;
+			luaL_checkstack(target->lua->current_state, 1, nullptr);
+			lua_rawgeti(target->lua->current_state, LUA_REGISTRYINDEX, target->effects_map[it.first]->label_object);
+			if(!lua_isuserdata(target->lua->current_state, -1)){
+				it.second->label_object = return_value->ref_handle;
+				lua_pop(target->lua->current_state, 1);
+				continue;
+			}
+			void* p = *(void**)lua_touserdata(target->lua->current_state, -1);
+			lua_pop(target->lua->current_state, 1);
+			group* pgroup = reinterpret_cast<group*>(p);
+			change_lua_duel(source_pduel);
+
 			for(auto& pc : pgroup->container){
 				if(pc && pc->current.controler == 0){
 					card* new_card = find_card(source, pc, playerid);

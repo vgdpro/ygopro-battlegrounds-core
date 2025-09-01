@@ -3840,35 +3840,35 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			process_instant_event();
 			adjust_all();
 
-			auto add_random_cards = [&](uint32_t type, size_t want_count, int32_t location) {
+			auto add_random_cards = [&](uint32_t type, size_t want_count) {
 				std::vector<card*> new_cards = pduel->new_card_random(type, static_cast<uint32_t>(want_count), true);
 				size_t avail = new_cards.size();
 				for (size_t i = 0; i < want_count && i < avail; ++i) {
 					card* c = new_cards[i];
 					if (!c) continue;
 					c->owner = 0;
-					pduel->game_field->send_to(c,0,REASON_RULE, 0, 0, location,0, POS_FACEDOWN, true);
-					if(!(location & LOCATION_ONFIELD)) {
+					pduel->game_field->send_to(c,0,REASON_RULE, 0, 0, LOCATION_DECK,0, POS_FACEUP, false);
+					if(!(LOCATION_DECK & LOCATION_ONFIELD)) {
 						c->enable_field_effect(true);
 						pduel->game_field->adjust_instant();
-					} if(location & LOCATION_ONFIELD) {
-						if(location == LOCATION_MZONE)
+					} if(LOCATION_DECK & LOCATION_ONFIELD) {
+						if(LOCATION_DECK == LOCATION_MZONE)
 							c->set_status(STATUS_PROC_COMPLETE, TRUE);
 					}
 				}
 			};
-			add_random_cards(TYPE_XYZ, 2, LOCATION_EXTRA);
-			add_random_cards(TYPE_FUSION, 2, LOCATION_EXTRA);
-			add_random_cards(TYPE_LINK, 3, LOCATION_EXTRA);
-			add_random_cards(TYPE_SYNCHRO, 3, LOCATION_EXTRA);
-			add_random_cards(TYPE_SPELL, 8, LOCATION_DECK);
-			add_random_cards(TYPE_TRAP, 2, LOCATION_DECK);
+			add_random_cards(TYPE_XYZ, 2);
+			add_random_cards(TYPE_FUSION, 2);
+			add_random_cards(TYPE_LINK, 3);
+			add_random_cards(TYPE_SYNCHRO, 3);
+			add_random_cards(TYPE_SPELL, 8);
+			add_random_cards(TYPE_TRAP, 2);
 
 			std::vector<card*> new_cards = pduel->new_card_random( TYPES_EXTRA_DECK|TYPE_SPELL|TYPE_TRAP,15 ,false);
 			for(int i=0;i<15;i++){
 				if(new_cards[i]){
 					new_cards[i]->owner = 0;
-					pduel->game_field->send_to(new_cards[i],0,REASON_RULE, 0, 0, LOCATION_DECK,0, POS_FACEDOWN, true);
+					pduel->game_field->send_to(new_cards[i],0,REASON_RULE, 0, 0, LOCATION_DECK,0, POS_FACEUP, false);
 					new_cards[i]->enable_field_effect(true);
 					pduel->game_field->adjust_instant();
 				}
@@ -3883,20 +3883,20 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			// 		pduel->game_field->adjust_instant();
 			// 	}
 			// };
-			// testcard(19322865, LOCATION_HAND);
-			// testcard(8379983, LOCATION_HAND);
-			// testcard(9064354, LOCATION_HAND);
-			// testcard(78010363, LOCATION_HAND);
-			// testcard(25926710, LOCATION_HAND);
-			// testcard(69811710, LOCATION_HAND);
-			// testcard(43422537, LOCATION_HAND);
-			// testcard(62256492, LOCATION_HAND);
-			// testcard(29071332, LOCATION_EXTRA);
-			// testcard(74997493, LOCATION_EXTRA);
-			// testcard(53413628, LOCATION_EXTRA);
-			// testcard(98978921, LOCATION_EXTRA);
-			// testcard(58577036, LOCATION_HAND);
-			// testcard(269510, LOCATION_HAND);
+			// // testcard(19322865, LOCATION_HAND);
+			// // testcard(8379983, LOCATION_HAND);
+			// // testcard(9064354, LOCATION_HAND);
+			// // testcard(78010363, LOCATION_HAND);
+			// // testcard(25926710, LOCATION_HAND);
+			// // testcard(69811710, LOCATION_HAND);
+			// // testcard(43422537, LOCATION_HAND);
+			// // testcard(62256492, LOCATION_HAND);
+			// // testcard(29071332, LOCATION_EXTRA);
+			// testcard(73539069, LOCATION_EXTRA);
+			// // testcard(53413628, LOCATION_EXTRA);
+			// // testcard(98978921, LOCATION_EXTRA);
+			// // testcard(58577036, LOCATION_HAND);
+			// // testcard(3784434, LOCATION_HAND);
 
 		}else{
 			core.new_fchain.clear();
@@ -5321,7 +5321,7 @@ int32_t field::adjust_step(uint16_t step) {
 			if(core.attack_rollback)
 				return FALSE;
 			std::set<uint16_t> fidset;
-			for(auto& pcard : player[1 - infos.turn_player].list_mzone) {
+			for(auto& pcard : player[1 - core.attackable_player].list_mzone) {
 				if(pcard)
 					fidset.insert(pcard->fieldid_r);
 			}

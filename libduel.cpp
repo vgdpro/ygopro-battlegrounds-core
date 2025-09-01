@@ -3631,6 +3631,7 @@ int32_t scriptlib::duel_clear_operation_info(lua_State* L) {
 int32_t scriptlib::duel_check_xyz_material(lua_State *L) {
 	check_param_count(L, 6);
 	check_param(L, PARAM_TYPE_CARD, 1);
+	duel* pduel = interpreter::get_duel_info(L);
 	uint32_t findex = 0;
 	if(!lua_isnil(L, 2)) {
 		check_param(L, PARAM_TYPE_FUNCTION, 2);
@@ -3645,7 +3646,13 @@ int32_t scriptlib::duel_check_xyz_material(lua_State *L) {
 		check_param(L, PARAM_TYPE_GROUP, 6);
 		mg = *(group**) lua_touserdata(L, 6);
 	}
-	lua_pushboolean(L, scard->pduel->game_field->check_xyz_material(L, scard, findex, lv, minc, maxc, mg));
+	for(auto& pc : pduel->game_field->player[scard->current.controler].list_mzone){
+		if(pc && pduel->game_field->check_xyz_material(L, scard, findex, pc->get_level(), minc, maxc, mg)){
+			lua_pushboolean(L, 1);
+			return 1;
+		}
+	}
+	lua_pushboolean(L, 0);
 	return 1;
 }
 int32_t scriptlib::duel_select_xyz_material(lua_State *L) {

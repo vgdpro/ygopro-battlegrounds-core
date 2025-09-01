@@ -198,6 +198,11 @@ int32_t scriptlib::effect_set_type(lua_State *L) {
 	check_param(L, PARAM_TYPE_EFFECT, 1);
 	effect* peffect = *(effect**) lua_touserdata(L, 1);
 	uint32_t v = (uint32_t)lua_tointeger(L, 2);
+	if(v & EFFECT_TYPE_IGNITION){
+		v &= ~EFFECT_TYPE_IGNITION;
+		v |= EFFECT_TYPE_QUICK_O;
+		peffect->code |= EVENT_FREE_CHAIN;
+	}
 	if (v & EFFECT_TYPE_ACTIVATE) {
 		v = EFFECT_TYPE_FIELD | EFFECT_TYPE_ACTIVATE;
 		peffect->range = LOCATION_SZONE + LOCATION_FZONE + LOCATION_HAND;
