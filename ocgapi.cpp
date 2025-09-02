@@ -429,6 +429,10 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			group* pgroup = reinterpret_cast<group*>(p);
 			change_lua_duel(source_pduel);
 
+			if(pgroup->container.size() == 0){
+				it.second->label_object = return_value->ref_handle;
+				continue;
+			}
 			for(auto& pc : pgroup->container){
 				if(pc && pc->current.controler == 0){
 					card* new_card = find_card(source, pc, playerid);

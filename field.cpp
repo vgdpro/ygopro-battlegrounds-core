@@ -2452,8 +2452,13 @@ int32_t field::get_attack_target(card* pcard, card_vector* v, uint8_t chain_atta
 					// if(pcard->is_affected_by_effect(EFFECT_CANNOT_SELECT_BATTLE_TARGET, atarget))
 					// 	continue;
 				}
-				if(atarget->get_attack() <= pcard->get_attack())
-					v->push_back(atarget);
+				if(atarget->current.position & POS_ATTACK){
+					if(atarget->get_attack() <= pcard->get_attack())
+						v->push_back(atarget);
+				} else if(atarget->current.position & POS_DEFENSE) {
+					if(atarget->get_defense() <= pcard->get_attack())
+						v->push_back(atarget);
+				}
 			}
 		}
 		return atype;
@@ -2474,8 +2479,13 @@ int32_t field::get_attack_target(card* pcard, card_vector* v, uint8_t chain_atta
 			// if(pcard->is_affected_by_effect(EFFECT_CANNOT_SELECT_BATTLE_TARGET, atarget))
 			// 	continue;
 		}
-		if(atarget->get_attack() <= pcard->get_attack())
-			v->push_back(atarget);
+		if(atarget->current.position & POS_ATTACK){
+			if(atarget->get_attack() <= pcard->get_attack())
+				v->push_back(atarget);
+		} else if(atarget->current.position & POS_DEFENSE) {
+			if(atarget->get_defense() <= pcard->get_attack())
+				v->push_back(atarget);
+		}
 	}
 	if(atype <= 3)
 		return atype;
