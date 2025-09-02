@@ -161,7 +161,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 				card* new_card = source->game_field->player[playerid].list_mzone[i];
 				for(auto& pc :pcard->xyz_materials){
 					if(pc){
-						card* mat = source->new_card(pcard->data.code);
+						card* mat = source->new_card(pc->data.code);
 						new_card->owner = playerid;
 						new_card->xyz_add(mat);
 					}
