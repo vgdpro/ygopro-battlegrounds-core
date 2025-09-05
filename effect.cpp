@@ -188,7 +188,7 @@ int32_t effect::get_required_handorset_effects(effect_set* eset, uint8_t playeri
 	{
 		if(handler->data.type & TYPE_TRAP)
 			ecode = EFFECT_TRAP_ACT_IN_HAND;
-		else if((handler->data.type & TYPE_SPELL) && pduel->game_field->infos.turn_player != playerid) {
+		else if((handler->data.type & TYPE_SPELL)) {
 			if(handler->data.type & TYPE_QUICKPLAY)
 				ecode = EFFECT_QP_ACT_IN_NTPHAND;
 			else
@@ -207,6 +207,9 @@ int32_t effect::get_required_handorset_effects(effect_set* eset, uint8_t playeri
 	int32_t available = 0;
 	effect_set tmp_eset;
 	handler->filter_effect(ecode, &tmp_eset);
+	if((ecode == EFFECT_QP_ACT_IN_SET_TURN || ecode == EFFECT_TRAP_ACT_IN_SET_TURN)){
+		return 2;
+	}
 	if(!tmp_eset.size())
 		return available;
 	effect* oreason = pduel->game_field->core.reason_effect;
@@ -292,7 +295,7 @@ int32_t effect::is_activateable(uint8_t playerid, const tevent& e, int32_t negle
 			}
 			// check activate in hand/in set turn
 			effect_set eset;
-			if(!get_required_handorset_effects(&eset, playerid, e, neglect_loc) && handler->current.location & LOCATION_MZONE)
+			if(!get_required_handorset_effects(&eset, playerid, e, neglect_loc))
 				return FALSE;
 			if(handler->is_status(STATUS_FORBIDDEN))
 				return FALSE;
@@ -686,6 +689,44 @@ void effect::recharge() {
 	if(is_flag(EFFECT_FLAG_COUNT_LIMIT)) {
 		count_limit = count_limit_max;
 	}
+}
+void effect::clear_effect_activation() {
+	effect* peffect = this;
+    if(!peffect) return;
+    if(peffect->effect_owner < 0 || peffect->effect_owner > PLAYER_NONE) return;
+
+    uint32_t code = peffect->count_code;
+    // 无计数代码时只 recharge 并返回
+    if(code == 0) {
+        peffect->recharge();
+        return;
+    }
+
+    uint32_t limit_code = code & MAX_CARD_ID;
+    uint32_t limit_type = code & 0xf0000000;
+    uint32_t key = code;
+    int map_player = peffect->effect_owner;
+
+    if(limit_code == EFFECT_COUNT_CODE_SINGLE) {
+        auto handler = peffect->get_handler();
+        if(!handler) {
+            // 无 handler 时只 recharge 并返回
+            peffect->recharge();
+            return;
+        }
+        key = limit_type | handler->activate_count_id;
+        map_player = PLAYER_NONE;
+    }
+
+    std::unordered_map<uint32_t, int32_t>* count_map = &pduel->game_field->core.effect_count_code[map_player];
+    if(key & EFFECT_COUNT_CODE_DUEL)
+        count_map = &pduel->game_field->core.effect_count_code_duel[map_player];
+    else if(key & EFFECT_COUNT_CODE_CHAIN)
+        count_map = &pduel->game_field->core.effect_count_code_chain[map_player];
+
+    count_map->erase(key);
+
+    peffect->recharge();
 }
 int32_t effect::get_value(uint32_t extraargs) {
 	if(is_flag(EFFECT_FLAG_FUNC_VALUE)) {

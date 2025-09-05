@@ -96,6 +96,7 @@ public:
 	int32_t reset(uint32_t reset_level, uint32_t reset_type);
 	void dec_count(uint8_t playerid = PLAYER_NONE);
 	void recharge();
+	void clear_effect_activation();
 	int32_t get_value(uint32_t extraargs = 0);
 	int32_t get_value(card* pcard, uint32_t extraargs = 0);
 	int32_t get_value(effect* peffect, uint32_t extraargs = 0);
@@ -177,6 +178,7 @@ constexpr uint32_t RESETS_STANDARD = RESET_TOFIELD | RESET_LEAVE | RESET_TODECK 
 #define EFFECT_TYPE_XMATERIAL		0x1000	//
 #define EFFECT_TYPE_GRANT			0x2000	//
 #define EFFECT_TYPE_TARGET			0x4000	//
+#define EFFECT_TYPE_IGNITION_ACT	0x8000	//
 
 constexpr uint32_t EFFECT_TYPES_TRIGGER_LIKE = EFFECT_TYPE_ACTIVATE | EFFECT_TYPE_TRIGGER_O | EFFECT_TYPE_TRIGGER_F | EFFECT_TYPE_QUICK_O | EFFECT_TYPE_QUICK_F;
 constexpr uint32_t EFFECT_TYPES_CHAIN_LINK = EFFECT_TYPES_TRIGGER_LIKE | EFFECT_TYPE_FLIP | EFFECT_TYPE_IGNITION;

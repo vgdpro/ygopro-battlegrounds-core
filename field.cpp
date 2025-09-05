@@ -941,6 +941,77 @@ void field::get_cards_in_zone(card_set* cset, uint32_t zone, int32_t playerid, i
 		icheck <<= 1;
 	}
 }
+void field::refresh_deck() {
+	if(core.duel_options & DUEL_ONLY_MAIN){
+		for(int32_t i = player[0].list_main.size(); i<10; ++i ){
+			pduel->write_buffer8(MSG_MOVE);
+			pduel->write_buffer32(0);
+			pduel->write_buffer8(0);
+			pduel->write_buffer8(0);
+			pduel->write_buffer8(0);
+			pduel->write_buffer8(0);
+			pduel->write_buffer8(0);
+			pduel->write_buffer8(LOCATION_DECK);
+			pduel->write_buffer8(SEQ_DECKTOP);
+			pduel->write_buffer8(POS_FACEDOWN);
+			pduel->write_buffer32(REASON_RULE);
+		}
+		for(int32_t i = player[0].list_extra.size(); i<5; ++i ){
+			pduel->write_buffer8(MSG_MOVE);
+			pduel->write_buffer32(0);
+			pduel->write_buffer8(0);
+			pduel->write_buffer8(0);
+			pduel->write_buffer8(0);
+			pduel->write_buffer8(0);
+			pduel->write_buffer8(0);
+			pduel->write_buffer8(LOCATION_EXTRA);
+			pduel->write_buffer8(0);
+			pduel->write_buffer8(POS_FACEDOWN);
+			pduel->write_buffer32(REASON_RULE);
+		}
+		auto clear_zone = [&](auto &vec) {
+		while (true) {
+				auto it = std::find_if(vec.begin(), vec.end(), [](card* c) { return c != nullptr; });
+				if (it == vec.end()) break;
+				pduel->game_field->remove_card(*it);
+			}
+		};
+		clear_zone(pduel->game_field->player[0].list_extra);
+		clear_zone(pduel->game_field->player[0].list_main);
+		auto add_random_cards = [&](uint32_t type, size_t want_count) {
+			std::vector<card*> new_cards = pduel->new_card_random(type, static_cast<uint32_t>(want_count), true);
+			size_t avail = new_cards.size();
+			for (size_t i = 0; i < want_count && i < avail; ++i) {
+				card* c = new_cards[i];
+				if (!c) continue;
+				c->owner = 0;
+				pduel->game_field->add_card(0, c, LOCATION_DECK, 0);
+				c->current.position = POS_FACEDOWN;
+				c->enable_field_effect(true);
+				pduel->game_field->adjust_instant();
+			}
+		};
+		add_random_cards(TYPE_XYZ, 1);
+		add_random_cards(TYPE_FUSION, 1);
+		add_random_cards(TYPE_LINK, 2);
+		add_random_cards(TYPE_SYNCHRO, 1);
+		add_random_cards(TYPE_SPELL, 3);
+		add_random_cards(TYPE_TRAP, 1);
+
+		std::vector<card*> new_cards = pduel->new_card_random( TYPES_EXTRA_DECK|TYPE_SPELL|TYPE_TRAP,6 ,false);
+		for(int i=0;i<6;i++){
+			if(new_cards[i]){
+				new_cards[i]->owner = 0;
+				pduel->game_field->add_card(0, new_cards[i], LOCATION_DECK, 0);
+				new_cards[i]->current.position = POS_FACEDOWN;
+				new_cards[i]->enable_field_effect(true);
+				pduel->game_field->adjust_instant();
+			}
+		}
+		shuffle(0, LOCATION_DECK);
+		shuffle(0, LOCATION_EXTRA);
+	}
+}
 void field::shuffle(uint8_t playerid, uint8_t location) {
 	if(!(location & (LOCATION_HAND | LOCATION_DECK | LOCATION_EXTRA)))
 		return;

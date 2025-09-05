@@ -203,6 +203,10 @@ int32_t scriptlib::effect_set_type(lua_State *L) {
 		v |= EFFECT_TYPE_QUICK_O;
 		peffect->code |= EVENT_FREE_CHAIN;
 	}
+	if(v & EFFECT_TYPE_IGNITION_ACT){
+		v &= ~EFFECT_TYPE_IGNITION_ACT;
+		v |= EFFECT_TYPE_IGNITION;
+	}
 	if (v & EFFECT_TYPE_ACTIVATE) {
 		v = EFFECT_TYPE_FIELD | EFFECT_TYPE_ACTIVATE;
 		peffect->range = LOCATION_SZONE + LOCATION_FZONE + LOCATION_HAND;

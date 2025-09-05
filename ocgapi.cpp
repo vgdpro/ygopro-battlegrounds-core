@@ -33,6 +33,7 @@ static byte buffer[0x100000];
 static std::set<duel*> duel_set;
 static interpreter* public_lua;
 static uint32_t public_seed_sequence[SEED_COUNT]{};
+static std::map<card*,card*> xyz_list[2];
 
 OCGCORE_API void set_script_reader(script_reader f) {
 	sreader = f;
@@ -93,6 +94,7 @@ OCGCORE_API intptr_t create_duel_v2(uint32_t seed_sequence[]) {
 OCGCORE_API intptr_t create_duel_v3() {
 	duel* pduel = new duel();
 	pduel->lua = public_lua;
+	change_lua_duel((intptr_t)pduel);
 	duel_set.insert(pduel);
 	pduel->random.seed(public_seed_sequence, SEED_COUNT);
 	pduel->rng_version = 2;
@@ -104,6 +106,19 @@ OCGCORE_API void change_lua_duel(intptr_t pduel) {
 	std::memcpy(lua_getextraspace(target->lua->lua_state), &target, LUA_EXTRASPACE);
 	return ;
 }
+void sync_used_xyz(card* pcard ,card* mat,int32_t playerid) {
+	if(xyz_list[playerid].find(pcard) == xyz_list[playerid].end())
+		return;
+	change_lua_duel((intptr_t)xyz_list[playerid][pcard]->pduel);
+	for(auto& it :xyz_list[playerid][pcard]->xyz_materials){
+		if(it && it->data.code == mat->data.code){
+			xyz_list[playerid][pcard]->xyz_remove(it);
+			xyz_list[playerid][pcard]->pduel->game_field->add_card(0, pcard, LOCATION_GRAVE, 0);
+		}
+	}
+	change_lua_duel((intptr_t)pcard->pduel);
+	return;
+}
 OCGCORE_API void reload_field_info(intptr_t pduel){
 	duel* source = (duel*)pduel;
 	source->game_field->reload_field_info();
@@ -112,6 +127,9 @@ OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t
 	duel* source = (duel*)source_pduel;
 	duel* target1 = (duel*)spduel1;
 	duel* target2 = (duel*)spduel2;
+
+	xyz_list[0].clear();
+	xyz_list[1].clear();
 	change_lua_duel(source_pduel);
 	player_info infos[2];
 	uint32_t options = source->game_field->core.duel_options;
@@ -162,9 +180,13 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 				for(auto& pc :pcard->xyz_materials){
 					if(pc){
 						card* mat = source->new_card(pc->data.code);
-						new_card->owner = playerid;
+						pc->owner = playerid;
 						new_card->xyz_add(mat);
 					}
+				}
+				if(pcard->data.type & TYPE_XYZ){
+					card* new_card = source->game_field->player[playerid].list_mzone[i];
+					xyz_list[playerid][new_card] = pcard;
 				}
 			}
 		}
@@ -280,30 +302,30 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			}
 		}
 	}
-	for(int i=0; i < source->game_field->player[playerid].list_extra.size(); ++i) {
-		if(source->game_field->player[playerid].list_extra[i]) {
-			card* pcard = target->game_field->player[target_playerid].list_extra[i];
-			card* new_card = source->game_field->player[playerid].list_extra[i];
-			for(auto& it : pcard->indexer){
-				effect* new_effect = new_card->pduel->new_effect();
-				effect_data_copy(new_effect, it.first, playerid, target_playerid);
-				new_card->add_effect(new_effect);
-				effects_map[it.first->clone_id] = new_effect;
-			}
-		}
-	}
-	for(int i=0; i < source->game_field->player[playerid].list_main.size(); ++i) {
-		if(source->game_field->player[playerid].list_main[i]) {
-			card* pcard = target->game_field->player[target_playerid].list_main[i];
-			card* new_card = source->game_field->player[playerid].list_main[i];
-			for(auto& it : pcard->indexer){
-				effect* new_effect = new_card->pduel->new_effect();
-				effect_data_copy(new_effect, it.first, playerid, target_playerid);
-				new_card->add_effect(new_effect);
-				effects_map[it.first->clone_id] = new_effect;
-			}
-		}
-	}
+	// for(int i=0; i < source->game_field->player[playerid].list_extra.size(); ++i) {
+	// 	if(source->game_field->player[playerid].list_extra[i]) {
+	// 		card* pcard = target->game_field->player[target_playerid].list_extra[i];
+	// 		card* new_card = source->game_field->player[playerid].list_extra[i];
+	// 		for(auto& it : pcard->indexer){
+	// 			effect* new_effect = new_card->pduel->new_effect();
+	// 			effect_data_copy(new_effect, it.first, playerid, target_playerid);
+	// 			new_card->add_effect(new_effect);
+	// 			effects_map[it.first->clone_id] = new_effect;
+	// 		}
+	// 	}
+	// }
+	// for(int i=0; i < source->game_field->player[playerid].list_main.size(); ++i) {
+	// 	if(source->game_field->player[playerid].list_main[i]) {
+	// 		card* pcard = target->game_field->player[target_playerid].list_main[i];
+	// 		card* new_card = source->game_field->player[playerid].list_main[i];
+	// 		for(auto& it : pcard->indexer){
+	// 			effect* new_effect = new_card->pduel->new_effect();
+	// 			effect_data_copy(new_effect, it.first, playerid, target_playerid);
+	// 			new_card->add_effect(new_effect);
+	// 			effects_map[it.first->clone_id] = new_effect;
+	// 		}
+	// 	}
+	// }
 	for(auto& it : target->game_field->effects.indexer){
 		if(it.first &&  it.first->owner && it.first->owner->current.controler == 0){
 			if(effects_map[it.first->clone_id]){
@@ -359,16 +381,24 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 	}
 	for(int i=0; i < source->game_field->player[playerid].list_extra.size(); ++i) {
 		if(source->game_field->player[playerid].list_extra[i]) {
-			card* pcard = target->game_field->player[target_playerid].list_extra[i];
 			card* new_card = source->game_field->player[playerid].list_extra[i];
-			card_data_copy(new_card, pcard, playerid, target_playerid, effects_map);
+			if(source->lua->is_load_script(new_card->data)){
+				new_card->set_status(STATUS_INITIALIZING, TRUE);
+				source->lua->add_param(new_card, PARAM_TYPE_CARD);
+				source->lua->call_card_function(new_card, "initial_effect", 1, 0);
+				new_card->set_status(STATUS_INITIALIZING, FALSE);
+			}
 		}
 	}
 	for(int i=0; i < source->game_field->player[playerid].list_main.size(); ++i) {
 		if(source->game_field->player[playerid].list_main[i]) {
-			card* pcard = target->game_field->player[target_playerid].list_main[i];
 			card* new_card = source->game_field->player[playerid].list_main[i];
-			card_data_copy(new_card, pcard, playerid, target_playerid, effects_map);
+			if(source->lua->is_load_script(new_card->data)){
+				new_card->set_status(STATUS_INITIALIZING, TRUE);
+				source->lua->add_param(new_card, PARAM_TYPE_CARD);
+				source->lua->call_card_function(new_card, "initial_effect", 1, 0);
+				new_card->set_status(STATUS_INITIALIZING, FALSE);
+			}
 		}
 	}
 	for(auto& it : effects_map){

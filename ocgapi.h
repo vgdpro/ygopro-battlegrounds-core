@@ -53,6 +53,7 @@ uint32_t read_card(uint32_t code, card_data* data);
 uint32_t read_card_random(std::vector<int>& data,uint32_t count, uint32_t type,bool is_include);
 uint32_t handle_message(void* pduel, uint32_t message_type);
 void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, uint32_t playerid,uint32_t target_playerid);
+void sync_used_xyz(card* pcard ,card* mat,int32_t playerid);
 // static int rebind_lua_function_between_states(lua_State* srcL, int srcref, lua_State* dstL);
 
 OCGCORE_API intptr_t create_duel(uint_fast32_t seed);

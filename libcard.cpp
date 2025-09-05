@@ -1739,6 +1739,17 @@ int32_t scriptlib::card_check_activate_effect(lua_State *L) {
 	}
 	return 0;
 }
+int32_t scriptlib::card_reset_activation(lua_State *L) {
+	check_param_count(L, 1);
+	check_param(L, PARAM_TYPE_CARD, 1);
+	card* pcard = *(card**) lua_touserdata(L, 1);
+	for(auto eit = pcard->indexer.begin(); eit != pcard->indexer.end();) {
+		effect* peffect = eit->first;
+		++eit;
+		peffect->clear_effect_activation();
+	}
+	return 0;
+}
 int32_t scriptlib::card_get_tuner_limit(lua_State *L) {
 	check_param_count(L, 1);
 	check_param(L, PARAM_TYPE_CARD, 1);
@@ -3580,6 +3591,7 @@ static const struct luaL_Reg cardlib[] = {
 	{ "GetOwnerTargetCount", scriptlib::card_get_owner_target_count },
 	{ "GetActivateEffect", scriptlib::card_get_activate_effect },
 	{ "CheckActivateEffect", scriptlib::card_check_activate_effect },
+	{ "ResetActivation", scriptlib::card_reset_activation },
 	{ "GetTunerLimit", scriptlib::card_get_tuner_limit },
 	{ "GetHandSynchro", scriptlib::card_get_hand_synchro },
 	{ "RegisterEffect", scriptlib::card_register_effect },

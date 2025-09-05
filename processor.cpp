@@ -3813,6 +3813,22 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 				}
 			}
 		}
+		if(!pduel->game_field->player[1].list_szone[5] && pduel->game_field->core.duel_options & DUEL_ONLY_MAIN) {
+			card* c = pduel->new_card(8794055);
+			c->owner = 1;
+			pduel->game_field->add_card(1, c, LOCATION_SZONE, 5);
+			c->current.position = POS_FACEUP;
+			c->enable_field_effect(true);
+			pduel->game_field->adjust_instant();
+			pduel->write_buffer8(MSG_MOVE);
+			pduel->write_buffer32(c->data.code);
+			pduel->write_buffer8(0);
+			pduel->write_buffer8(0);
+			pduel->write_buffer8(0);
+			pduel->write_buffer8(0);
+			pduel->write_buffer32(c->get_info_location());
+			pduel->write_buffer32(REASON_RULE);
+		}
 		++infos.turn_id;
 		++infos.turn_id_by_player[0];
 		++infos.turn_id_by_player[1];
@@ -3827,9 +3843,9 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 		// 	adjust_all();
 		// 	return FALSE;
 		// }
-		// infos.phase = PHASE_DRAW;
-		// core.phase_action = FALSE;
-		// core.hand_adjusted = FALSE;
+		infos.phase = PHASE_DRAW;
+		core.phase_action = FALSE;
+		core.hand_adjusted = FALSE;
 		// raise_event(nullptr, EVENT_PHASE_START + PHASE_DRAW, 0, 0, 0, turn_player, 0);
 		if(core.duel_options & DUEL_ONLY_MAIN){
 			pduel->write_buffer8(MSG_NEW_TURN);
@@ -3857,15 +3873,15 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 					}
 				}
 			};
-			add_random_cards(TYPE_XYZ, 2);
-			add_random_cards(TYPE_FUSION, 2);
-			add_random_cards(TYPE_LINK, 3);
-			add_random_cards(TYPE_SYNCHRO, 3);
-			add_random_cards(TYPE_SPELL, 8);
-			add_random_cards(TYPE_TRAP, 2);
+			add_random_cards(TYPE_XYZ, 1);
+			add_random_cards(TYPE_FUSION, 1);
+			add_random_cards(TYPE_LINK, 2);
+			add_random_cards(TYPE_SYNCHRO, 1);
+			add_random_cards(TYPE_SPELL, 3);
+			add_random_cards(TYPE_TRAP, 1);
 
-			std::vector<card*> new_cards = pduel->new_card_random( TYPES_EXTRA_DECK|TYPE_SPELL|TYPE_TRAP,15 ,false);
-			for(int i=0;i<15;i++){
+			std::vector<card*> new_cards = pduel->new_card_random( TYPES_EXTRA_DECK|TYPE_SPELL|TYPE_TRAP,6 ,false);
+			for(int i=0;i<6;i++){
 				if(new_cards[i]){
 					new_cards[i]->owner = 0;
 					pduel->game_field->send_to(new_cards[i],0,REASON_RULE, 0, 0, LOCATION_DECK,0, POS_FACEUP, false);
@@ -3878,7 +3894,7 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			// 	card* newcard = pduel->new_card(code);
 			// 	if(newcard) {
 			// 		newcard->owner = 0;
-			// 		pduel->game_field->send_to(newcard,0,REASON_RULE, 0, 0, LOCATION_HAND,0, POS_FACEUP, true);
+			// 		pduel->game_field->send_to(newcard,0,REASON_RULE, 0, 0, location,0, POS_FACEDOWN, false);
 			// 		newcard->enable_field_effect(true);
 			// 		pduel->game_field->adjust_instant();
 			// 	}
@@ -3888,11 +3904,13 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			// // testcard(9064354, LOCATION_HAND);
 			// // testcard(78010363, LOCATION_HAND);
 			// // testcard(25926710, LOCATION_HAND);
-			// // testcard(69811710, LOCATION_HAND);
-			// // testcard(43422537, LOCATION_HAND);
-			// // testcard(62256492, LOCATION_HAND);
-			// // testcard(29071332, LOCATION_EXTRA);
-			// testcard(73539069, LOCATION_EXTRA);
+			// // testcard(90241276, LOCATION_HAND);
+			// // testcard(98520301, LOCATION_HAND);
+			// testcard(423585, LOCATION_HAND);
+			// testcard(29669359, LOCATION_DECK);
+			// testcard(423585, LOCATION_DECK);
+			// testcard(423585, LOCATION_DECK);
+			// // testcard(73539069, LOCATION_EXTRA);
 			// // testcard(53413628, LOCATION_EXTRA);
 			// // testcard(98978921, LOCATION_EXTRA);
 			// // testcard(58577036, LOCATION_HAND);
@@ -3915,7 +3933,7 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			}
 		}
 		pduel->game_field->core.select_cards.assign(pgroup->container.begin(), pgroup->container.end());
-		pduel->game_field->add_process(PROCESSOR_SELECT_CARD, 0, 0, 0, 0, 5 + (5 << 16));
+		pduel->game_field->add_process(PROCESSOR_SELECT_CARD, 0, 0, 0, 0, 4 + (4 << 16));
 		return FALSE;
 	}
 	case 2: {
@@ -4131,14 +4149,15 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 				pduel->game_field->remove_card(*it);
 			}
 		};
+		int32_t graveNum = pduel->game_field->player[0].list_grave.size();
 
 		// 使用 safe helper 清理所有需要清空的槽位
-		clear_zone(pduel->game_field->player[0].list_hand);
+		clear_zone(pduel->game_field->player[0].list_grave);
 		clear_zone(pduel->game_field->player[0].list_extra);
 		clear_zone(pduel->game_field->player[0].list_main);
 		// 使用 safe helper 清理所有需要清空的槽位
 		clear_zone(pduel->game_field->player[1].list_mzone);
-		clear_zone(pduel->game_field->player[1].list_szone);
+		// clear_zone(pduel->game_field->player[1].list_szone);
 		clear_zone(pduel->game_field->player[1].list_hand);
 		clear_zone(pduel->game_field->player[1].list_grave);
 		clear_zone(pduel->game_field->player[1].list_remove);
@@ -4146,12 +4165,22 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 		clear_zone(pduel->game_field->player[1].list_main);
 		// add_process(PROCESSOR_IDLE_COMMAND, 0, 0, 0, 0, 0);
 
+		std::vector<card*> cards2;
+		for(auto& pcard : player[1].list_szone) {
+			if(pcard && (pcard->current.sequence != 5))
+				cards2.push_back(pcard);
+		}
+		for (card* c : cards2) {
+            if (c)
+                pduel->game_field->remove_card(c);
+        }
+
 		std::vector<card*> cards;
 		for(auto& pcard : player[0].list_szone) {
 			if(pcard && pcard->is_position(POS_FACEDOWN))
 				cards.push_back(pcard);
 		}
-
+		graveNum += cards.size();
 		for (card* c : cards) {
             if (c)
                 pduel->game_field->remove_card(c);
@@ -4159,7 +4188,9 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 
 		reload_field_info();
 		
-
+		if(pduel->game_field->player[1].list_szone[5]){
+			pduel->game_field->player[1].list_szone[5]->add_counter(1, 0x1015, graveNum + pduel->game_field->player[1].list_szone[5]->get_counter(0x1015), false);
+		}
 		if(is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_EP)) {
 			core.units.begin()->step = 17;
 			reset_phase(PHASE_END);

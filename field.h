@@ -376,6 +376,7 @@ public:
 	explicit field(duel* pd);
 	~field() = default;
 	void reload_field_info();
+	void refresh_deck();
 
 	void add_card(uint8_t playerid, card* pcard, uint8_t location, uint8_t sequence, uint8_t pzone = FALSE);
 	void remove_card(card* pcard);

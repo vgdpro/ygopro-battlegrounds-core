@@ -190,6 +190,7 @@ public:
 	static int32_t card_get_owner_target_count(lua_State *L);
 	static int32_t card_get_activate_effect(lua_State *L);
 	static int32_t card_check_activate_effect(lua_State *L);
+	static int32_t card_reset_activation(lua_State *L);
 	static int32_t card_get_tuner_limit(lua_State * L);
 	static int32_t card_get_hand_synchro(lua_State * L);
 	static int32_t card_register_effect(lua_State *L);
@@ -419,6 +420,7 @@ public:
 	static int32_t duel_reset_flag_effect(lua_State *L);
 	static int32_t duel_set_flag_effect_label(lua_State *L);
 	static int32_t duel_get_flag_effect_label(lua_State *L);
+	static int32_t duel_get_summon_count(lua_State *L);
 	static int32_t duel_destroy(lua_State *L);
 	static int32_t duel_remove(lua_State *L);
 	static int32_t duel_sendto_grave(lua_State *L);
@@ -436,6 +438,7 @@ public:
 	static int32_t duel_sendto_hand(lua_State *L);
 	static int32_t duel_sendto_deck(lua_State *L);
 	static int32_t duel_sendto_extra(lua_State *L);
+	static int32_t duel_exile(lua_State *L);
 	static int32_t duel_get_operated_group(lua_State *L);
 	static int32_t duel_is_can_add_counter(lua_State *L);
 	static int32_t duel_remove_counter(lua_State *L);
@@ -455,6 +458,7 @@ public:
 	static int32_t duel_confirm_extratop(lua_State *L);
 	static int32_t duel_confirm_cards(lua_State *L);
 	static int32_t duel_sort_decktop(lua_State *L);
+	static int32_t duel_refresh_deck(lua_State *L);
 	static int32_t duel_check_event(lua_State *L);
 	static int32_t duel_raise_event(lua_State *L);
 	static int32_t duel_raise_single_event(lua_State *L);

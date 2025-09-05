@@ -76,12 +76,10 @@ void interpreter::register_card(card *pcard) {
 	lua_setmetatable(current_state, -2);	//-1
 	lua_pop(current_state, 1);				//-1
 	//Initial
-	if(is_load_script(pcard->data)) {
+	if(is_load_script(pcard->data) && pduel->game_field->core.duel_options& DUEL_ONLY_MAIN) {
 		pcard->set_status(STATUS_INITIALIZING, TRUE);
 		add_param(pcard, PARAM_TYPE_CARD);
-		if(pduel->game_field->core.duel_options& DUEL_ONLY_MAIN){
-			call_card_function(pcard, "initial_effect", 1, 0);
-		}
+		call_card_function(pcard, "initial_effect", 1, 0);
 		pcard->set_status(STATUS_INITIALIZING, FALSE);
 	}
 	pcard->cardid = pduel->game_field->infos.card_id++;
