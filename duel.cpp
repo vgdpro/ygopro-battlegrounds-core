@@ -13,10 +13,14 @@
 #include "effect.h"
 #include "group.h"
 #include "ocgapi.h"
+#include "ocgapi.cpp"
 #include "buffer.h"
 
 duel::duel() {
 	lua = new interpreter(this);
+	if(public_lua)
+		lua = public_lua;
+	change_lua_duel((intptr_t)this);
 	game_field = new field(this);
 	game_field->temp_card = new_card(TEMP_CARD_ID);
 	message_buffer.reserve(SIZE_MESSAGE_BUFFER);
