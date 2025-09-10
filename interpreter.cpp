@@ -76,7 +76,7 @@ void interpreter::register_card(card *pcard) {
 	lua_setmetatable(current_state, -2);	//-1
 	lua_pop(current_state, 1);				//-1
 	//Initial
-	if(is_load_script(pcard->data) && pduel->game_field->core.duel_options& DUEL_ONLY_MAIN) {
+	if(is_load_script(pcard->data)) {
 		pcard->set_status(STATUS_INITIALIZING, TRUE);
 		add_param(pcard, PARAM_TYPE_CARD);
 		call_card_function(pcard, "initial_effect", 1, 0);

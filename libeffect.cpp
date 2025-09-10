@@ -75,6 +75,9 @@ int32_t scriptlib::effect_new(lua_State *L) {
 	effect* peffect = pduel->new_effect();
 	peffect->effect_owner = pduel->game_field->core.reason_player;
 	peffect->owner = pcard;
+	pcard->init_effect_list[pcard->next_init_effect_list_id] = peffect;
+	peffect->init_clone_id = pcard->next_init_effect_list_id;
+	pcard->next_init_effect_list_id++;
 	interpreter::effect2value(L, peffect);
 	return 1;
 }

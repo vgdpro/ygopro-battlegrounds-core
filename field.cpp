@@ -1273,6 +1273,9 @@ void field::add_effect(effect* peffect, uint8_t owner_player) {
 	}
 	peffect->card_type = peffect->owner->data.type;
 	effects.indexer.emplace(peffect, it);
+	if(peffect->owner->is_status(STATUS_INITIALIZING)){
+		peffect->is_init_effect = true;
+	}
 	if(peffect->is_flag(EFFECT_FLAG_FIELD_ONLY)) {
 		if(peffect->is_disable_related())
 			update_disable_check_list(peffect);

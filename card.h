@@ -205,6 +205,8 @@ public:
 	effect_container target_effect;
 	effect_container xmaterial_effect;
 	effect_indexer indexer;
+	std::map<int32_t, effect*> init_effect_list;
+	uint32_t next_init_effect_list_id{1};
 	effect_relation relate_effect;
 	effect_set_v immune_effect;
 	effect_collection initial_effect;

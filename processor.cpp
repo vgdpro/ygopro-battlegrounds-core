@@ -40,6 +40,16 @@ uint32_t field::process() {
 	if (core.units.size() == 0)
 		return PROCESSOR_END | pduel->buffer_size();
 	auto it = core.units.begin();
+	if(!(core.duel_options & DUEL_ONLY_MAIN)){
+		FILE *fp = fopen("error.log", "at");
+		fprintf(fp, "MSGtype %d\n", it->type);
+		fprintf(fp, "MSGstep %d\n", it->step);
+		if(it->peffect){
+			effect* test_effect = reinterpret_cast<effect*>(it->peffect);
+			fprintf(fp, "MSGstep %d\n", test_effect->owner->data.code);
+		}
+		fclose(fp);
+	}
 	switch (it->type) {
 	case PROCESSOR_ADJUST: {
 		if (adjust_step(it->step))

@@ -36,6 +36,7 @@ public:
 	uint32_t code{ 0 };
 	uint32_t id{ 0 };
 	uint32_t clone_id{ 0 };
+	uint32_t init_clone_id{ 0 };
 	uint32_t type{ 0 };
 	uint16_t copy_id{ 0 };
 	uint16_t range{ 0 };
@@ -66,6 +67,7 @@ public:
 	uint8_t cost_checked{ FALSE };
 	effect_set required_handorset_effects;
 	LuaParamType object_type{ PARAM_TYPE_INT };
+	bool is_init_effect{ false };
 
 	explicit effect(duel* pd);
 	~effect() = default;

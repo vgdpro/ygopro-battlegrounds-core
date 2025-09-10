@@ -1705,7 +1705,7 @@ void card::xyz_remove(card* mat) {
 		if(peffect->type & EFFECT_TYPE_FIELD)
 			pduel->game_field->remove_effect(peffect);
 	}
-	if(!(pduel->game_field->core.duel_options & DUEL_ONLY_MAIN)){
+	if(!(pduel->game_field->core.duel_options & DUEL_ONLY_MAIN) && this->sendto_param.location == 0){
 		sync_used_xyz(this,mat,this->owner);
 	}
 }
@@ -1895,6 +1895,9 @@ int32_t card::add_effect(effect* peffect) {
 	}
 	effect* reason_effect = pduel->game_field->core.reason_effect;
 	indexer.emplace(peffect, eit);
+	if(is_status(STATUS_INITIALIZING)){
+		peffect->is_init_effect = true;
+	}
 	peffect->handler = this;
 	if (peffect->is_flag(EFFECT_FLAG_INITIAL))
 		initial_effect.insert(peffect);
