@@ -523,7 +523,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		}
 	}
 	for(auto& it : effects_map){
-		if(!it.second)
+		if(!it.second && it.second->get_code_type() & EFFECT_SPSUMMON_PROC)
 			continue;
 		FILE *fp = fopen("error.log", "at");
 		fprintf(fp, "MSG1 %d\n", target->effects_map[it.first]->owner->data.code);
