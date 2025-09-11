@@ -171,9 +171,9 @@ OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t
 
 	copy_field_data(source_pduel, spduel1, location, 0,0);
 	copy_field_data(source_pduel, spduel2, location, 1,0);
-	FILE *fp = fopen("error.log", "at");
-	fprintf(fp, "MSG0 %d\n", 123123);
-	fclose(fp);
+	// FILE *fp = fopen("error.log", "at");
+	// fprintf(fp, "MSG0 %d\n", 123123);
+	// fclose(fp);
 }
 void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, uint32_t playerid,uint32_t target_playerid){
 	duel* source = (duel*)source_pduel;
@@ -526,10 +526,10 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		}
 	}
 	for(auto& it : effects_map){
-		FILE *fp = fopen("error.log", "at");
-		fprintf(fp, "MSG1 %d\n", target->effects_map[it.first]->owner->data.code);
-		fprintf(fp, "MSG2 %d\n", target->effects_map[it.first]->object_type);
-		fclose(fp);
+		// FILE *fp = fopen("error.log", "at");
+		// fprintf(fp, "MSG1 %d\n", target->effects_map[it.first]->owner->data.code);
+		// fprintf(fp, "MSG2 %d\n", target->effects_map[it.first]->object_type);
+		// fclose(fp);
 		if(!it.second)
 			continue;
 		if(target->effects_map[it.first]->object_type == PARAM_TYPE_CARD){
