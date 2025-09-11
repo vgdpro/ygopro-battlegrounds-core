@@ -1098,6 +1098,10 @@ uint32_t card::check_xyz_level(card* pcard, uint32_t lv) {
 	return 0;
 }
 uint32_t card::get_attribute() {
+	if(assume_type == ASSUME_ATTRIBUTE)
+		return 0xffffffff;
+	if(!(data.type & TYPE_MONSTER) && !(get_type() & TYPE_MONSTER) && !is_affected_by_effect(EFFECT_PRE_MONSTER))
+		return 0;
 	return 0xffffffff;
 	// if(assume_type == ASSUME_ATTRIBUTE)
 	// 	return assume_value;
@@ -1124,7 +1128,7 @@ uint32_t card::get_attribute() {
 	// return attribute;
 }
 uint32_t card::get_fusion_attribute(uint8_t playerid) {
-	return 0xffffffff;
+	return get_attribute();
 	// effect_set effects;
 	// filter_effect(EFFECT_CHANGE_FUSION_ATTRIBUTE, &effects);
 	// if(!effects.size() || pduel->game_field->core.not_material)
@@ -1137,7 +1141,7 @@ uint32_t card::get_fusion_attribute(uint8_t playerid) {
 	// return attribute;
 }
 uint32_t card::get_link_attribute(uint8_t playerid) {
-	return 0xffffffff;
+	return get_attribute();
 	// effect_set effects;
 	// filter_effect(EFFECT_ADD_LINK_ATTRIBUTE, &effects);
 	// uint32_t attribute = get_attribute();
@@ -1148,7 +1152,7 @@ uint32_t card::get_link_attribute(uint8_t playerid) {
 	// return attribute;
 }
 uint32_t card::get_grave_attribute(uint8_t playerid) {
-	return 0xffffffff;
+	return get_attribute();
 	// if(!(data.type & TYPE_MONSTER))
 	// 	return 0;
 	// if(current.is_location(LOCATION_GRAVE))
@@ -1169,6 +1173,10 @@ uint32_t card::get_grave_attribute(uint8_t playerid) {
 	// return attribute;
 }
 uint32_t card::get_race() {
+	if(assume_type == ASSUME_RACE)
+		return 0xffffffff;
+	if(!(data.type & TYPE_MONSTER) && !(get_type() & TYPE_MONSTER) && !is_affected_by_effect(EFFECT_PRE_MONSTER))
+		return 0;
 	return 0xffffffff;
 	// if(assume_type == ASSUME_RACE)
 	// 	return assume_value;
@@ -1195,7 +1203,7 @@ uint32_t card::get_race() {
 	// return race;
 }
 uint32_t card::get_link_race(uint8_t playerid) {
-	return 0xffffffff;
+	return get_race();
 	// effect_set effects;
 	// filter_effect(EFFECT_ADD_LINK_RACE, &effects);
 	// uint32_t race = get_race();
@@ -1206,7 +1214,7 @@ uint32_t card::get_link_race(uint8_t playerid) {
 	// return race;
 }
 uint32_t card::get_grave_race(uint8_t playerid) {
-	return 0xffffffff;
+	return get_race();
 	// if(!(data.type & TYPE_MONSTER))
 	// 	return 0;
 	// if(current.is_location(LOCATION_GRAVE))

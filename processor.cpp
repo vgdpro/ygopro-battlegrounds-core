@@ -40,16 +40,16 @@ uint32_t field::process() {
 	if (core.units.size() == 0)
 		return PROCESSOR_END | pduel->buffer_size();
 	auto it = core.units.begin();
-	if(!(core.duel_options & DUEL_ONLY_MAIN)){
-		FILE *fp = fopen("error.log", "at");
-		fprintf(fp, "MSGtype %d\n", it->type);
-		fprintf(fp, "MSGstep %d\n", it->step);
-		if(it->peffect){
-			effect* test_effect = reinterpret_cast<effect*>(it->peffect);
-			fprintf(fp, "MSGstep %d\n", test_effect->owner->data.code);
-		}
-		fclose(fp);
-	}
+	// if(!(core.duel_options & DUEL_ONLY_MAIN)){
+	// 	FILE *fp = fopen("error.log", "at");
+	// 	fprintf(fp, "MSGtype %d\n", it->type);
+	// 	fprintf(fp, "MSGstep %d\n", it->step);
+	// 	if(it->peffect){
+	// 		effect* test_effect = reinterpret_cast<effect*>(it->peffect);
+	// 		fprintf(fp, "MSGstep %d\n", test_effect->owner->data.code);
+	// 	}
+	// 	fclose(fp);
+	// }
 	switch (it->type) {
 	case PROCESSOR_ADJUST: {
 		if (adjust_step(it->step))
@@ -1256,10 +1256,11 @@ int32_t field::process_phase_event(int16_t step, int32_t phase) {
 		if(eset.size())
 			limit = eset.back()->get_value();
 		int32_t hd = (int32_t)player[infos.turn_player].list_hand.size();
-		if(hd <= limit) {
-			core.units.begin()->step = 24;
-			return FALSE;
-		}
+		// if(hd <= limit) {
+		// 	core.units.begin()->step = 24;
+		// 	return FALSE;
+		// }
+		core.units.begin()->step = 24;
 		core.select_cards.clear();
 		for(auto& pcard : player[infos.turn_player].list_hand)
 			core.select_cards.push_back(pcard);
@@ -3917,9 +3918,14 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			// // testcard(90241276, LOCATION_HAND);
 			// // testcard(98520301, LOCATION_HAND);
 			// testcard(423585, LOCATION_HAND);
-			// testcard(29669359, LOCATION_DECK);
+			// testcard(58494728, LOCATION_HAND);
+			// testcard(73309655, LOCATION_DECK);
+			// testcard(82308875, LOCATION_DECK);
+			// testcard(67557908, LOCATION_DECK);
+			// testcard(269510, LOCATION_HAND);
+			// testcard(8379983, LOCATION_DECK);
 			// testcard(423585, LOCATION_DECK);
-			// testcard(423585, LOCATION_DECK);
+			// testcard(51782995, LOCATION_DECK);
 			// // testcard(73539069, LOCATION_EXTRA);
 			// // testcard(53413628, LOCATION_EXTRA);
 			// // testcard(98978921, LOCATION_EXTRA);

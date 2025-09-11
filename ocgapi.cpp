@@ -139,18 +139,25 @@ OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t
 	source->game_field->player[1].start_count = 0;
 	source->game_field->player[0].draw_count = 0;
 	source->game_field->player[1].draw_count = 0;
-	FILE *fp = fopen("error.log", "at");
-	fprintf(fp, "MSG10 %d\n", 123123);
-	fclose(fp);
+	// FILE *fp = fopen("error.log", "at");
+	// fprintf(fp, "MSG10 %d\n", 123123);
+	// fclose(fp);
 	for(auto& pcard : source->cards)
 		delete pcard;
 	for(auto& pgroup : source->groups)
 		delete pgroup;
+	for(auto& peffect : source->effects)
+		delete peffect;
 	source->cards.clear();
 	source->groups.clear();
-	FILE *fp1 = fopen("error.log", "at");
-	fprintf(fp1, "MSG11 %d\n", 123123);
-	fclose(fp1);
+	source->effects.clear();
+	source->assumes.clear();
+	source->sgroups.clear();
+	source->uncopy.clear();
+	source->effects_map.clear();
+	// FILE *fp1 = fopen("error.log", "at");
+	// fprintf(fp1, "MSG11 %d\n", 123123);
+	// fclose(fp1);
 	start_duel(source_pduel, options);
 	// for(auto& it : source->effects){
 	// 	source->delete_effect(it);
@@ -168,9 +175,9 @@ OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t
 void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, uint32_t playerid,uint32_t target_playerid){
 	duel* source = (duel*)source_pduel;
 	duel* target = (duel*)spduel;
-	FILE *fp = fopen("error.log", "at");
-	fprintf(fp, "MSG0 %d\n", 123123);
-	fclose(fp);
+	// FILE *fp = fopen("error.log", "at");
+	// fprintf(fp, "MSG0 %d\n", 123123);
+	// fclose(fp);
 
 	if(location & LOCATION_SZONE){
 		for(int i=0; i < target->game_field->player[target_playerid].list_szone.size(); ++i) {
@@ -241,9 +248,9 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		}
 	}
 
-	FILE *fp1 = fopen("error.log", "at");
-	fprintf(fp1, "MSG1 %d\n", 123123);
-	fclose(fp1);
+	// FILE *fp1 = fopen("error.log", "at");
+	// fprintf(fp1, "MSG1 %d\n", 123123);
+	// fclose(fp1);
 
 	std::map<int, effect*> effects_map;
 	for(int i=0; i < source->game_field->player[playerid].list_szone.size(); ++i) {
@@ -311,9 +318,9 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		if(source->game_field->player[playerid].list_hand[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_hand[i];
 			card* new_card = source->game_field->player[playerid].list_hand[i];
-			FILE *fp1 = fopen("error.log", "at");
-			fprintf(fp1, "MSGhand %d\n", new_card->data.code);
-			fclose(fp1);
+			// FILE *fp1 = fopen("error.log", "at");
+			// fprintf(fp1, "MSGhand %d\n", new_card->data.code);
+			// fclose(fp1);
 			for(auto& it : pcard->indexer){
 				if(!it.first->is_init_effect){
 					effect* new_effect = new_card->pduel->new_effect();
@@ -437,18 +444,18 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		}
 	}
 
-	source->lua->params.clear();
-	FILE *fp2 = fopen("error.log", "at");
-	fprintf(fp2, "MSG2 %d\n", 123123);
-	fclose(fp2);
+	// source->lua->params.clear();
+	// FILE *fp2 = fopen("error.log", "at");
+	// fprintf(fp2, "MSG2 %d\n", 123123);
+	// fclose(fp2);
 
 	for(int i=0; i < source->game_field->player[playerid].list_szone.size(); ++i) {
 		if(source->game_field->player[playerid].list_szone[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_szone[i];
 			card* new_card = source->game_field->player[playerid].list_szone[i];
-			FILE *fp2 = fopen("error.log", "at");
-			fprintf(fp2, "MSG3 %d\n", new_card->data.code);
-			fclose(fp2);
+			// FILE *fp2 = fopen("error.log", "at");
+			// fprintf(fp2, "MSG3 %d\n", new_card->data.code);
+			// fclose(fp2);
 			card_data_copy(new_card, pcard, playerid, target_playerid, effects_map);
 		}
 	}
@@ -456,9 +463,9 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		if(source->game_field->player[playerid].list_mzone[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_mzone[i];
 			card* new_card = source->game_field->player[playerid].list_mzone[i];
-			FILE *fp2 = fopen("error.log", "at");
-			fprintf(fp2, "MSG4 %d\n", new_card->data.code);
-			fclose(fp2);
+			// FILE *fp2 = fopen("error.log", "at");
+			// fprintf(fp2, "MSG4 %d\n", new_card->data.code);
+			// fclose(fp2);
 			card_data_copy(new_card, pcard, playerid, target_playerid, effects_map);
 			for(int i=0; i < new_card->xyz_materials.size(); ++i) {
 				card_data_copy(new_card->xyz_materials[i], pcard->xyz_materials[i], playerid, target_playerid, effects_map);
@@ -469,9 +476,9 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		if(source->game_field->player[playerid].list_hand[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_hand[i];
 			card* new_card = source->game_field->player[playerid].list_hand[i];
-			FILE *fp2 = fopen("error.log", "at");
-			fprintf(fp2, "MSG5 %d\n", new_card->data.code);
-			fclose(fp2);
+			// FILE *fp2 = fopen("error.log", "at");
+			// fprintf(fp2, "MSG5 %d\n", new_card->data.code);
+			// fclose(fp2);
 			card_data_copy(new_card, pcard, playerid, target_playerid, effects_map);
 		}
 	}
@@ -479,9 +486,9 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		if(source->game_field->player[playerid].list_grave[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_grave[i];
 			card* new_card = source->game_field->player[playerid].list_grave[i];
-			FILE *fp2 = fopen("error.log", "at");
-			fprintf(fp2, "MSG6 %d\n", new_card->data.code);
-			fclose(fp2);
+			// FILE *fp2 = fopen("error.log", "at");
+			// fprintf(fp2, "MSG6 %d\n", new_card->data.code);
+			// fclose(fp2);
 			card_data_copy(new_card, pcard, playerid, target_playerid, effects_map);
 		}
 	}
@@ -489,9 +496,9 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		if(source->game_field->player[playerid].list_remove[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_remove[i];
 			card* new_card = source->game_field->player[playerid].list_remove[i];
-			FILE *fp2 = fopen("error.log", "at");
-			fprintf(fp2, "MSG7 %d\n", new_card->data.code);
-			fclose(fp2);
+			// FILE *fp2 = fopen("error.log", "at");
+			// fprintf(fp2, "MSG7 %d\n", new_card->data.code);
+			// fclose(fp2);
 			card_data_copy(new_card, pcard, playerid, target_playerid, effects_map);
 		}
 	}
@@ -499,9 +506,9 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		if(source->game_field->player[playerid].list_extra[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_extra[i];
 			card* new_card = source->game_field->player[playerid].list_extra[i];
-			FILE *fp2 = fopen("error.log", "at");
-			fprintf(fp2, "MSG8 %d\n", new_card->data.code);
-			fclose(fp2);
+			// FILE *fp2 = fopen("error.log", "at");
+			// fprintf(fp2, "MSG8 %d\n", new_card->data.code);
+			// fclose(fp2);
 			card_data_copy(new_card, pcard, playerid, target_playerid, effects_map);
 		}
 	}
@@ -509,13 +516,15 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		if(source->game_field->player[playerid].list_main[i]) {
 			card* pcard = target->game_field->player[target_playerid].list_main[i];
 			card* new_card = source->game_field->player[playerid].list_main[i];
-			FILE *fp2 = fopen("error.log", "at");
-			fprintf(fp2, "MSG9 %d\n", new_card->data.code);
-			fclose(fp2);
+			// FILE *fp2 = fopen("error.log", "at");
+			// fprintf(fp2, "MSG9 %d\n", new_card->data.code);
+			// fclose(fp2);
 			card_data_copy(new_card, pcard, playerid, target_playerid, effects_map);
 		}
 	}
 	for(auto& it : effects_map){
+		if(!it.second)
+			continue;
 		FILE *fp = fopen("error.log", "at");
 		fprintf(fp, "MSG1 %d\n", target->effects_map[it.first]->owner->data.code);
 		fprintf(fp, "MSG2 %d\n", target->effects_map[it.first]->object_type);
@@ -539,7 +548,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 				continue;
 			}
 
-			if(pcard && pcard->current.controler == 0)
+			if(pcard->current.controler == 0)
 				it.second->label_object = (find_card(source, pcard, playerid))->ref_handle;
 		}
 		if(target->effects_map[it.first]->object_type == PARAM_TYPE_EFFECT){
@@ -557,52 +566,41 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			lua_pop(target->lua->current_state, 1);
 			effect* new_effect = reinterpret_cast<effect*>(p);
 			change_lua_duel(source_pduel);
-			if(new_effect->ref_handle != target->effects_map[it.first]->label_object){
+			if(new_effect && new_effect->ref_handle != target->effects_map[it.first]->label_object){
 				continue;
 			}
 
-			if(new_effect && new_effect->owner && new_effect->owner->current.controler == 0 && effects_map.find(new_effect->clone_id) != effects_map.end()){
-				it.second->label_object = effects_map[new_effect->clone_id]->ref_handle;
+			if(new_effect->owner && new_effect->owner->current.controler == 0){
+				auto itmap = effects_map.find(new_effect->clone_id);
+				if(itmap != effects_map.end() && itmap->second) {
+					// 防御性检查目标指针
+					if(it.second) {
+						it.second->label_object = itmap->second->ref_handle;
+					} 
+				}
 			}
 		}
 		if(target->effects_map[it.first]->object_type == PARAM_TYPE_GROUP){
 			group* return_value = source->new_group();
+			interpreter::group2value(source->lua->lua_state, return_value);
 
 			change_lua_duel(spduel);
 			if(target->effects_map[it.first]->label_object == 0)
 				continue;
-			// FILE *fp1 = fopen("error.log", "at");
-			// fprintf(fp1, "MSG1 %d\n", 668668);
-			// fclose(fp1);
 			luaL_checkstack(target->lua->current_state, 1, nullptr);
 			lua_rawgeti(target->lua->current_state, LUA_REGISTRYINDEX, target->effects_map[it.first]->label_object);
-			// FILE *fp2 = fopen("error.log", "at");
-			// fprintf(fp2, "MSG2 %d\n", 668668);
-			// fclose(fp2);
 			if(!lua_isuserdata(target->lua->current_state, -1)){
-				// FILE *fp3 = fopen("error.log", "at");
-				// fprintf(fp3, "MSG3 %d\n", 668668);
-				// fclose(fp3);
 				it.second->label_object = return_value->ref_handle;
 				lua_pop(target->lua->current_state, 1);
 				continue;
 			}
-			// FILE *fp4 = fopen("error.log", "at");
-			// fprintf(fp4, "MSG4 %d\n", 668668);
-			// fclose(fp4);
 			void* p = *(void**)lua_touserdata(target->lua->current_state, -1);
-			// FILE *fp5 = fopen("error.log", "at");
-			// fprintf(fp5, "MSG5 %d\n", 668668);
-			// fclose(fp5);
 			lua_pop(target->lua->current_state, 1);
 			group* pgroup = reinterpret_cast<group*>(p);
 			change_lua_duel(source_pduel);
 			if(pgroup->ref_handle != target->effects_map[it.first]->label_object){
 				continue;
 			}
-			// FILE *fp6 = fopen("error.log", "at");
-			// fprintf(fp6, "MSG6 %d\n", 668668);
-			// fclose(fp6);
 
 			// 防御性检查：确保 pgroup 非空且看起来是有效的 group
 			if(!pgroup || pgroup->ref_handle == 0 || pgroup->pduel == nullptr || pgroup->pduel != target) {
@@ -610,24 +608,20 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 				it.second->label_object = return_value->ref_handle;
 				continue;
 			}
-			// FILE *fp8 = fopen("error.log", "at");
-			// fprintf(fp8, "MSG8 %d\n", 345345);
-			// fclose(fp8);
-			if(pgroup->container.size() == 0){
+			if(pgroup->container.empty()){
 				it.second->label_object = return_value->ref_handle;
 				continue;
 			}
-			// FILE *fp7 = fopen("error.log", "at");
-			// fprintf(fp7, "MSG7 %d\n", 345345);
-			// fclose(fp7);
-			for(auto& pc : pgroup->container){
-				// FILE *fp1 = fopen("error.log", "at");
-				// fprintf(fp1, "MSG11 %d\n", 345345);
-				// fclose(fp1);
+			std::vector<card*> temp(pgroup->container.begin(), pgroup->container.end());
+			for(auto pc : temp) {
+				bool in_target = false;
+                for(auto& chk : target->cards) {
+                    if(chk == pc) { in_target = true; break; }
+                }
+                if(!in_target) {
+                    continue;
+                }
 				if(pc && pc->current.controler == 0){
-					// FILE *fp1 = fopen("error.log", "at");
-					// fprintf(fp1, "MSG21 %d\n", 6786787);
-					// fclose(fp1);
 					card* new_card = find_card(source, pc, playerid);
 					if(new_card)
 						return_value->container.insert(new_card);
