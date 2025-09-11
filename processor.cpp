@@ -1261,6 +1261,7 @@ int32_t field::process_phase_event(int16_t step, int32_t phase) {
 		// 	return FALSE;
 		// }
 		core.units.begin()->step = 24;
+		return false;
 		core.select_cards.clear();
 		for(auto& pcard : player[infos.turn_player].list_hand)
 			core.select_cards.push_back(pcard);
