@@ -15,6 +15,7 @@
 #include <unordered_set>
 #include <vector>
 #include <map>
+#include <unordered_map>
 
 class card;
 class group;
@@ -41,6 +42,8 @@ public:
 	std::unordered_set<effect*> effects;
 	std::map<int, effect*> effects_map;
 	std::unordered_set<effect*> uncopy;
+
+	std::unordered_map<uint32_t, int> card_table_refs;
 	
 	duel();
 	~duel();

@@ -53,6 +53,7 @@ void duel::clear() {
 	sgroups.clear();
 	uncopy.clear();
 	effects_map.clear();
+	card_table_refs.clear();
 	next_effect_id = 1;
 	game_field = new field(this);
 	game_field->temp_card = new_card(TEMP_CARD_ID);

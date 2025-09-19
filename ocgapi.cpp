@@ -100,22 +100,104 @@ OCGCORE_API intptr_t create_duel_v3() {
 	return (intptr_t)pduel;
 }
 OCGCORE_API void change_lua_duel(intptr_t pduel) {
-	duel* target = (duel*)pduel;
+    duel* target = (duel*)pduel;
+	duel* originduel = target->lua->pduel;
+	if(originduel == target)
+		return;
+	// 1. 先将所有卡片表保存到 card_table_refs 中
+    lua_pushglobaltable(originduel->lua->lua_state);
+    lua_pushnil(originduel->lua->lua_state);
+    while (lua_next(originduel->lua->lua_state, -2)) {
+        if (lua_type(originduel->lua->lua_state, -2) == LUA_TSTRING) {
+            const char* key = lua_tostring(originduel->lua->lua_state, -2);
+            if (key[0] == 'c' && isdigit(key[1])) {
+                // 尝试从变量名中提取卡片编号
+                uint32_t code = 0;
+                if (sscanf(key + 1, "%u", &code) == 1 && code > 0) {
+                    // 检查是否已存在此卡片的引用
+                    auto it = originduel->card_table_refs.find(code);
+                    if (it == originduel->card_table_refs.end()) {
+                        // 保存表到 registry 中
+                        lua_pushvalue(originduel->lua->lua_state, -1); // 复制表
+                        int ref = luaL_ref(originduel->lua->lua_state, LUA_REGISTRYINDEX);
+                        // 保存引用到 card_table_refs
+                        originduel->card_table_refs[code] = ref;
+                    }
+                }
+            }
+        }
+        lua_pop(originduel->lua->lua_state, 1);
+    }
+
+	lua_getglobal(originduel->lua->lua_state, "Auxiliary"); // +1 Auxiliary
+	if (lua_istable(originduel->lua->lua_state, -1)) { // 确认是表
+		lua_pushvalue(originduel->lua->lua_state, -1); // 复制表 +1
+		int ref = luaL_ref(originduel->lua->lua_state, LUA_REGISTRYINDEX); // -1
+		// 保存引用到 card_table_refs，使用 0 作为特殊码
+		originduel->card_table_refs[0] = ref;
+	}
+	lua_pop(originduel->lua->lua_state, 1); // 弹出 Auxiliary
+
+	// 清除 Auxiliary 表
+	lua_pushglobaltable(originduel->lua->lua_state); // +1 _G
+	lua_pushstring(originduel->lua->lua_state, "Auxiliary"); // +1 "Auxiliary"
+	lua_pushnil(originduel->lua->lua_state); // +1 nil
+	lua_settable(originduel->lua->lua_state, -3); // -2，设置 _G["Auxiliary"] = nil
+	lua_pop(originduel->lua->lua_state, 1); // 弹出 _G
+
+    // 能帮我在这里把所有卡片表放到card_table_refs里吗？这样就不用修改load_card_script了
+    lua_pushglobaltable(originduel->lua->lua_state);
+    lua_pushnil(originduel->lua->lua_state);
+    while (lua_next(originduel->lua->lua_state, -2)) {
+        if (lua_type(originduel->lua->lua_state, -2) == LUA_TSTRING) {
+            const char* key = lua_tostring(originduel->lua->lua_state, -2);
+            if (key[0] == 'c' && isdigit(key[1])) {
+                lua_pushvalue(originduel->lua->lua_state, -2); 
+                lua_pushnil(originduel->lua->lua_state);
+                lua_settable(originduel->lua->lua_state, -5); 
+            }
+        }
+        lua_pop(originduel->lua->lua_state, 1); 
+    }
+    lua_pop(originduel->lua->lua_state, 1); 
+
 	target->lua->pduel = target;
-	std::memcpy(lua_getextraspace(target->lua->lua_state), &target, LUA_EXTRASPACE);
-	return ;
+    std::memcpy(lua_getextraspace(target->lua->lua_state), &target, LUA_EXTRASPACE);
+
+    for (const auto& it : target->card_table_refs) {
+		uint32_t code = it.first;
+		int ref = it.second;
+		
+		if (code != 0) {
+			// 处理卡片表
+			char class_name[20];
+			sprintf(class_name, "c%u", code);
+			lua_rawgeti(target->lua->lua_state, LUA_REGISTRYINDEX, ref);
+			lua_setglobal(target->lua->lua_state, class_name);
+		}
+	}
+
+	if(target->card_table_refs.find(0) != target->card_table_refs.end()){
+		// 特殊处理 Auxiliary 表
+		lua_rawgeti(target->lua->lua_state, LUA_REGISTRYINDEX, target->card_table_refs[0]);
+		lua_setglobal(target->lua->lua_state, "Auxiliary");
+	}else{
+		target->lua->load_script("./script/utility.lua");
+		target->lua->load_script("./script/procedure.lua");
+	}
+	
+
+    return;
 }
 void sync_used_xyz(card* pcard ,card* mat,int32_t playerid) {
 	if(xyz_list[playerid].find(pcard) == xyz_list[playerid].end())
 		return;
-	change_lua_duel((intptr_t)xyz_list[playerid][pcard]->pduel);
 	for(auto& it :xyz_list[playerid][pcard]->xyz_materials){
 		if(it && it->data.code == mat->data.code){
 			xyz_list[playerid][pcard]->xyz_remove(it);
 			xyz_list[playerid][pcard]->pduel->game_field->add_card(0, pcard, LOCATION_GRAVE, 0);
 		}
 	}
-	change_lua_duel((intptr_t)pcard->pduel);
 	return;
 }
 OCGCORE_API void reload_field_info(intptr_t pduel){
@@ -129,6 +211,7 @@ OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t
 
 	xyz_list[0].clear();
 	xyz_list[1].clear();
+	source->card_table_refs.clear();
 	change_lua_duel(source_pduel);
 	uint32_t options = source->game_field->core.duel_options;
 	delete source->game_field;
@@ -533,7 +616,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			continue;
 		if(target->effects_map[it.first]->object_type == PARAM_TYPE_CARD){
 
-			change_lua_duel(spduel);
 			if(target->effects_map[it.first]->label_object == 0)
 				continue;
 			luaL_checkstack(target->lua->current_state, 1, nullptr);
@@ -545,7 +627,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			void* p = *(void**)lua_touserdata(target->lua->current_state, -1);
 			lua_pop(target->lua->current_state, 1);
 			card* pcard = reinterpret_cast<card*>(p);
-			change_lua_duel(source_pduel);
 			if(pcard && pcard->ref_handle != target->effects_map[it.first]->label_object){
 				continue;
 			}
@@ -555,7 +636,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		}
 		if(target->effects_map[it.first]->object_type == PARAM_TYPE_EFFECT){
 
-			change_lua_duel(spduel);
 			if(target->effects_map[it.first]->label_object == 0)
 				continue;
 			luaL_checkstack(target->lua->current_state, 1, nullptr);
@@ -567,7 +647,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			void* p = *(void**)lua_touserdata(target->lua->current_state, -1);
 			lua_pop(target->lua->current_state, 1);
 			effect* new_effect = reinterpret_cast<effect*>(p);
-			change_lua_duel(source_pduel);
 			if(new_effect && new_effect->ref_handle != target->effects_map[it.first]->label_object){
 				continue;
 			}
@@ -587,7 +666,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 				continue;
 			group* return_value = source->new_group();
 
-			change_lua_duel(spduel);
 			if(target->effects_map[it.first]->label_object == 0)
 				continue;
 			luaL_checkstack(target->lua->current_state, 1, nullptr);
@@ -600,7 +678,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			void* p = *(void**)lua_touserdata(target->lua->current_state, -1);
 			lua_pop(target->lua->current_state, 1);
 			group* pgroup = reinterpret_cast<group*>(p);
-			change_lua_duel(source_pduel);
 			if(pgroup->ref_handle != target->effects_map[it.first]->label_object){
 				continue;
 			}
@@ -887,7 +964,6 @@ void effect_data_copy(effect* new_effect, effect* peffect,uint32_t playerid,uint
 	new_effect->label = peffect->label;
     new_effect->label_object = 0;
 
-	change_lua_duel((intptr_t)peffect->pduel);
 	if(peffect->condition)
 		new_effect->condition = public_lua->clone_function_ref(peffect->condition);
 	if(peffect->cost)
@@ -903,7 +979,6 @@ void effect_data_copy(effect* new_effect, effect* peffect,uint32_t playerid,uint
 			new_effect->value = public_lua->clone_function_ref(peffect->value);
 		}
 	}
-	change_lua_duel((intptr_t)new_effect->pduel);
 
 	// lua_State* srcL = nullptr;
     // lua_State* dstL = nullptr;
@@ -1036,34 +1111,6 @@ OCGCORE_API void start_duel(intptr_t pduel, uint32_t options) {
 		}
 	}
 	pd->game_field->add_process(PROCESSOR_TURN, 0, 0, 0, 0, 0);
-}
-OCGCORE_API void clean_duel_data(intptr_t pduel){
-	duel* pd = (duel*)pduel;
-
-	for(auto& pcard : pd->cards)
-		delete pcard;
-	for(auto& pgroup : pd->groups)
-		delete pgroup;
-	for(auto& peffect : pd->effects)
-		delete peffect;
-	delete pd->game_field;
-	pd->cards.clear();
-	pd->groups.clear();
-	pd->effects.clear();
-	pd->assumes.clear();
-	pd->sgroups.clear();
-	pd->uncopy.clear();
-	pd->effects_map.clear();
-	uint32_t options = pd->game_field->core.duel_options;
-	pd->game_field = new field(pd);
-	pd->game_field->core.duel_options = options;
-	pd->message_buffer.clear();
-	pd->next_effect_id = 1;
-	pd->game_field->temp_card = pd->new_card(TEMP_CARD_ID);
-	pd->game_field->player[0].start_count = 0;
-	pd->game_field->player[1].start_count = 0;
-	pd->game_field->player[0].draw_count = 0;
-	pd->game_field->player[1].draw_count = 0;
 }
 OCGCORE_API void end_duel(intptr_t pduel) {
 	duel* pd = (duel*)pduel;
