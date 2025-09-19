@@ -130,8 +130,8 @@ OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t
 	xyz_list[0].clear();
 	xyz_list[1].clear();
 	change_lua_duel(source_pduel);
-	player_info infos[2];
 	uint32_t options = source->game_field->core.duel_options;
+	delete source->game_field;
 	source->game_field = new field(source);
 	source->game_field->temp_card = source->new_card(TEMP_CARD_ID);
 	source->message_buffer.clear();
@@ -269,7 +269,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 						continue;
 					}
 					new_card->add_effect(new_effect);
-					interpreter::effect2value(source->lua->lua_state, new_effect);
+					
 					effects_map[it.first->clone_id] = new_effect;
 				}else{
 					effects_map[it.first->clone_id] = new_card->init_effect_list[it.first->init_clone_id];
@@ -291,7 +291,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 						continue;
 					}
 					new_card->add_effect(new_effect);
-					interpreter::effect2value(source->lua->lua_state, new_effect);
+					
 					effects_map[it.first->clone_id] = new_effect;
 				}else{
 					effects_map[it.first->clone_id] = new_card->init_effect_list[it.first->init_clone_id];
@@ -308,7 +308,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 							continue;
 						}
 						new_card->add_effect(new_effect);
-						interpreter::effect2value(source->lua->lua_state, new_effect);
+						
 						effects_map[it.first->clone_id] = new_effect;
 					}else{
 						effects_map[it.first->clone_id] = new_card->init_effect_list[it.first->init_clone_id];
@@ -333,7 +333,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 						continue;
 					}
 					new_card->add_effect(new_effect);
-					interpreter::effect2value(source->lua->lua_state, new_effect);
+					
 					effects_map[it.first->clone_id] = new_effect;
 				}else{
 					effects_map[it.first->clone_id] = new_card->init_effect_list[it.first->init_clone_id];
@@ -354,7 +354,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 						continue;
 					}
 					new_card->add_effect(new_effect);
-					interpreter::effect2value(source->lua->lua_state, new_effect);
+					
 					effects_map[it.first->clone_id] = new_effect;
 				}else{
 					effects_map[it.first->clone_id] = new_card->init_effect_list[it.first->init_clone_id];
@@ -375,7 +375,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 						continue;
 					}
 					new_card->add_effect(new_effect);
-					interpreter::effect2value(source->lua->lua_state, new_effect);
+					
 					effects_map[it.first->clone_id] = new_effect;
 				}else{
 					effects_map[it.first->clone_id] = new_card->init_effect_list[it.first->init_clone_id];
@@ -396,7 +396,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 						continue;
 					}
 					new_card->add_effect(new_effect);
-					interpreter::effect2value(source->lua->lua_state, new_effect);
+					
 					effects_map[it.first->clone_id] = new_effect;
 				}else{
 					effects_map[it.first->clone_id] = new_card->init_effect_list[it.first->init_clone_id];
@@ -417,7 +417,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 						continue;
 					}
 					new_card->add_effect(new_effect);
-					interpreter::effect2value(source->lua->lua_state, new_effect);
+					
 					effects_map[it.first->clone_id] = new_effect;
 				}else{
 					effects_map[it.first->clone_id] = new_card->init_effect_list[it.first->init_clone_id];
@@ -426,7 +426,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		}
 	}
 	for(auto& it : target->game_field->effects.indexer){
-		if(it.first &&  it.first->owner && it.first->owner->current.location !=0){
+		if(it.first &&  it.first->owner){
 			if(effects_map[it.first->clone_id]){
 				source->game_field->add_effect(effects_map[it.first->clone_id], it.first->effect_owner);
 			}else{
@@ -437,8 +437,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 						source->delete_effect(new_effect);
 						continue;
 					}
-					source->game_field->add_effect(new_effect, it.first->effect_owner);
-					interpreter::effect2value(source->lua->lua_state, new_effect);
+					source->game_field->add_effect(new_effect, it.first->effect_owner);					
 					effects_map[it.first->clone_id] = new_effect;
 				}else{
 					effects_map[it.first->clone_id] = it.first->owner->init_effect_list[it.first->init_clone_id];
@@ -587,7 +586,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			if(it.second->code & EFFECT_SPSUMMON_PROC)
 				continue;
 			group* return_value = source->new_group();
-			interpreter::group2value(source->lua->lua_state, return_value);
 
 			change_lua_duel(spduel);
 			if(target->effects_map[it.first]->label_object == 0)
@@ -842,10 +840,18 @@ void card_data_copy(card* new_card, card* pcard, uint32_t playerid ,uint32_t tar
 }
 void effect_data_copy(effect* new_effect, effect* peffect,uint32_t playerid,uint32_t target_playerid){
 	if(peffect->owner ){
-		new_effect->owner = find_card(new_effect->pduel, peffect->owner, playerid);
+		if(peffect->owner->current.location !=0){
+			new_effect->owner = find_card(new_effect->pduel, peffect->owner, playerid);
+		}else{
+			new_effect->owner = new_effect->pduel->game_field->temp_card;
+		}
 	}
 	if(peffect->handler){
-		new_effect->handler = find_card(new_effect->pduel, peffect->handler, playerid);
+		if(peffect->handler->current.location !=0){
+			new_effect->handler = find_card(new_effect->pduel, peffect->handler, playerid);
+		}else{
+			new_effect->handler = new_effect->pduel->game_field->temp_card;
+		}
 	}
 	new_effect->effect_owner = playerid;
 	new_effect->description = peffect->description;
@@ -1030,6 +1036,34 @@ OCGCORE_API void start_duel(intptr_t pduel, uint32_t options) {
 		}
 	}
 	pd->game_field->add_process(PROCESSOR_TURN, 0, 0, 0, 0, 0);
+}
+OCGCORE_API void clean_duel_data(intptr_t pduel){
+	duel* pd = (duel*)pduel;
+
+	for(auto& pcard : pd->cards)
+		delete pcard;
+	for(auto& pgroup : pd->groups)
+		delete pgroup;
+	for(auto& peffect : pd->effects)
+		delete peffect;
+	delete pd->game_field;
+	pd->cards.clear();
+	pd->groups.clear();
+	pd->effects.clear();
+	pd->assumes.clear();
+	pd->sgroups.clear();
+	pd->uncopy.clear();
+	pd->effects_map.clear();
+	uint32_t options = pd->game_field->core.duel_options;
+	pd->game_field = new field(pd);
+	pd->game_field->core.duel_options = options;
+	pd->message_buffer.clear();
+	pd->next_effect_id = 1;
+	pd->game_field->temp_card = pd->new_card(TEMP_CARD_ID);
+	pd->game_field->player[0].start_count = 0;
+	pd->game_field->player[1].start_count = 0;
+	pd->game_field->player[0].draw_count = 0;
+	pd->game_field->player[1].draw_count = 0;
 }
 OCGCORE_API void end_duel(intptr_t pduel) {
 	duel* pd = (duel*)pduel;

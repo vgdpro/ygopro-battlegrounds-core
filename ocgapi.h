@@ -59,6 +59,7 @@ void sync_used_xyz(card* pcard ,card* mat,int32_t playerid);
 OCGCORE_API intptr_t create_duel(uint_fast32_t seed);
 OCGCORE_API intptr_t create_duel_v2(uint32_t seed_sequence[]);
 OCGCORE_API intptr_t create_duel_v3();
+OCGCORE_API void clean_duel_data(intptr_t pduel);
 OCGCORE_API void change_lua_duel(intptr_t pduel);
 OCGCORE_API void set_player_lp(intptr_t pduel, intptr_t player, int32_t playerid);
 OCGCORE_API void start_duel(intptr_t pduel, uint32_t options);

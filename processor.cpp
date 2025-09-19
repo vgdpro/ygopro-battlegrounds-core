@@ -40,7 +40,7 @@ uint32_t field::process() {
 	if (core.units.size() == 0)
 		return PROCESSOR_END | pduel->buffer_size();
 	auto it = core.units.begin();
-	// if(!(core.duel_options & DUEL_ONLY_MAIN)){
+	// if((core.duel_options & DUEL_ONLY_MAIN)){
 	// 	FILE *fp = fopen("error.log", "at");
 	// 	fprintf(fp, "MSGtype %d\n", it->type);
 	// 	fprintf(fp, "MSGstep %d\n", it->step);
@@ -1256,12 +1256,12 @@ int32_t field::process_phase_event(int16_t step, int32_t phase) {
 		if(eset.size())
 			limit = eset.back()->get_value();
 		int32_t hd = (int32_t)player[infos.turn_player].list_hand.size();
-		// if(hd <= limit) {
-		// 	core.units.begin()->step = 24;
-		// 	return FALSE;
-		// }
-		core.units.begin()->step = 24;
-		return false;
+		if(hd <= limit) {
+			core.units.begin()->step = 24;
+			return FALSE;
+		}
+		// core.units.begin()->step = 24;
+		// return false;
 		core.select_cards.clear();
 		for(auto& pcard : player[infos.turn_player].list_hand)
 			core.select_cards.push_back(pcard);
@@ -2563,13 +2563,13 @@ int32_t field::process_battle_command(uint16_t step) {
 			newchain.evt.reason_effect = 0;
 			newchain.evt.reason_player = PLAYER_NONE;
 			newchain.set_triggering_state(phandler);
-			newchain.triggering_player = core.attackable_player;
+			newchain.triggering_player = infos.turn_player;
 			core.new_chains.push_back(newchain);
 			phandler->set_status(STATUS_CHAINING, TRUE);
-			peffect->dec_count(core.attackable_player);
+			peffect->dec_count(infos.turn_player);
 			core.select_chains.clear();
 			add_process(PROCESSOR_ADD_CHAIN, 0, 0, 0, 0, 0);
-			add_process(PROCESSOR_QUICK_EFFECT, 0, 0, 0, FALSE, 1 - core.attackable_player);
+			add_process(PROCESSOR_QUICK_EFFECT, 0, 0, 0, FALSE, 1 - infos.turn_player);
 			infos.priorities[0] = 0;
 			infos.priorities[1] = 0;
 			core.select_chains.clear();
@@ -2602,13 +2602,13 @@ int32_t field::process_battle_command(uint16_t step) {
 			core.units.begin()->arg1 = ctype;
 			pduel->write_buffer8(MSG_HINT);
 			pduel->write_buffer8(HINT_EVENT);
-			pduel->write_buffer8(1 - core.attackable_player);
+			pduel->write_buffer8(1 - infos.turn_player);
 			pduel->write_buffer32(29);
 			core.select_chains.clear();
-			core.hint_timing[core.attackable_player] = TIMING_BATTLE_STEP_END;
-			add_process(PROCESSOR_QUICK_EFFECT, 0, 0, 0, FALSE, 1 - core.attackable_player);
-			infos.priorities[core.attackable_player] = 1;
-			infos.priorities[1 - core.attackable_player] = 0;
+			core.hint_timing[infos.turn_player] = TIMING_BATTLE_STEP_END;
+			add_process(PROCESSOR_QUICK_EFFECT, 0, 0, 0, FALSE, 1 - infos.turn_player);
+			infos.priorities[infos.turn_player] = 1;
+			infos.priorities[1 - infos.turn_player] = 0;
 			return FALSE;
 		}
 		return TRUE;
@@ -2825,12 +2825,14 @@ int32_t field::process_battle_command(uint16_t step) {
 			return FALSE;
 		}
 		// replay
-		if(!core.attacker->is_affected_by_effect(EFFECT_MUST_ATTACK))
-			add_process(PROCESSOR_SELECT_YESNO, 0, 0, 0, core.attackable_player, 30);
-		else {
-			returns.ivalue[0] = TRUE;
-			core.attack_cancelable = FALSE;
-		}
+		// if(!core.attacker->is_affected_by_effect(EFFECT_MUST_ATTACK))
+		// 	add_process(PROCESSOR_SELECT_YESNO, 0, 0, 0, core.attackable_player, 30);
+		// else {
+		// 	returns.ivalue[0] = TRUE;
+		// 	core.attack_cancelable = FALSE;
+		// }
+		returns.ivalue[0] = TRUE;
+		core.attack_cancelable = FALSE;
 		return FALSE;
 	}
 	case 12: {
@@ -3842,19 +3844,19 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			pduel->write_buffer32(REASON_RULE);
 		}
 		++infos.turn_id;
-		++infos.turn_id_by_player[0];
-		++infos.turn_id_by_player[1];
+		++infos.turn_id_by_player[turn_player];
 		infos.turn_player = turn_player;
 		// if((core.duel_options & DUEL_TAG_MODE) && infos.turn_id != 1)
 		// 	tag_swap(turn_player);
 		// if(is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_TURN)) {
-		// 	core.units.begin()->step = 17;
-		// 	reset_phase(PHASE_DRAW);
-		// 	reset_phase(PHASE_STANDBY);
-		// 	reset_phase(PHASE_END);
-		// 	adjust_all();
-		// 	return FALSE;
-		// }
+		if(core.duel_options && DUEL_ONLY_MAIN && infos.turn_player == 1) {
+			core.units.begin()->step = 17;
+			reset_phase(PHASE_DRAW);
+			reset_phase(PHASE_STANDBY);
+			reset_phase(PHASE_END);
+			adjust_all();
+			return FALSE;
+		}
 		infos.phase = PHASE_DRAW;
 		core.phase_action = FALSE;
 		core.hand_adjusted = FALSE;
@@ -4246,7 +4248,7 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 		core.quick_f_chain.clear();
 		core.delayed_quick_tmp.clear();
 		core.units.begin()->step = -1;
-		// core.units.begin()->arg1 = 1 - core.units.begin()->arg1;
+		core.units.begin()->arg1 = 1 - core.units.begin()->arg1;
 		return FALSE;
 	}
 	}
