@@ -213,12 +213,9 @@ OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t
 
 	xyz_list[0].clear();
 	xyz_list[1].clear();
-	source->card_table_refs.clear();
-	change_lua_duel(source_pduel);
 	uint32_t options = source->game_field->core.duel_options;
 	delete source->game_field;
 	source->game_field = new field(source);
-	source->game_field->temp_card = source->new_card(TEMP_CARD_ID);
 	source->message_buffer.clear();
 	source->game_field->player[0].start_count = 0;
 	source->game_field->player[1].start_count = 0;
@@ -240,6 +237,9 @@ OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t
 	source->sgroups.clear();
 	source->uncopy.clear();
 	source->effects_map.clear();
+	source->game_field->temp_card = source->new_card(TEMP_CARD_ID);
+	source->card_table_refs.clear();
+	change_lua_duel(source_pduel);
 	// FILE *fp1 = fopen("error.log", "at");
 	// fprintf(fp1, "MSG11 %d\n", 123123);
 	// fclose(fp1);
@@ -925,7 +925,7 @@ void effect_data_copy(effect* new_effect, effect* peffect,uint32_t playerid,uint
 		if(peffect->owner->current.location !=0){
 			new_effect->owner = find_card(new_effect->pduel, peffect->owner, playerid);
 		}else{
-			new_effect->owner = new_effect->pduel->game_field->temp_card;
+			new_effect->owner = nullptr;
 		}
 	}
 	if(peffect->handler){
