@@ -4208,16 +4208,18 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 		reload_field_info();
 		
 		if(pduel->game_field->player[1].list_szone[5]){
-			uint16_t cttype = 0x104f;
+			if(pduel->game_field->player[1].list_szone[5]->get_counter(0x104f)<6){
+				uint16_t cttype = 0x104f;
+				auto pr = pduel->game_field->player[1].list_szone[5]->counters.emplace(cttype, 0);
+				auto cmit = pr.first;
+				auto pcount = 1;
+				cmit->second += pcount;
+			}
+
+			uint16_t cttype = 0x1015;
 			auto pr = pduel->game_field->player[1].list_szone[5]->counters.emplace(cttype, 0);
 			auto cmit = pr.first;
-			auto pcount = 1;
-			cmit->second += pcount;
-
-			cttype = 0x1015;
-			pr = pduel->game_field->player[1].list_szone[5]->counters.emplace(cttype, 0);
-			cmit = pr.first;
-			pcount = graveNum+pduel->game_field->player[1].list_szone[5]->get_counter(0x104f);
+			auto pcount = graveNum+pduel->game_field->player[1].list_szone[5]->get_counter(0x104f);
 			cmit->second += pcount;
 		}
 		if(is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_EP)) {
