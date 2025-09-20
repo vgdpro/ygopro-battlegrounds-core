@@ -4199,7 +4199,6 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			if(pcard && pcard->is_position(POS_FACEDOWN))
 				cards.push_back(pcard);
 		}
-		graveNum += cards.size();
 		for (card* c : cards) {
             if (c)
                 pduel->game_field->remove_card(c);
