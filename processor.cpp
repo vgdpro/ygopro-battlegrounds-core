@@ -4208,7 +4208,17 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 		reload_field_info();
 		
 		if(pduel->game_field->player[1].list_szone[5]){
-			pduel->game_field->player[1].list_szone[5]->add_counter(1, 0x1015, graveNum + pduel->game_field->player[1].list_szone[5]->get_counter(0x1015), false);
+			uint16_t cttype = 0x104f;
+			auto pr = pduel->game_field->player[1].list_szone[5]->counters.emplace(cttype, 0);
+			auto cmit = pr.first;
+			auto pcount = 1;
+			cmit->second += pcount;
+
+			cttype = 0x1015;
+			pr = pduel->game_field->player[1].list_szone[5]->counters.emplace(cttype, 0);
+			cmit = pr.first;
+			pcount = graveNum+pduel->game_field->player[1].list_szone[5]->get_counter(0x104f);
+			cmit->second += pcount;
 		}
 		if(is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_EP)) {
 			core.units.begin()->step = 17;
@@ -4229,6 +4239,32 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 		return FALSE;
 	}
 	case 17: {
+		if((core.duel_options& DUEL_ONLY_MAIN)){
+			if(pduel->game_field->player[1].list_szone[5]){
+				for(const auto& cmit : pduel->game_field->player[1].list_szone[5]->counters) {
+					pduel->write_buffer8(MSG_REMOVE_COUNTER);
+					pduel->write_buffer16(cmit.first);
+					pduel->write_buffer8(pduel->game_field->player[1].list_szone[5]->current.controler);
+					pduel->write_buffer8(pduel->game_field->player[1].list_szone[5]->current.location);
+					pduel->write_buffer8(pduel->game_field->player[1].list_szone[5]->current.sequence);
+					pduel->write_buffer16(cmit.second);
+				}
+				pduel->write_buffer8(MSG_ADD_COUNTER);
+				pduel->write_buffer16(0x104f);
+				pduel->write_buffer8(pduel->game_field->player[1].list_szone[5]->current.controler);
+				pduel->write_buffer8(pduel->game_field->player[1].list_szone[5]->current.location);
+				pduel->write_buffer8(pduel->game_field->player[1].list_szone[5]->current.sequence);
+				pduel->write_buffer16(pduel->game_field->player[1].list_szone[5]->get_counter(0x104f));
+				pduel->write_buffer8(MSG_ADD_COUNTER);
+				pduel->write_buffer16(0x1015);
+				pduel->write_buffer8(pduel->game_field->player[1].list_szone[5]->current.controler);
+				pduel->write_buffer8(pduel->game_field->player[1].list_szone[5]->current.location);
+				pduel->write_buffer8(pduel->game_field->player[1].list_szone[5]->current.sequence);
+				pduel->write_buffer16(pduel->game_field->player[1].list_szone[5]->get_counter(0x1015));
+			}
+		}
+
+
 		core.new_fchain.clear();
 		core.new_ochain.clear();
 		core.quick_f_chain.clear();
