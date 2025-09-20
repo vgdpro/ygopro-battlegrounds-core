@@ -192,12 +192,14 @@ OCGCORE_API void change_lua_duel(intptr_t pduel) {
 void sync_used_xyz(card* pcard ,card* mat,int32_t playerid) {
 	if(xyz_list[playerid].find(pcard) == xyz_list[playerid].end())
 		return;
+	change_lua_duel((intptr_t)xyz_list[playerid][pcard]->pduel);
 	for(auto& it :xyz_list[playerid][pcard]->xyz_materials){
 		if(it && it->data.code == mat->data.code){
 			xyz_list[playerid][pcard]->xyz_remove(it);
 			xyz_list[playerid][pcard]->pduel->game_field->add_card(0, pcard, LOCATION_GRAVE, 0);
 		}
 	}
+	change_lua_duel((intptr_t)pcard->pduel);
 	return;
 }
 OCGCORE_API void reload_field_info(intptr_t pduel){
@@ -615,7 +617,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		if(!it.second)
 			continue;
 		if(target->effects_map[it.first]->object_type == PARAM_TYPE_CARD){
-
+			change_lua_duel(spduel);
 			if(target->effects_map[it.first]->label_object == 0)
 				continue;
 			luaL_checkstack(target->lua->current_state, 1, nullptr);
@@ -627,6 +629,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			void* p = *(void**)lua_touserdata(target->lua->current_state, -1);
 			lua_pop(target->lua->current_state, 1);
 			card* pcard = reinterpret_cast<card*>(p);
+			change_lua_duel(source_pduel);
 			if(pcard && pcard->ref_handle != target->effects_map[it.first]->label_object){
 				continue;
 			}
@@ -635,7 +638,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 				it.second->label_object = (find_card(source, pcard, playerid))->ref_handle;
 		}
 		if(target->effects_map[it.first]->object_type == PARAM_TYPE_EFFECT){
-
+			change_lua_duel(spduel);
 			if(target->effects_map[it.first]->label_object == 0)
 				continue;
 			luaL_checkstack(target->lua->current_state, 1, nullptr);
@@ -647,6 +650,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			void* p = *(void**)lua_touserdata(target->lua->current_state, -1);
 			lua_pop(target->lua->current_state, 1);
 			effect* new_effect = reinterpret_cast<effect*>(p);
+			change_lua_duel(source_pduel);
 			if(new_effect && new_effect->ref_handle != target->effects_map[it.first]->label_object){
 				continue;
 			}
@@ -665,7 +669,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			if(it.second->code & EFFECT_SPSUMMON_PROC)
 				continue;
 			group* return_value = source->new_group();
-
+			change_lua_duel(spduel);
 			if(target->effects_map[it.first]->label_object == 0)
 				continue;
 			luaL_checkstack(target->lua->current_state, 1, nullptr);
@@ -678,6 +682,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			void* p = *(void**)lua_touserdata(target->lua->current_state, -1);
 			lua_pop(target->lua->current_state, 1);
 			group* pgroup = reinterpret_cast<group*>(p);
+			change_lua_duel(source_pduel);
 			if(pgroup->ref_handle != target->effects_map[it.first]->label_object){
 				continue;
 			}
@@ -963,7 +968,7 @@ void effect_data_copy(effect* new_effect, effect* peffect,uint32_t playerid,uint
 	}
 	new_effect->label = peffect->label;
     new_effect->label_object = 0;
-
+	change_lua_duel((intptr_t)peffect->pduel);
 	if(peffect->condition)
 		new_effect->condition = public_lua->clone_function_ref(peffect->condition);
 	if(peffect->cost)
@@ -979,6 +984,7 @@ void effect_data_copy(effect* new_effect, effect* peffect,uint32_t playerid,uint
 			new_effect->value = public_lua->clone_function_ref(peffect->value);
 		}
 	}
+	change_lua_duel((intptr_t)new_effect->pduel);
 
 	// lua_State* srcL = nullptr;
     // lua_State* dstL = nullptr;
