@@ -40,7 +40,7 @@ uint32_t field::process() {
 	if (core.units.size() == 0)
 		return PROCESSOR_END | pduel->buffer_size();
 	auto it = core.units.begin();
-	// if((core.duel_options & DUEL_ONLY_MAIN)){
+	// if(!(core.duel_options & DUEL_ONLY_MAIN)){
 	// 	FILE *fp = fopen("error.log", "at");
 	// 	fprintf(fp, "MSGtype %d\n", it->type);
 	// 	fprintf(fp, "MSGstep %d\n", it->step);
@@ -3920,20 +3920,59 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			// // testcard(25926710, LOCATION_HAND);
 			// // testcard(90241276, LOCATION_HAND);
 			// // testcard(98520301, LOCATION_HAND);
-			// testcard(423585, LOCATION_HAND);
-			// testcard(58494728, LOCATION_HAND);
-			// testcard(73309655, LOCATION_DECK);
-			// testcard(82308875, LOCATION_DECK);
-			// testcard(67557908, LOCATION_DECK);
-			// testcard(269510, LOCATION_HAND);
+			// // testcard(5997110, LOCATION_HAND);
+			// testcard(51630558, LOCATION_HAND);
+			// // testcard(7445307, LOCATION_HAND);
+			// // testcard(81260679, LOCATION_HAND);
+			// // testcard(46918794, LOCATION_HAND);
+			// // testcard(58494728, LOCATION_HAND);
+			// // testcard(87639778, LOCATION_HAND);
+			// // testcard(11819473, LOCATION_DECK);
+			// // testcard(73309655, LOCATION_DECK);
+			// testcard(85692042, LOCATION_DECK);
+			// // testcard(82308875, LOCATION_DECK);
+			// // testcard(54652250, LOCATION_DECK);
+			// testcard(3743515, LOCATION_DECK);
+			// // testcard(269510, LOCATION_HAND);
 			// testcard(8379983, LOCATION_DECK);
 			// testcard(423585, LOCATION_DECK);
-			// testcard(51782995, LOCATION_DECK);
-			// // testcard(73539069, LOCATION_EXTRA);
-			// // testcard(53413628, LOCATION_EXTRA);
-			// // testcard(98978921, LOCATION_EXTRA);
-			// // testcard(58577036, LOCATION_HAND);
-			// // testcard(3784434, LOCATION_HAND);
+			// // testcard(51782995, LOCATION_DECK);
+			// testcard(73244186, LOCATION_DECK);
+			// testcard(45041488, LOCATION_DECK);
+			// testcard(24920410, LOCATION_DECK);
+			// testcard(56495147, LOCATION_DECK);
+			// testcard(56495147, LOCATION_DECK);
+			// testcard(22993208, LOCATION_DECK);
+			// testcard(674561, LOCATION_DECK);
+			// testcard(16960351, LOCATION_DECK);
+			// testcard(45742626, LOCATION_DECK);
+			// testcard(37057012, LOCATION_DECK);
+			// testcard(39880350, LOCATION_DECK);
+			// testcard(8602351, LOCATION_DECK);
+			// testcard(99217226, LOCATION_DECK);
+			// testcard(11722335, LOCATION_DECK);
+			// testcard(66570171, LOCATION_DECK);
+			// testcard(34293667, LOCATION_DECK);
+			// testcard(76218313, LOCATION_DECK);
+			// testcard(20579538, LOCATION_DECK);
+			// testcard(32484853, LOCATION_DECK);
+			// testcard(54126514, LOCATION_DECK);
+			// testcard(56495147, LOCATION_DECK);
+			// testcard(73468603, LOCATION_DECK);
+			// testcard(38723936, LOCATION_DECK);
+			// testcard(70368879, LOCATION_DECK);
+			// testcard(16037007, LOCATION_DECK);
+			// testcard(73452089, LOCATION_DECK);
+			// testcard(95515518, LOCATION_DECK);
+			// testcard(38745241, LOCATION_DECK);
+			// testcard(70634245, LOCATION_DECK);
+			// testcard(74644400, LOCATION_DECK);
+			// testcard(22091345, LOCATION_DECK);
+			// testcard(82977464, LOCATION_DECK);
+			// testcard(68144350, LOCATION_DECK);
+			// testcard(6849042, LOCATION_DECK);
+			// testcard(64911387, LOCATION_DECK);
+			// testcard(15871676, LOCATION_DECK);
 
 		}else{
 			core.new_fchain.clear();
@@ -4051,10 +4090,10 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 		return FALSE;
 	}
 	case 9: {
-		if(returns.ivalue[0] == 7) { // End Phase
-			core.units.begin()->step = 14;
-			return FALSE;
-		}
+		// if(returns.ivalue[0] == 7) { // End Phase
+		// 	core.units.begin()->step = 13;
+		// 	return FALSE;
+		// }
 		infos.phase = PHASE_BATTLE_START;
 		core.new_fchain.clear();
 		core.new_ochain.clear();
@@ -4062,15 +4101,17 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 		core.delayed_quick_tmp.clear();
 		core.phase_action = FALSE;
 		++core.battle_phase_count[infos.turn_player];
+		if(pduel->game_field->player[1].list_szone[5])
+			core.player_coin_num =0;
 		pduel->write_buffer8(MSG_NEW_PHASE);
 		pduel->write_buffer16(infos.phase);
 		if((core.duel_options & DUEL_ONLY_MAIN)){
-			core.units.begin()->step = 14;
+			core.units.begin()->step = 13;
 			return FALSE;
 		}
 		// Show the texts to indicate that BP is entered and skipped
 		if(is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_BP)) {
-			core.units.begin()->step = 14;
+			core.units.begin()->step = 13;
 			reset_phase(PHASE_BATTLE_START);
 			reset_phase(PHASE_BATTLE_STEP);
 			reset_phase(PHASE_BATTLE);
@@ -4135,17 +4176,6 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 		return FALSE;
 	}
 	case 14: {
-		core.new_fchain.clear();
-		core.new_ochain.clear();
-		core.quick_f_chain.clear();
-		core.delayed_quick_tmp.clear();
-		// pduel->write_buffer8(MSG_NEW_PHASE);
-		// pduel->write_buffer16(infos.phase);
-		// infos.can_shuffle = TRUE;
-		// add_process(PROCESSOR_IDLE_COMMAND, 0, 0, 0, 0, 0);
-		return FALSE;
-	}
-	case 15: {
 		if(!(core.duel_options & DUEL_ONLY_MAIN)){
 			core.new_fchain.clear();
 			core.new_ochain.clear();
@@ -4157,10 +4187,6 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			core.units.begin()->step = 18;
 			return FALSE;
 		}
-		//End Phase
-		infos.phase = PHASE_END;
-		core.phase_action = FALSE;
-
 		auto clear_zone = [&](auto &vec) {
 		while (true) {
 				auto it = std::find_if(vec.begin(), vec.end(), [](card* c) { return c != nullptr; });
@@ -4207,20 +4233,30 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 		reload_field_info();
 		
 		if(pduel->game_field->player[1].list_szone[5]){
-			if(pduel->game_field->player[1].list_szone[5]->get_counter(0x104f)<6){
-				uint16_t cttype = 0x104f;
-				auto pr = pduel->game_field->player[1].list_szone[5]->counters.emplace(cttype, 0);
-				auto cmit = pr.first;
-				auto pcount = 1;
-				cmit->second += pcount;
-			}
-
-			uint16_t cttype = 0x1015;
-			auto pr = pduel->game_field->player[1].list_szone[5]->counters.emplace(cttype, 0);
-			auto cmit = pr.first;
-			auto pcount = graveNum+pduel->game_field->player[1].list_szone[5]->get_counter(0x104f);
-			cmit->second += pcount;
+			core.player_coin_num = pduel->game_field->player[1].list_szone[5]->get_counter(0x1015);
+			core.player_coin_num += core.player_coin_num/5 >= 5 ? 5 : core.player_coin_num/5;
+			core.player_coin_num += graveNum;
+			pduel->game_field->player[1].list_szone[5]->counters.clear();
 		}
+		// core.new_fchain.clear();
+		// core.new_ochain.clear();
+		// core.quick_f_chain.clear();
+		// core.delayed_quick_tmp.clear();
+		// pduel->write_buffer8(MSG_NEW_PHASE);
+		// pduel->write_buffer16(infos.phase);
+		// infos.can_shuffle = TRUE;
+		// add_process(PROCESSOR_IDLE_COMMAND, 0, 0, 0, 0, 0);
+		return FALSE;
+	}
+	case 15: {
+		//End Phase
+		if((core.duel_options& DUEL_ONLY_MAIN)){
+			if(pduel->game_field->player[1].list_szone[5]){
+				pduel->game_field->player[1].list_szone[5]->add_counter(0,0x1015, core.player_coin_num,false);
+			}
+		}
+		infos.phase = PHASE_END;
+		core.phase_action = FALSE;
 		if(is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_EP)) {
 			core.units.begin()->step = 17;
 			reset_phase(PHASE_END);
@@ -4240,32 +4276,6 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 		return FALSE;
 	}
 	case 17: {
-		if((core.duel_options& DUEL_ONLY_MAIN)){
-			if(pduel->game_field->player[1].list_szone[5]){
-				for(const auto& cmit : pduel->game_field->player[1].list_szone[5]->counters) {
-					pduel->write_buffer8(MSG_REMOVE_COUNTER);
-					pduel->write_buffer16(cmit.first);
-					pduel->write_buffer8(pduel->game_field->player[1].list_szone[5]->current.controler);
-					pduel->write_buffer8(pduel->game_field->player[1].list_szone[5]->current.location);
-					pduel->write_buffer8(pduel->game_field->player[1].list_szone[5]->current.sequence);
-					pduel->write_buffer16(cmit.second);
-				}
-				pduel->write_buffer8(MSG_ADD_COUNTER);
-				pduel->write_buffer16(0x104f);
-				pduel->write_buffer8(pduel->game_field->player[1].list_szone[5]->current.controler);
-				pduel->write_buffer8(pduel->game_field->player[1].list_szone[5]->current.location);
-				pduel->write_buffer8(pduel->game_field->player[1].list_szone[5]->current.sequence);
-				pduel->write_buffer16(pduel->game_field->player[1].list_szone[5]->get_counter(0x104f));
-				pduel->write_buffer8(MSG_ADD_COUNTER);
-				pduel->write_buffer16(0x1015);
-				pduel->write_buffer8(pduel->game_field->player[1].list_szone[5]->current.controler);
-				pduel->write_buffer8(pduel->game_field->player[1].list_szone[5]->current.location);
-				pduel->write_buffer8(pduel->game_field->player[1].list_szone[5]->current.sequence);
-				pduel->write_buffer16(pduel->game_field->player[1].list_szone[5]->get_counter(0x1015));
-			}
-		}
-
-
 		core.new_fchain.clear();
 		core.new_ochain.clear();
 		core.quick_f_chain.clear();

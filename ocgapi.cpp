@@ -284,7 +284,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 				for(auto& pc :pcard->xyz_materials){
 					if(pc){
 						card* mat = source->new_card(pc->data.code);
-						pc->owner = playerid;
+						mat->owner = playerid;
 						new_card->xyz_add(mat);
 					}
 				}
@@ -512,9 +512,10 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 	}
 	for(auto& it : target->game_field->effects.indexer){
 		if(it.first &&  it.first->owner){
-			if(effects_map[it.first->clone_id]){
-				source->game_field->add_effect(effects_map[it.first->clone_id], it.first->effect_owner);
-			}else{
+			// if(effects_map.find(it.first->clone_id) != effects_map.end()){
+			// 	source->game_field->add_effect(effects_map[it.first->clone_id], it.first->effect_owner);
+			// }else{
+			if(!effects_map[it.first->clone_id]){
 				if(!it.first->is_init_effect){
 					effect* new_effect = source->new_effect();
 					effect_data_copy(new_effect, it.first, playerid, target_playerid);
