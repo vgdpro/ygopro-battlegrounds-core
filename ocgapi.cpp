@@ -15,17 +15,6 @@
 #include "field.h"
 #include "interpreter.h"
 #include "buffer.h"
-#include <filesystem>   
-#include <chrono>      
-#include <ctime>        
-#include <iomanip>     
-#include <sstream>
-#if defined(_WIN32)
-#include <direct.h>   // _mkdir
-#else
-#include <sys/stat.h> // mkdir
-#include <sys/types.h>
-#endif  
 
 static uint32_t default_card_reader(uint32_t code, card_data* data) {
 	return 0;
@@ -101,26 +90,6 @@ OCGCORE_API intptr_t create_duel_v2(uint32_t seed_sequence[]) {
 	pduel->random.seed(seed_sequence, SEED_COUNT);
 	std::memcpy(public_seed_sequence, seed_sequence, sizeof(uint32_t) * SEED_COUNT);
 	pduel->rng_version = 2;
-
-#if defined(_WIN32)
-    _mkdir("logs");
-#else
-    mkdir("logs", 0755);
-#endif
-    auto now = std::chrono::system_clock::now();
-    std::time_t t = std::chrono::system_clock::to_time_t(now);
-    std::tm tm{};
-#if defined(_WIN32)
-    localtime_s(&tm, &t);
-#else
-    localtime_r(&t, &tm);
-#endif
-    std::ostringstream oss;
-    oss << std::put_time(&tm, "%Y%m%d_%H%M%S") << ".log";
-    error_file = std::string("logs/") + oss.str();
-
-    // 确保文件创建
-    if (FILE* fp = std::fopen(error_file.c_str(), "a")) std::fclose(fp);
 	
 	return (intptr_t)pduel;
 }
@@ -644,10 +613,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		}
 	}
 	for(auto& it : effects_map){
-		FILE *fp = fopen(error_file.c_str(), "at");
-		fprintf(fp, "MSG1 %d\n", target->effects_map[it.first]->owner->data.code);
-		fprintf(fp, "MSG2 %d\n", target->effects_map[it.first]->object_type);
-		fclose(fp);
 		if(!it.second)
 			continue;
 		if(target->effects_map[it.first]->object_type == PARAM_TYPE_CARD){
@@ -749,9 +714,6 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 			it.second->label_object = return_value->ref_handle;
 		}
 	}
-	FILE *fp = fopen(error_file.c_str(), "at");
-	fprintf(fp, "MSGover %d\n", 12323);
-	fclose(fp);
 		
 }
 void card_data_copy(card* new_card, card* pcard, uint32_t playerid ,uint32_t target_playerid ,std::map<int, effect*> effects_map) {

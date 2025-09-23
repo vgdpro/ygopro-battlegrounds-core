@@ -529,7 +529,7 @@ int32_t field::damage(uint16_t step, effect* reason_effect, uint32_t reason, uin
 		if(is_reflect || (reason & REASON_RRECOVER))
 			core.units.begin()->step = 2;
 		core.hint_timing[playerid] |= TIMING_DAMAGE;
-		amount = amount/4;
+		amount = amount/2;
 		player[playerid].lp -= amount;
 		pduel->write_buffer8(MSG_DAMAGE);
 		pduel->write_buffer8(playerid);
