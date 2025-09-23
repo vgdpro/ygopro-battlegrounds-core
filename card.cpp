@@ -1713,7 +1713,7 @@ void card::xyz_remove(card* mat) {
 		if(peffect->type & EFFECT_TYPE_FIELD)
 			pduel->game_field->remove_effect(peffect);
 	}
-	if(!(pduel->game_field->core.duel_options & DUEL_ONLY_MAIN) && this->sendto_param.location == 0){
+	if(!(pduel->game_field->core.duel_options & DUEL_ONLY_MAIN) && this->current.location & LOCATION_MZONE){
 		sync_used_xyz(this,mat,this->owner);
 	}
 }

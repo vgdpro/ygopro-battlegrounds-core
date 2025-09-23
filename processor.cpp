@@ -3984,23 +3984,26 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 		return FALSE;
 	}
 	case 1:{
-		group* pgroup = pduel->new_group();
-		for(auto cit = player[0].list_main.rbegin(); cit != player[0].list_main.rend(); ++cit) {
-			if((*cit)->is_capable_send_to_hand(0)){
-				pgroup->container.insert(*cit);
-			}
+		// group* pgroup = pduel->new_group();
+		// for(auto cit = player[0].list_main.rbegin(); cit != player[0].list_main.rend(); ++cit) {
+		// 	if((*cit)->is_capable_send_to_hand(0)){
+		// 		pgroup->container.insert(*cit);
+		// 	}
+		// }
+		// pduel->game_field->core.select_cards.assign(pgroup->container.begin(), pgroup->container.end());
+		// pduel->game_field->add_process(PROCESSOR_SELECT_CARD, 0, 0, 0, 0, 4 + (4 << 16));
+		if(pduel->game_field->player[1].list_szone[5]){
+			pduel->game_field->player[1].list_szone[5]->add_counter(0,0x1015, 8,false);
 		}
-		pduel->game_field->core.select_cards.assign(pgroup->container.begin(), pgroup->container.end());
-		pduel->game_field->add_process(PROCESSOR_SELECT_CARD, 0, 0, 0, 0, 4 + (4 << 16));
 		return FALSE;
 	}
 	case 2: {
-		group* pgroup = pduel->new_group();
-		for(int32_t i = 0; i < pduel->game_field->returns.bvalue[0]; ++i) {
-			card* pcard = pduel->game_field->core.select_cards[pduel->game_field->returns.bvalue[i + 1]];
-			pgroup->container.insert(pcard);
-		}
-		pduel->game_field->send_to(pgroup->container,0,REASON_RULE, PLAYER_NONE, 0, LOCATION_HAND, 0, POS_FACEUP);
+		// group* pgroup = pduel->new_group();
+		// for(int32_t i = 0; i < pduel->game_field->returns.bvalue[0]; ++i) {
+		// 	card* pcard = pduel->game_field->core.select_cards[pduel->game_field->returns.bvalue[i + 1]];
+		// 	pgroup->container.insert(pcard);
+		// }
+		// pduel->game_field->send_to(pgroup->container,0,REASON_RULE, PLAYER_NONE, 0, LOCATION_HAND, 0, POS_FACEUP);
 
 		if(is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_DP)) {
 			core.units.begin()->step = 3;
@@ -4110,14 +4113,14 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			return FALSE;
 		}
 		// Show the texts to indicate that BP is entered and skipped
-		if(is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_BP)) {
-			core.units.begin()->step = 13;
-			reset_phase(PHASE_BATTLE_START);
-			reset_phase(PHASE_BATTLE_STEP);
-			reset_phase(PHASE_BATTLE);
-			adjust_all();
-			return FALSE;
-		}
+		// if(is_player_affected_by_effect(infos.turn_player, EFFECT_SKIP_BP)) {
+		// 	core.units.begin()->step = 13;
+		// 	reset_phase(PHASE_BATTLE_START);
+		// 	reset_phase(PHASE_BATTLE_STEP);
+		// 	reset_phase(PHASE_BATTLE);
+		// 	adjust_all();
+		// 	return FALSE;
+		// }
 		raise_event(nullptr, EVENT_PHASE_START + PHASE_BATTLE_START, 0, 0, 0, turn_player, 0);
 		process_instant_event();
 		adjust_all();
