@@ -1132,9 +1132,10 @@ OCGCORE_API void set_player_lp(intptr_t pduel, intptr_t player, intptr_t player2
 	int32_t lp1 = pd->game_field->player[1].lp;
 	int32_t diff = (lp0 > lp1) ? (lp0 - lp1) : (lp1 - lp0);
 	if (diff > 4000) {
-		if(pd->game_field->core.battle_winner == 0){
+		if(pd->game_field->core.battle_winner == 0 && lp0 > lp1){
 			pd3->game_field->core.player_coin_num += 6;
-		} else if(pd->game_field->core.battle_winner == 1){
+		}
+		if(pd->game_field->core.battle_winner == 1 && lp1 > lp0){
 			pd2->game_field->core.player_coin_num += 6;
 		}
 	}
