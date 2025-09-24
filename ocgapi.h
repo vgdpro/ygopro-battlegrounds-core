@@ -60,7 +60,7 @@ OCGCORE_API intptr_t create_duel(uint_fast32_t seed);
 OCGCORE_API intptr_t create_duel_v2(uint32_t seed_sequence[]);
 OCGCORE_API intptr_t create_duel_v3();
 OCGCORE_API void change_lua_duel(intptr_t pduel);
-OCGCORE_API void set_player_lp(intptr_t pduel, intptr_t player, int32_t playerid);
+OCGCORE_API void set_player_lp(intptr_t pduel, intptr_t player, intptr_t player2);
 OCGCORE_API void start_duel(intptr_t pduel, uint32_t options);
 OCGCORE_API void end_duel(intptr_t pduel);
 OCGCORE_API void set_player_info(intptr_t pduel, int32_t playerid, int32_t lp, int32_t startcount, int32_t drawcount);

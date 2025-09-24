@@ -3321,9 +3321,11 @@ int32_t field::process_battle_command(uint16_t step) {
 		}
 		if(level[0] > level[1]){
 			damage(0, REASON_BATTLE, 0, 0, 1, (level[0]-level[1])*200);
+			core.battle_winner = 0;
 		}
 		else if(level[0] < level[1]){
 			damage(0, REASON_BATTLE, 1, 0, 0, (level[1]-level[0])*200);
+			core.battle_winner = 1;
 		}
 
 		for(auto& ch_lim : core.chain_limit)
@@ -3913,7 +3915,7 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			// 		pduel->game_field->adjust_instant();
 			// 	}
 			// };
-			// // testcard(19322865, LOCATION_HAND);
+			// testcard(45115956, LOCATION_HAND);
 			// // testcard(8379983, LOCATION_HAND);
 			// // testcard(9064354, LOCATION_HAND);
 			// // testcard(78010363, LOCATION_HAND);

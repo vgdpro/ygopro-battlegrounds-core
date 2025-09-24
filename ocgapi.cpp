@@ -34,7 +34,6 @@ static std::set<duel*> duel_set;
 static interpreter* public_lua;
 static uint32_t public_seed_sequence[SEED_COUNT]{};
 static std::map<card*,card*> xyz_list[2];
-static std::string error_file;
 
 OCGCORE_API void set_script_reader(script_reader f) {
 	sreader = f;
@@ -1124,11 +1123,28 @@ OCGCORE_API void end_duel(intptr_t pduel) {
 		delete pd;
 	}
 }
-OCGCORE_API void set_player_lp(intptr_t pduel, intptr_t player, int32_t playerid){
+OCGCORE_API void set_player_lp(intptr_t pduel, intptr_t player, intptr_t player2){
 	duel* pd = (duel*)pduel;
 	duel* pd2 = (duel*)player;
-	pd2->game_field->player[0].lp = pd->game_field->player[playerid].lp;
-	pd2->game_field->player[1].lp = pd->game_field->player[1-playerid].lp;
+	duel* pd3 = (duel*)player2;
+
+	int32_t lp0 = pd->game_field->player[0].lp;
+	int32_t lp1 = pd->game_field->player[1].lp;
+	int32_t diff = (lp0 > lp1) ? (lp0 - lp1) : (lp1 - lp0);
+	if (diff > 4000) {
+		if(pd->game_field->core.battle_winner == 0){
+			pd3->game_field->core.player_coin_num += 6;
+		} else if(pd->game_field->core.battle_winner == 1){
+			pd2->game_field->core.player_coin_num += 6;
+		}
+	}
+
+	pd2->game_field->player[0].lp = pd->game_field->player[0].lp;
+	pd2->game_field->player[1].lp = pd->game_field->player[1].lp;
+
+	pd3->game_field->player[0].lp = pd->game_field->player[1].lp;
+	pd3->game_field->player[1].lp = pd->game_field->player[0].lp;
+
 }
 OCGCORE_API void set_player_info(intptr_t pduel, int32_t playerid, int32_t lp, int32_t startcount, int32_t drawcount) {
 	if (!check_playerid(playerid))

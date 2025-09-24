@@ -271,6 +271,7 @@ struct processor {
 	uint8_t conti_solving{ FALSE };
 	uint8_t win_player{ 5 };
 	uint8_t win_reason{ 0 };
+	uint8_t battle_winner{ PLAYER_NONE };
 	uint8_t re_adjust{ FALSE };
 	effect* reason_effect{ nullptr };
 	uint8_t reason_player{ PLAYER_NONE };

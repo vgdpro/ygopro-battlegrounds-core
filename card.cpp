@@ -1099,10 +1099,10 @@ uint32_t card::check_xyz_level(card* pcard, uint32_t lv) {
 }
 uint32_t card::get_attribute() {
 	if(assume_type == ASSUME_ATTRIBUTE)
-		return 0xffffffff;
+		return ATTRIBUTE_ALL;
 	if(!(data.type & TYPE_MONSTER) && !(get_type() & TYPE_MONSTER) && !is_affected_by_effect(EFFECT_PRE_MONSTER))
 		return 0;
-	return 0xffffffff;
+	return ATTRIBUTE_ALL;
 	// if(assume_type == ASSUME_ATTRIBUTE)
 	// 	return assume_value;
 	// if(!(data.type & TYPE_MONSTER) && !(get_type() & TYPE_MONSTER) && !is_affected_by_effect(EFFECT_PRE_MONSTER))
@@ -1174,10 +1174,10 @@ uint32_t card::get_grave_attribute(uint8_t playerid) {
 }
 uint32_t card::get_race() {
 	if(assume_type == ASSUME_RACE)
-		return 0xffffffff;
+		return RACE_ALL;
 	if(!(data.type & TYPE_MONSTER) && !(get_type() & TYPE_MONSTER) && !is_affected_by_effect(EFFECT_PRE_MONSTER))
 		return 0;
-	return 0xffffffff;
+	return RACE_ALL;
 	// if(assume_type == ASSUME_RACE)
 	// 	return assume_value;
 	// if(!(data.type & TYPE_MONSTER) && !(get_type() & TYPE_MONSTER) && !is_affected_by_effect(EFFECT_PRE_MONSTER))

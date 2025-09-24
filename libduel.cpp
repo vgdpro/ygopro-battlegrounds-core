@@ -4053,6 +4053,8 @@ int32_t scriptlib::duel_announce_race(lua_State * L) {
 	int32_t count = (int32_t)lua_tointeger(L, 2);
 	int32_t available = (int32_t)lua_tointeger(L, 3);
 	duel* pduel = interpreter::get_duel_info(L);
+	if(available == 0)
+		available = RACE_ALL;
 	pduel->game_field->add_process(PROCESSOR_ANNOUNCE_RACE, 0, 0, 0, playerid + (count << 16), available);
 	return lua_yieldk(L, 0, (lua_KContext)pduel, [](lua_State *L, int32_t status, lua_KContext ctx) {
 		duel* pduel = (duel*)ctx;
@@ -4067,6 +4069,8 @@ int32_t scriptlib::duel_announce_attribute(lua_State * L) {
 	int32_t count = (int32_t)lua_tointeger(L, 2);
 	int32_t available = (int32_t)lua_tointeger(L, 3);
 	duel* pduel = interpreter::get_duel_info(L);
+	if(available == 0)
+		available = RACE_ALL;
 	pduel->game_field->add_process(PROCESSOR_ANNOUNCE_ATTRIB, 0, 0, 0, playerid + (count << 16), available);
 	return lua_yieldk(L, 0, (lua_KContext)pduel, [](lua_State *L, int32_t status, lua_KContext ctx) {
 		duel* pduel = (duel*)ctx;
