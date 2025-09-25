@@ -31,9 +31,9 @@ static card_reader_random rcreader = default_card_reader_random;
 static message_handler mhandler = default_message_handler;
 static byte buffer[0x100000];
 static std::set<duel*> duel_set;
-static interpreter* public_lua;
+static interpreter* public_lua{};
 static uint32_t public_seed_sequence[SEED_COUNT]{};
-static std::map<card*,card*> xyz_list[2];
+static std::map<duel*,std::map<card*,card*>[2]> xyz_list;
 
 OCGCORE_API void set_script_reader(script_reader f) {
 	sreader = f;
@@ -85,11 +85,15 @@ OCGCORE_API intptr_t create_duel(uint_fast32_t seed) {
 OCGCORE_API intptr_t create_duel_v2(uint32_t seed_sequence[]) {
 	duel* pduel = new duel();
 	duel_set.insert(pduel);
-	public_lua = pduel->lua;
-	pduel->random.seed(seed_sequence, SEED_COUNT);
-	std::memcpy(public_seed_sequence, seed_sequence, sizeof(uint32_t) * SEED_COUNT);
 	pduel->rng_version = 2;
-	
+	if(!public_lua){
+		public_lua = pduel->lua;
+		pduel->random.seed(seed_sequence, SEED_COUNT);
+		std::memcpy(public_seed_sequence, seed_sequence, sizeof(uint32_t) * SEED_COUNT);
+	}else{
+		pduel->lua = public_lua;
+		pduel->random.seed(public_seed_sequence, SEED_COUNT);
+	}
 	return (intptr_t)pduel;
 }
 OCGCORE_API intptr_t create_duel_v3() {
@@ -191,13 +195,13 @@ OCGCORE_API void change_lua_duel(intptr_t pduel) {
     return;
 }
 void sync_used_xyz(card* pcard ,card* mat,int32_t playerid) {
-	if(xyz_list[playerid].find(pcard) == xyz_list[playerid].end())
+	if(xyz_list[pcard->pduel][playerid].find(pcard) == xyz_list[pcard->pduel][playerid].end())
 		return;
-	change_lua_duel((intptr_t)xyz_list[playerid][pcard]->pduel);
-	for(auto& it :xyz_list[playerid][pcard]->xyz_materials){
+	change_lua_duel((intptr_t)xyz_list[pcard->pduel][playerid][pcard]->pduel);
+	for(auto& it :xyz_list[pcard->pduel][playerid][pcard]->xyz_materials){
 		if(it && it->data.code == mat->data.code){
-			xyz_list[playerid][pcard]->xyz_remove(it);
-			xyz_list[playerid][pcard]->pduel->game_field->add_card(0, pcard, LOCATION_GRAVE, 0);
+			xyz_list[pcard->pduel][playerid][pcard]->xyz_remove(it);
+			xyz_list[pcard->pduel][playerid][pcard]->pduel->game_field->add_card(0, pcard, LOCATION_GRAVE, 0);
 		}
 	}
 	change_lua_duel((intptr_t)pcard->pduel);
@@ -212,8 +216,8 @@ OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t
 	duel* target1 = (duel*)spduel1;
 	duel* target2 = (duel*)spduel2;
 
-	xyz_list[0].clear();
-	xyz_list[1].clear();
+	xyz_list[source][0].clear();
+	xyz_list[source][1].clear();
 	uint32_t options = source->game_field->core.duel_options;
 	delete source->game_field;
 	source->game_field = new field(source);
@@ -291,7 +295,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 				}
 				if(pcard->data.type & TYPE_XYZ){
 					card* new_card = source->game_field->player[playerid].list_mzone[i];
-					xyz_list[playerid][new_card] = pcard;
+					xyz_list[source][playerid][new_card] = pcard;
 				}
 			}
 		}
