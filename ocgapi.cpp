@@ -1123,7 +1123,7 @@ OCGCORE_API void end_duel(intptr_t pduel) {
 		delete pd;
 	}
 }
-OCGCORE_API void set_player_lp(intptr_t pduel, intptr_t player, intptr_t player2){
+OCGCORE_API void set_player_state(intptr_t pduel, intptr_t player, intptr_t player2){
 	duel* pd = (duel*)pduel;
 	duel* pd2 = (duel*)player;
 	duel* pd3 = (duel*)player2;
@@ -1139,6 +1139,23 @@ OCGCORE_API void set_player_lp(intptr_t pduel, intptr_t player, intptr_t player2
 			pd2->game_field->core.player_coin_num += 6;
 		}
 	}
+
+	auto clear_zone = [&](auto &vec,auto &vec2, duel* pduel) {
+		change_lua_duel((intptr_t)pduel);
+		while (true) {
+			auto it = std::find_if(vec.begin(), vec.end(), [](card* c) { return c != nullptr; });
+			if (it == vec.end()) break;
+			pduel->game_field->remove_card(*it);
+		}
+		for(int i=0; i < vec2.size(); ++i) {
+			if(vec2[i]) {
+				card* pcard = vec2[i];
+				new_card((intptr_t)pduel, pcard->data.code,0,0,LOCATION_HAND,pcard->current.sequence,pcard->current.position);
+			}
+		}
+	};
+	clear_zone(pd2->game_field->player[0].list_hand,pd->game_field->player[0].list_hand,pd2);
+	clear_zone(pd3->game_field->player[0].list_hand,pd->game_field->player[1].list_hand,pd3);
 
 	pd2->game_field->player[0].lp = pd->game_field->player[0].lp;
 	pd2->game_field->player[1].lp = pd->game_field->player[1].lp;

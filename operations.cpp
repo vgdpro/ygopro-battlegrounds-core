@@ -596,7 +596,7 @@ int32_t field::recover(uint16_t step, effect* reason_effect, uint32_t reason, ui
 		if (player[playerid].lp > 0) {
 			limit = INT32_MAX - player[playerid].lp;
 		}
-		int32_t val = amount;
+		int32_t val = amount/6;
 		if (val > limit) {
 			val = limit;
 		}

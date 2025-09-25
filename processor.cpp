@@ -3931,7 +3931,6 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			// // testcard(87639778, LOCATION_HAND);
 			// // testcard(11819473, LOCATION_DECK);
 			// // testcard(73309655, LOCATION_DECK);
-			// testcard(85692042, LOCATION_DECK);
 			// // testcard(82308875, LOCATION_DECK);
 			// // testcard(54652250, LOCATION_DECK);
 			// testcard(3743515, LOCATION_DECK);
