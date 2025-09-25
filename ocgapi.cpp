@@ -612,7 +612,7 @@ void copy_field_data(intptr_t source_pduel, intptr_t spduel, uint32_t location, 
 		}
 	}
 	for(auto& it : effects_map){
-		if(!it.second)
+		if(!it.second || target->effects_map.find(it.first) == target->effects_map.end())
 			continue;
 		if(target->effects_map[it.first]->object_type == PARAM_TYPE_CARD){
 			change_lua_duel(spduel);
