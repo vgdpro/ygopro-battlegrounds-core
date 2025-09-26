@@ -64,7 +64,7 @@ OCGCORE_API void set_player_state(intptr_t pduel, intptr_t player, intptr_t play
 OCGCORE_API void start_duel(intptr_t pduel, uint32_t options);
 OCGCORE_API void end_duel(intptr_t pduel);
 OCGCORE_API void set_player_info(intptr_t pduel, int32_t playerid, int32_t lp, int32_t startcount, int32_t drawcount);
-OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t spduel2,uint32_t location);
+OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t spduel2,uint32_t opt);
 OCGCORE_API void get_log_message(intptr_t pduel, char* buf);
 OCGCORE_API int32_t get_message(intptr_t pduel, byte* buf);
 OCGCORE_API uint32_t process(intptr_t pduel);

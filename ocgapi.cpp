@@ -211,14 +211,14 @@ OCGCORE_API void reload_field_info(intptr_t pduel){
 	duel* source = (duel*)pduel;
 	source->game_field->reload_field_info();
 }
-OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t spduel2,uint32_t location){
+OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t spduel2,uint32_t opt){
 	duel* source = (duel*)source_pduel;
 	duel* target1 = (duel*)spduel1;
 	duel* target2 = (duel*)spduel2;
 
 	xyz_list[source][0].clear();
 	xyz_list[source][1].clear();
-	uint32_t options = source->game_field->core.duel_options;
+	uint32_t options = source->game_field->core.duel_options | opt;
 	delete source->game_field;
 	source->game_field = new field(source);
 	source->message_buffer.clear();
@@ -257,10 +257,14 @@ OCGCORE_API void copy_duel_data(intptr_t source_pduel, intptr_t spduel1,intptr_t
 	source->game_field->infos.turn_id_by_player[0] = target1->game_field->infos.turn_id_by_player[0];
 	source->game_field->infos.turn_id_by_player[1] = target2->game_field->infos.turn_id_by_player[1];
 	source->game_field->player[0].lp = target1->game_field->player[0].lp;
+	if(source->game_field->player[0].lp <= 0)
+		source->game_field->player[0].lp = 1145;
 	source->game_field->player[1].lp = target2->game_field->player[0].lp;
+	if(source->game_field->player[1].lp <= 0)
+		source->game_field->player[1].lp = 1145;
 
-	copy_field_data(source_pduel, spduel1, location, 0,0);
-	copy_field_data(source_pduel, spduel2, location, 1,0);
+	copy_field_data(source_pduel, spduel1, 0xffffffff, 0,0);
+	copy_field_data(source_pduel, spduel2, 0xffffffff, 1,0);
 	// FILE *fp = fopen("error.log", "at");
 	// fprintf(fp, "MSG0 %d\n", 123123);
 	// fclose(fp);
@@ -1162,10 +1166,18 @@ OCGCORE_API void set_player_state(intptr_t pduel, intptr_t player, intptr_t play
 	clear_zone(pd3->game_field->player[0].list_hand,pd->game_field->player[1].list_hand,pd3);
 
 	pd2->game_field->player[0].lp = pd->game_field->player[0].lp;
+	if(pd2->game_field->player[0].lp <= 0)
+		pd2->game_field->player[0].lp = 1145;
 	pd2->game_field->player[1].lp = pd->game_field->player[1].lp;
+	if(pd2->game_field->player[1].lp <= 0)
+		pd2->game_field->player[1].lp = 1145;
 
 	pd3->game_field->player[0].lp = pd->game_field->player[1].lp;
+	if(pd3->game_field->player[0].lp <= 0)
+		pd3->game_field->player[0].lp = 1145;
 	pd3->game_field->player[1].lp = pd->game_field->player[0].lp;
+	if(pd3->game_field->player[1].lp <= 0)
+		pd3->game_field->player[1].lp = 1145;
 
 }
 OCGCORE_API void set_player_info(intptr_t pduel, int32_t playerid, int32_t lp, int32_t startcount, int32_t drawcount) {

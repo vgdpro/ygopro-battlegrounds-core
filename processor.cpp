@@ -3915,7 +3915,7 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			// 		pduel->game_field->adjust_instant();
 			// 	}
 			// };
-			// // testcard(8794055, LOCATION_HAND);
+			// testcard(46130346, LOCATION_HAND);
 			// // testcard(66506689, LOCATION_HAND);
 			// // testcard(46640168, LOCATION_HAND);
 			// // testcard(38342336, LOCATION_HAND);
