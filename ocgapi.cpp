@@ -1131,6 +1131,33 @@ OCGCORE_API void end_duel(intptr_t pduel) {
 		delete pd;
 	}
 }
+OCGCORE_API int32_t force_to_battle(intptr_t ppduel) {
+	duel* pduel = (duel*)ppduel;
+	auto it = pduel->game_field->core.units.begin();
+	if(it->type == 10 && it->step == 1){
+		return 0;
+	}
+	int32_t playerid = 0;
+	uint32_t reset = RESET_PHASE+PHASE_END;
+	int32_t count = 1;
+	int32_t value = 0;
+	if(count <= 0)
+		count = 1;
+	int32_t code = EFFECT_SKIP_M1;
+	effect* peffect = pduel->new_effect();
+	peffect->owner = pduel->game_field->temp_card;
+	peffect->effect_owner = playerid;
+	peffect->type = EFFECT_TYPE_FIELD;
+	peffect->code = code;
+	peffect->reset_flag = (reset & 0x3ff) | RESET_PHASE | RESET_SELF_TURN;
+	peffect->flag[0] = EFFECT_FLAG_CANNOT_DISABLE | EFFECT_FLAG_PLAYER_TARGET;
+	peffect->s_range = 1;
+	peffect->o_range = 0;
+	peffect->reset_count = count;
+	peffect->value = value;
+	pduel->game_field->add_effect(peffect, playerid);
+	return 1;
+}
 OCGCORE_API void set_player_state(intptr_t pduel, intptr_t player, intptr_t player2){
 	duel* pd = (duel*)pduel;
 	duel* pd2 = (duel*)player;

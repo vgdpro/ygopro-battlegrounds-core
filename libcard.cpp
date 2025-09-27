@@ -111,7 +111,7 @@ int32_t scriptlib::card_is_fusion_code(lua_State *L) {
 			break;
 		}
 	}
-	lua_pushboolean(L, result);
+	lua_pushboolean(L, true);
 	return 1;
 }
 int32_t scriptlib::card_is_link_code(lua_State *L) {
@@ -141,7 +141,7 @@ int32_t scriptlib::card_is_link_code(lua_State *L) {
 			break;
 		}
 	}
-	lua_pushboolean(L, result);
+	lua_pushboolean(L, true);
 	return 1;
 }
 int32_t scriptlib::card_is_set_card(lua_State *L) {
