@@ -3304,30 +3304,6 @@ int32_t field::process_battle_command(uint16_t step) {
 	}
 	case 40: {
 		//计算战斗伤害
-		int level[2];
-		for(int i = 0; i < 2; ++i) {
-			level[i] = 0;
-			for(auto& pcard : player[i].list_mzone) {
-				if(pcard && pcard->is_position(POS_FACEUP)){
-					if(pcard->get_type() & TYPE_XYZ){
-						level[i] += pcard->get_rank();
-					}else if(pcard->get_type() & TYPE_LINK){
-						level[i] += pcard->get_link();
-					}else{
-						level[i] += pcard->get_level();
-					}
-				}
-			}
-		}
-		if(level[0] > level[1]){
-			damage(0, REASON_BATTLE, 0, 0, 1, (level[0]-level[1])*200);
-			core.battle_winner = 0;
-		}
-		else if(level[0] < level[1]){
-			damage(0, REASON_BATTLE, 1, 0, 0, (level[1]-level[0])*200);
-			core.battle_winner = 1;
-		}
-
 		for(auto& ch_lim : core.chain_limit)
 			luaL_unref(pduel->lua->lua_state, LUA_REGISTRYINDEX, ch_lim.function);
 		core.chain_limit.clear();
@@ -4124,6 +4100,29 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 				}
 			}
 			return FALSE;
+		}
+		int level[2];
+		for(int i = 0; i < 2; ++i) {
+			level[i] = 0;
+			for(auto& pcard : player[i].list_mzone) {
+				if(pcard && pcard->is_position(POS_FACEUP)){
+					if(pcard->get_type() & TYPE_XYZ){
+						level[i] += pcard->get_rank();
+					}else if(pcard->get_type() & TYPE_LINK){
+						level[i] += pcard->get_link();
+					}else{
+						level[i] += pcard->get_level();
+					}
+				}
+			}
+		}
+		if(level[0] > level[1]){
+			damage(0, REASON_BATTLE, 0, 0, 1, (level[0]-level[1])*200);
+			core.battle_winner = 0;
+		}
+		else if(level[0] < level[1]){
+			damage(0, REASON_BATTLE, 1, 0, 0, (level[1]-level[0])*200);
+			core.battle_winner = 1;
 		}
 		core.skip_m2 = FALSE;
 		if(returns.ivalue[0] == 3) { // End Phase
