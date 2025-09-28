@@ -1133,29 +1133,50 @@ OCGCORE_API void end_duel(intptr_t pduel) {
 }
 OCGCORE_API int32_t force_to_battle(intptr_t ppduel) {
 	duel* pduel = (duel*)ppduel;
+	pduel->game_field->core.force_to_bp = TRUE;
 	auto it = pduel->game_field->core.units.begin();
-	if(it->type == 10 && it->step == 1){
-		return 0;
+	switch (it->type)
+	{
+	case 10:
+	case 11:
+	case 13:
+	case 14:
+	case 15:
+	case 17:
+	case 16:
+	case 18:
+	case 24:
+	case 19:
+	case 20:
+	case 22:
+	case 23:
+	case 25:
+	case 110:
+	case 111:
+	case 113:
+	case 115:{
+		it->step =0;
+		break;
 	}
-	int32_t playerid = 0;
-	uint32_t reset = RESET_PHASE+PHASE_END;
-	int32_t count = 1;
-	int32_t value = 0;
-	if(count <= 0)
-		count = 1;
-	int32_t code = EFFECT_SKIP_M1;
-	effect* peffect = pduel->new_effect();
-	peffect->owner = pduel->game_field->temp_card;
-	peffect->effect_owner = playerid;
-	peffect->type = EFFECT_TYPE_FIELD;
-	peffect->code = code;
-	peffect->reset_flag = (reset & 0x3ff) | RESET_PHASE | RESET_SELF_TURN;
-	peffect->flag[0] = EFFECT_FLAG_CANNOT_DISABLE | EFFECT_FLAG_PLAYER_TARGET;
-	peffect->s_range = 1;
-	peffect->o_range = 0;
-	peffect->reset_count = count;
-	peffect->value = value;
-	pduel->game_field->add_effect(peffect, playerid);
+	}
+	auto add_effect = [&](int32_t code) {
+		effect* peffect = pduel->new_effect();
+		peffect->owner = pduel->game_field->temp_card;
+		peffect->effect_owner = 0;
+		peffect->type = EFFECT_TYPE_FIELD;
+		peffect->code = code;
+		peffect->reset_flag = (RESET_PHASE+PHASE_BATTLE & 0x3ff) | RESET_PHASE | RESET_SELF_TURN;
+		peffect->flag[0] = EFFECT_FLAG_CANNOT_DISABLE | EFFECT_FLAG_PLAYER_TARGET;
+		peffect->s_range = 1;
+		peffect->o_range = 0;
+		peffect->reset_count = 1;
+		peffect->value = 0;
+		pduel->game_field->add_effect(peffect, 0);
+	};
+	add_effect(EFFECT_SKIP_EP);
+	add_effect(EFFECT_SKIP_DP);
+	add_effect(EFFECT_SKIP_SP);
+	add_effect(EFFECT_SKIP_M1);
 	return 1;
 }
 OCGCORE_API void set_player_state(intptr_t pduel, intptr_t player, intptr_t player2){

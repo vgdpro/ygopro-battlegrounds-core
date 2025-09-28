@@ -320,6 +320,7 @@ struct processor {
 	bool is_summon_negated{ false };
 
 	uint8_t to_bp{ FALSE };
+	uint8_t force_to_bp{ FALSE };
 	uint8_t to_m2{ FALSE };
 	uint8_t to_ep{ FALSE };
 	uint8_t skip_m2{ FALSE };

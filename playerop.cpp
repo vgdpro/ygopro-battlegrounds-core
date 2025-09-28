@@ -85,6 +85,10 @@ int32_t field::select_battle_command(uint16_t step, uint8_t playerid) {
 }
 int32_t field::select_idle_command(uint16_t step, uint8_t playerid) {
 	if(step == 0) {
+		if(core.force_to_bp){
+			returns.ivalue[0] = 6;
+			return TRUE;
+		}
 		pduel->write_buffer8(MSG_SELECT_IDLECMD);
 		pduel->write_buffer8(playerid);
 		//idle summon
@@ -177,7 +181,7 @@ int32_t field::select_idle_command(uint16_t step, uint8_t playerid) {
 }
 int32_t field::select_effect_yes_no(uint16_t step, uint8_t playerid, uint32_t description, card* pcard) {
 	if(step == 0) {
-		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+		if(((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) || (core.force_to_bp)) {
 			returns.ivalue[0] = 1;
 			return TRUE;
 		}
@@ -198,7 +202,7 @@ int32_t field::select_effect_yes_no(uint16_t step, uint8_t playerid, uint32_t de
 }
 int32_t field::select_yes_no(uint16_t step, uint8_t playerid, uint32_t description) {
 	if(step == 0) {
-		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+		if(((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) || (core.force_to_bp)) {
 			returns.ivalue[0] = 1;
 			return TRUE;
 		}
@@ -220,7 +224,7 @@ int32_t field::select_option(uint16_t step, uint8_t playerid) {
 		returns.ivalue[0] = -1;
 		if(core.select_options.size() == 0)
 			return TRUE;
-		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+		if(((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) || (core.force_to_bp)) {
 			// AI: 随机选择一个可选项索引
 			if(!core.select_options.empty()) {
 				static bool _rand_seeded = false;
@@ -257,7 +261,7 @@ int32_t field::select_card(uint16_t step, uint8_t playerid, uint8_t cancelable, 
 			max = (uint8_t)core.select_cards.size();
 		if(min > max)
 			min = max;
-		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+		if(((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) || (core.force_to_bp)) {
 			returns.bvalue[0] = min;
 			for(uint8_t i = 0; i < min; ++i)
 				returns.bvalue[i + 1] = i;
@@ -295,7 +299,7 @@ int32_t field::select_unselect_card(uint16_t step, uint8_t playerid, uint8_t can
 		returns.bvalue[0] = 0;
 		if(core.select_cards.empty() && core.unselect_cards.empty())
 			return TRUE;
-		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+		if(((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) || (core.force_to_bp)) {
 			returns.bvalue[0] = 1;
 			for(uint8_t i = 0; i < 1; ++i)
 				returns.bvalue[i + 1] = i;
@@ -342,7 +346,7 @@ int32_t field::select_unselect_card(uint16_t step, uint8_t playerid, uint8_t can
 int32_t field::select_chain(uint16_t step, uint8_t playerid, uint8_t spe_count) {
 	if(step == 0) {
 		returns.ivalue[0] = -1;
-		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+		if(((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) || (core.force_to_bp)) {
 			if(core.select_chains.size() == 0)
 				returns.ivalue[0] = -1;
 			else {
@@ -401,7 +405,7 @@ int32_t field::select_chain(uint16_t step, uint8_t playerid, uint8_t spe_count) 
 }
 int32_t field::select_place(uint16_t step, uint8_t playerid, uint32_t flag, uint8_t count) {
 	if(step == 0) {
-		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+		if(((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) || (core.force_to_bp)) {
 			flag = ~flag;
 			uint32_t filter;
 			int32_t pzone = 0;
@@ -492,7 +496,7 @@ int32_t field::select_position(uint16_t step, uint8_t playerid, uint32_t code, u
 			returns.ivalue[0] = positions;
 			return TRUE;
 		}
-		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+		if(((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) || (core.force_to_bp)) {
 			if((uint32_t)positions & 0x4)
 				returns.ivalue[0] = 0x4;
 			else if((uint32_t)positions & 0x1)
@@ -538,7 +542,7 @@ int32_t field::select_tribute(uint16_t step, uint8_t playerid, uint8_t cancelabl
 			min = max;
 		core.units.begin()->arg2 = ((uint32_t)min) + (((uint32_t)max) << 16);
 		// Simple AI: 随机选择满足最小释放点数(min)且选择数量<=max 的卡
-		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+		if(((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) || (core.force_to_bp)) {
 			size_t m = core.select_cards.size();
 			std::vector<int> idxs(m);
 			for(size_t i = 0; i < m; ++i) idxs[i] = (int)i;
@@ -648,7 +652,7 @@ int32_t field::select_counter(uint16_t step, uint8_t playerid, uint16_t countert
 			avail = o;
 		}
 		        // Simple AI: 随机分配要移除的计数到各卡上，直到总和等于 count
-        if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+        if(((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) || (core.force_to_bp)) {
             int n = (int)core.select_cards.size();
             std::vector<int> avail_cnt(n);
             int idx = 0;
@@ -760,7 +764,7 @@ int32_t field::select_with_sum_limit(int16_t step, uint8_t playerid, int32_t acc
 		if (core.must_select_cards.size() > UINT8_MAX)
 			core.must_select_cards.resize(UINT8_MAX);
 		        // Simple AI: 随机尝试寻找合法选项（包含 must_select_cards）
-        if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+        if(((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) || (core.force_to_bp)) {
             int32_t mcount = (int32_t)core.must_select_cards.size();
             int32_t m = (int32_t)core.select_cards.size();
             std::vector<uint32_t> base_oparams;
@@ -937,7 +941,7 @@ int32_t field::select_with_sum_limit(int16_t step, uint8_t playerid, int32_t acc
 int32_t field::sort_card(int16_t step, uint8_t playerid) {
 	if(step == 0) {
 		returns.bvalue[0] = 0;
-		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+		if(((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) || (core.force_to_bp)) {
 			returns.bvalue[0] = 0xff;
 			return TRUE;
 		}
@@ -983,7 +987,7 @@ int32_t field::announce_race(int16_t step, uint8_t playerid, int32_t count, int3
 			count = scount;
 			core.units.begin()->arg1 = (count << 16) + playerid;
 		}
-		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+		if(((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) || (core.force_to_bp)) {
             std::vector<int32_t> races;
             for(uint32_t ft = 0x1; ft < (0x1U << RACES_COUNT); ft <<= 1) {
                 if(ft & available) races.push_back(ft);
@@ -1043,7 +1047,7 @@ int32_t field::announce_attribute(int16_t step, uint8_t playerid, int32_t count,
 			count = scount;
 			core.units.begin()->arg1 = (count << 16) + playerid;
 		}
-		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+		if(((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) || (core.force_to_bp)) {
             std::vector<int32_t> attrs;
             for(int32_t ft = 0x1; ft != 0x80; ft <<= 1) {
                 if(ft & available) attrs.push_back(ft);
@@ -1226,7 +1230,7 @@ static int32_t is_declarable(card_data const& cd, const std::vector<uint32_t>& o
 }
 int32_t field::announce_card(int16_t step, uint8_t playerid) {
 	if(step == 0) {
-		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+		if(((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) || (core.force_to_bp)) {
             for(size_t i = 0; i < core.select_options.size(); ++i) {
                 int32_t code = (int32_t)core.select_options[i];
                 card_data data;
@@ -1271,7 +1275,7 @@ int32_t field::announce_card(int16_t step, uint8_t playerid) {
 }
 int32_t field::announce_number(int16_t step, uint8_t playerid) {
 	if(step == 0) {
-		if((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) {
+		if(((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) || (core.force_to_bp)) {
 			// AI: 随机选择一个可选项索引
 			if(!core.select_options.empty()) {
 				static bool _rand_seeded = false;

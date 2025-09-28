@@ -4044,6 +4044,7 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 		core.delayed_quick_tmp.clear();
 		core.phase_action = FALSE;
 		++core.battle_phase_count[infos.turn_player];
+		core.force_to_bp = FALSE;
 		if(pduel->game_field->player[1].list_szone[5])
 			core.player_coin_num =0;
 		pduel->write_buffer8(MSG_NEW_PHASE);
