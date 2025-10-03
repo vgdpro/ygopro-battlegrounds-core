@@ -1206,7 +1206,24 @@ OCGCORE_API void set_player_state(intptr_t pduel, intptr_t player, intptr_t play
 		for(int i=0; i < vec2.size(); ++i) {
 			if(vec2[i]) {
 				card* pcard = vec2[i];
-				new_card((intptr_t)pduel, pcard->data.code,0,0,LOCATION_HAND,pcard->current.sequence,pcard->current.position);
+				bool copy = true;
+				for(auto& it: pduel->game_field->player[0].list_mzone){
+					if(it && it->data.code == pcard->data.code){
+						copy = false;
+						break;
+					}
+				}
+				if(copy){
+					for(auto& it: pduel->game_field->player[0].list_szone){
+						if(it && it->data.code == pcard->data.code){
+							copy = false;
+							break;
+						}
+					}
+				}
+				if(copy){
+					new_card((intptr_t)pduel, pcard->data.code,0,0,LOCATION_HAND,pcard->current.sequence,pcard->current.position);
+				}
 			}
 		}
 	};

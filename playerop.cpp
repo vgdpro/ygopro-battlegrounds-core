@@ -182,7 +182,7 @@ int32_t field::select_idle_command(uint16_t step, uint8_t playerid) {
 int32_t field::select_effect_yes_no(uint16_t step, uint8_t playerid, uint32_t description, card* pcard) {
 	if(step == 0) {
 		if(((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) || (core.force_to_bp)) {
-			returns.ivalue[0] = 1;
+			returns.ivalue[0] = 0;
 			return TRUE;
 		}
 		pduel->write_buffer8(MSG_SELECT_EFFECTYN);
@@ -203,7 +203,7 @@ int32_t field::select_effect_yes_no(uint16_t step, uint8_t playerid, uint32_t de
 int32_t field::select_yes_no(uint16_t step, uint8_t playerid, uint32_t description) {
 	if(step == 0) {
 		if(((playerid == 1) && (core.duel_options & DUEL_SIMPLE_AI)) || (core.force_to_bp)) {
-			returns.ivalue[0] = 1;
+			returns.ivalue[0] = 0;
 			return TRUE;
 		}
 		pduel->write_buffer8(MSG_SELECT_YESNO);
@@ -351,11 +351,17 @@ int32_t field::select_chain(uint16_t step, uint8_t playerid, uint8_t spe_count) 
 				returns.ivalue[0] = -1;
 			else {
 				bool act = true;
-				for(const auto& ch : core.current_chain)
+				uint32_t ch_count = -1;
+				for(int i =0; i < core.current_chain.size(); ++i){
+					const auto& ch = core.current_chain[i];
+					if(ch.flag & CHAIN_FORCED){
+						ch_count = i;
+					}
 					if(ch.triggering_player == 1)
 						act = false;
+				}
 				if(act)
-					returns.ivalue[0] = 0;
+					returns.ivalue[0] = ch_count;
 				else
 					returns.ivalue[0] = -1;
 			}

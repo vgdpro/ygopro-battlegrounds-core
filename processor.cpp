@@ -4542,8 +4542,10 @@ int32_t field::add_chain(uint16_t step) {
 			clit.flag |= CHAIN_CONTINUOUS_CARD;
 		pduel->write_buffer8(MSG_CHAINED);
 		pduel->write_buffer8(clit.chain_count);
-		raise_event(phandler, EVENT_CHAINING, peffect, 0, clit.triggering_player, clit.triggering_player, clit.chain_count);
-		process_instant_event();
+		if(!(core.duel_options & DUEL_ONLY_MAIN) || phandler->current.controler != 1 || !(phandler->current.is_location(LOCATION_FZONE))){
+			raise_event(phandler, EVENT_CHAINING, peffect, 0, clit.triggering_player, clit.triggering_player, clit.chain_count);
+			process_instant_event();
+		}
 		if(core.new_chains.size())
 			add_process(PROCESSOR_ADD_CHAIN, 0, 0, 0, 0, 0);
 		adjust_all();
