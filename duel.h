@@ -70,6 +70,7 @@ public:
 	void write_buffer8(uint8_t value);
 	void clear_buffer();
 	void set_responsei(uint32_t resp);
+	void clean_remove_card();
 	void set_responseb(byte* resp);
 	int32_t get_next_integer(int32_t l, int32_t h);
 private:

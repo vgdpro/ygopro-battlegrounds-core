@@ -133,6 +133,11 @@ void duel::delete_effect(effect* peffect) {
     }
 	delete peffect;
 }
+void duel::clean_remove_card(){
+	// for(auto& it : cards){
+	// 	if(it){}
+	// }
+}
 int32_t duel::read_buffer(byte* buf) {
 	auto size = buffer_size();
 	if (size)

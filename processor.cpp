@@ -4118,11 +4118,11 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			}
 		}
 		if(level[0] > level[1]){
-			damage(0, REASON_BATTLE, 0, 0, 1, (level[0]-level[1])*1800);
+			damage(0, REASON_BATTLE, 0, 0, 1, (level[0]-level[1])*1200);
 			core.battle_winner = 0;
 		}
 		else if(level[0] < level[1]){
-			damage(0, REASON_BATTLE, 1, 0, 0, (level[1]-level[0])*1800);
+			damage(0, REASON_BATTLE, 1, 0, 0, (level[1]-level[0])*1200);
 			core.battle_winner = 1;
 		}
 		core.skip_m2 = FALSE;
@@ -4197,11 +4197,13 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
                 pduel->game_field->remove_card(c);
         }
 
+		// pduel->clean_remove_card();
+
 		reload_field_info();
 		
 		if(pduel->game_field->player[1].list_szone[5]){
 			core.player_coin_num = pduel->game_field->player[1].list_szone[5]->get_counter(0x1015);
-			core.player_coin_num += core.player_coin_num/5 >= 5 ? 5 : core.player_coin_num/5;
+			core.player_coin_num += ;
 			core.player_coin_num += graveNum;
 			pduel->game_field->player[1].list_szone[5]->counters.clear();
 		}
