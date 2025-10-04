@@ -4203,8 +4203,11 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 		
 		if(pduel->game_field->player[1].list_szone[5]){
 			core.player_coin_num = pduel->game_field->player[1].list_szone[5]->get_counter(0x1015);
-			core.player_coin_num += ;
-			core.player_coin_num += graveNum;
+			uint8_t add_coin = 0;
+			if(player[0].lp<8000)
+				add_coin = ((8000-player[0].lp)/1000)*2;
+			core.player_coin_num += add_coin > 10 ? 10 : add_coin;
+			core.player_coin_num += graveNum/2;
 			pduel->game_field->player[1].list_szone[5]->counters.clear();
 		}
 		// core.new_fchain.clear();
