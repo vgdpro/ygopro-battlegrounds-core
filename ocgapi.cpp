@@ -150,7 +150,6 @@ OCGCORE_API void change_lua_duel(intptr_t pduel) {
 	lua_settable(originduel->lua->lua_state, -3); // -2，设置 _G["Auxiliary"] = nil
 	lua_pop(originduel->lua->lua_state, 1); // 弹出 _G
 
-    // 能帮我在这里把所有卡片表放到card_table_refs里吗？这样就不用修改load_card_script了
     lua_pushglobaltable(originduel->lua->lua_state);
     lua_pushnil(originduel->lua->lua_state);
     while (lua_next(originduel->lua->lua_state, -2)) {

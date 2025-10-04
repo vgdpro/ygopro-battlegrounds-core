@@ -4118,11 +4118,11 @@ int32_t field::process_turn(uint16_t step, uint8_t turn_player) {
 			}
 		}
 		if(level[0] > level[1]){
-			damage(0, REASON_BATTLE, 0, 0, 1, (level[0]-level[1])*200);
+			damage(0, REASON_BATTLE, 0, 0, 1, (level[0]-level[1])*1800);
 			core.battle_winner = 0;
 		}
 		else if(level[0] < level[1]){
-			damage(0, REASON_BATTLE, 1, 0, 0, (level[1]-level[0])*200);
+			damage(0, REASON_BATTLE, 1, 0, 0, (level[1]-level[0])*1800);
 			core.battle_winner = 1;
 		}
 		core.skip_m2 = FALSE;
